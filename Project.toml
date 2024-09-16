@@ -1,7 +1,7 @@
 name = "OptimizationMethods"
 uuid = "5d16ec4c-3308-46eb-bccb-6dfd9ce745e1"
 authors = ["Vivak Patel <vivak.patel@wisc.edu>", "Daniel Adrian Maldonado <maldonadod@anl.gov>"]
-version = "0.0.0`"
+version = "0.0.0"
 
 [compat]
 julia = "1"
