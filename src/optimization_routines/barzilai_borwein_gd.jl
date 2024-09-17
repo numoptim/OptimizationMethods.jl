@@ -43,7 +43,16 @@ function barzilai_borwein_gd(
     while k <= max_iter
         # one iteration of barzilai-borwein
         grad!(gk, func, xk)
-        alfak = step_size(xk - xprev, gk - gprev) # TODO: remove the extra allocations
+
+        # use buffer to compute step size efficiently
+        xprev .*= -1
+        xprev .+= xk
+
+        gprev .*= -1
+        gprev .+= gk
+
+        # compute step size
+        alfak = step_size(xprev, gprev) # TODO: remove the extra allocations
 
         # do not update with a nan alfak
         if isnan(alfak)
