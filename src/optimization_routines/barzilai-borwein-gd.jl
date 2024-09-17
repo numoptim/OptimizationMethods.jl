@@ -2,22 +2,20 @@
 # Author: Christian Varner
 # Purpose: Implement barzilai-borwein.
 
-export barzilai_borwein_gd
-
 function barzilai_borwein_gd(
-    func::AbstractNLPModel,     # objective function
-    x0::AbstractVector,         # initial point
-    max_iter::Int64;            # max iteration
-    alfa0::Float64 = 1e-4,      # initial step size
-    long::Bool = true           # whether to use long or short step sizes
-)
+    func::AbstractNLPModel{T, S},     # objective function
+    x0::S,                            # initial point
+    max_iter::Int64;                  # max iteration
+    alfa0::T = 1e-4,            # initial step size
+    long::Bool = true                 # whether to use long or short step sizes
+) where S <: Vector{T} where T <: Real
 
     # step size helper functions
-    function _long_step_size(Δx::AbstractVector, Δg::AbstractVector) # long variant
+    function _long_step_size(Δx::S, Δg::S) # long variant
         return (Δx' * Δx) / (Δx' * Δg)        # ||x_k - x_{k-1}||_2^2 / (x_k - x_{k-1}) * (gk - gk-1)
     end
 
-    function _short_step_size(Δx::AbstractVector, Δg::AbstractVector) # short variant
+    function _short_step_size(Δx::S, Δg::S) # short variant
         return (Δx' * Δg) / (Δg' * Δg)
     end
 
@@ -25,28 +23,37 @@ function barzilai_borwein_gd(
     step_size = long ? _long_step_size : _short_step_size
 
     # initializations -- iterate
-    buffer = zeros(size(x))
-    xprev = zeros(size(x))
-    xk = zeros(size(x))
+    xprev :: S = zeros(T, size(x0))
+    xk :: S = zeros(T, size(x0))
     xprev .= xk .= x0
 
     # initialization -- gradient
-    gprev = zeros(size(x))
-    gk = zeros(size(x))
+    gprev :: S  = zeros(T, size(x0))
+    gk :: S = zeros(T, size(x0))
 
     # first iteration
     gprev .= grad(func, xk) 
     xk .-= alfa0 * gprev
 
     # main iteration
-    for k in 2:max_iter
+    k = 2
+    while k <= max_iter
+        # one iteration of barzilai-borwein
         gk .= grad(func, xk)
-        buffer .= xk - step_size(Δx = xk - xprev, Δg = gk - gprev) * gk
+        alfak :: T = step_size(xk - xprev, gk - gprev)
+
+        # do not update with a nan alfak
+        if isnan(alfak)
+            return xk
+        end
         xprev .= xk
-        xk .= buffer
+        xk .-= alfak .* gk 
         gprev .= gk
+        
+        # update iteration number
+        k += 1
     end
 
     # return
-    return x
+    return xk
 end
