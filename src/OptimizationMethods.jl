@@ -20,7 +20,7 @@ export barzilai_borwein_gd
 ############################
 
 # Objective function free methods
-include("optimization_routines/barzilai-borwein-gd.jl")
+include("optimization_routines/barzilai_borwein_gd.jl")
 
 # Methods that ensure descent 
 
