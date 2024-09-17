@@ -15,6 +15,8 @@ export obj, grad, grad!, hess, hess!
 # For optimization methods
 export barzilai_borwein_gd
 
+
+export weighted_norm_dampening_gd
 ############################
 # Algorithm Includes
 ############################
@@ -22,6 +24,8 @@ export barzilai_borwein_gd
 # Objective function free methods
 include("optimization_routines/barzilai_borwein_gd.jl")
 
+
+include("optimization_routines/weighted_norm_dampening_gd.jl")
 # Methods that ensure descent 
 
 ############################

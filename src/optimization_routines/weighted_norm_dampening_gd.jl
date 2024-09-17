@@ -5,7 +5,7 @@
 """
 TODO - documentation
 """
-function weighted_norm_dampening(
+function weighted_norm_dampening_gd(
     func :: AbstractNLPModel{T, S},
     x0 :: S,
     max_iter :: Int64;
