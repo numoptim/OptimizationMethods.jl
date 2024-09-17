@@ -21,8 +21,9 @@ function weighted_norm_dampening_gd(
     grad!(gk, func, xk)
 
     # main loop
+    k = 1
     while k <= max_iter
-        xk .-= (1/bk) * gk
+        xk .-= (1/bk) .* gk
         grad!(gk, func, xk)
         bk = bk + (norm(gk)^2)/bk # TODO: possible allocations
         k += 1
