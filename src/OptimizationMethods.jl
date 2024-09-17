@@ -10,7 +10,7 @@ using NLPModels, LinearAlgebra
 ############################
 
 # For objectives
-export obj, grad, hess
+export obj, grad, grad!, hess, hess!
 
 # For optimization methods
 export barzilai_borwein_gd
@@ -29,7 +29,7 @@ include("optimization_routines/barzilai-borwein-gd.jl")
 ############################
 
 # simple functions -- for testing code
-include("objective_functions/least_squares.jl")
+include("objective_functions/simple_least_squares.jl")
 
 # quasi-likelihood 
 

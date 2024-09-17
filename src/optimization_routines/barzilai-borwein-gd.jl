@@ -31,16 +31,19 @@ function barzilai_borwein_gd(
     gprev :: S  = zeros(T, size(x0))
     gk :: S = zeros(T, size(x0))
 
+    # initializations -- step size
+    alfak :: T = zero(T)
+
     # first iteration
-    gprev .= grad(func, xk) 
+    grad!(gprev, func, xk) 
     xk .-= alfa0 * gprev
 
     # main iteration
     k = 2
     while k <= max_iter
         # one iteration of barzilai-borwein
-        gk .= grad(func, xk)
-        alfak :: T = step_size(xk - xprev, gk - gprev)
+        grad!(gk, func, xk)
+        alfak = step_size(xk - xprev, gk - gprev) # TODO: remove the extra allocations
 
         # do not update with a nan alfak
         if isnan(alfak)
