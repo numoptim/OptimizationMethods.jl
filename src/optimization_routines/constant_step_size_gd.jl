@@ -23,7 +23,7 @@ function constant_step_size_gd(
     k = 1
     while k <= max_iter
         grad!(gk, func, xk)
-        xk .-= alfa0 * gk
+        xk .-= alfa0 .* gk
         k += 1
     end
 
