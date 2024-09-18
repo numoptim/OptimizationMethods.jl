@@ -3,7 +3,19 @@
 # Purpose: Implement barzilai-borwein.
 
 """
-TODO - documentation
+    barzilai_borwein_gd(func, x0, max_iter; alfa0, long)
+
+Implementation of barzilai-borwein step size method using negative gradient
+directions. To see more about the method, take a look at
+
+Barzilai and Borwein. "Two-Point Step Size Gradient Methods". IMA Journal of Numerical Analysis.
+
+# Arguments
+- `func::AbstractNLPModel{T, S}`, function to optimize. Must have grad! implemented.
+- `x0::S`, initial starting value.
+- `max_iter::Int64`, max iteration limit.
+- `alfa0::T = 1e-4` (Optional), initial step size.
+- `long::Bool = true` (Optional), flag to indicate the use of the long version or the short version
 """
 function barzilai_borwein_gd(
     func::AbstractNLPModel{T, S},     # objective function
