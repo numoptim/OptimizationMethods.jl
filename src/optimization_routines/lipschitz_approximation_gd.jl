@@ -53,7 +53,11 @@ function lipschitz_approximation_gd(
             alfak = min(sqrt(1+wk) * alfa_prev, norm(xprev) / (2 * norm(gprev))) 
         end
 
-        # update iterate and weights
+        # update history before iterate
+        xprev .= xk
+        gprev .= gk
+
+        # update history
         xk .-= alfak .* gk
         wk = alfak / alfa_prev
         alfa_prev = alfak
