@@ -67,7 +67,7 @@ function barzilai_borwein_gd(
         gprev .+= gk
 
         # compute step size
-        alfak = step_size(xprev, gprev) # TODO: remove the extra allocations
+        alfak = step_size(xprev, gprev) 
 
         # do not update with a nan alfak
         if isnan(alfak)

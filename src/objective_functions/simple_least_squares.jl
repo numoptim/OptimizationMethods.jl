@@ -32,7 +32,7 @@ function SimpleLinearLeastSquares()
     # solution of this system
     xstar :: Vector{Float64} = [1 / 3, 1 / 3]
 
-    return SimpleLinearLeastSquares{Float64, Vector{Float64}}(NLPModelMeta(2; x0 = zeros(2)), Counters(), A, xstar, b, A'*A, A'*b)
+    return SimpleLinearLeastSquares{Float64, Vector{Float64}}(NLPModelMeta(2; x0 = zeros(2)), Counters(), A, xstar, b, A' * A, A' * b)
 end
 
 # TODO: Implement a better constructor so that don't have to specify meta etc.
