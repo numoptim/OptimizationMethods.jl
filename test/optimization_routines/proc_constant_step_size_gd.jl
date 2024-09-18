@@ -41,6 +41,10 @@ using Test, OptimizationMethods, LinearAlgebra, Random
     xiter = constant_step_size_gd(func, func.meta.x0, iteration; alfa0 = alfa0)
     Δx = xiter - xiter_prev
     @test norm(Δx - (-alfa0 * grad(func, xiter_prev))) < eps()
+
+    # test full output
+    xres = constant_step_size_gd(func, func.meta.x0, 100; alfa0 = alfa0)
+    @test norm(xres - func.xstar) < eps()
 end
 
 end # end module
