@@ -50,7 +50,7 @@ function lipschitz_approximation_gd(
         if k == 2
             alfak = norm(xprev) / (2 * norm(gprev))
         else
-            alfak = min(sqrt(1+wk) * alfa_prev, norm(xprev) / (2 * norm(gprev))) 
+            alfak = min(sqrt(1 + wk) * alfa_prev, norm(xprev) / (2 * norm(gprev))) 
         end
 
         # update history before iterate
