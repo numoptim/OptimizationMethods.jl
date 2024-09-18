@@ -2,6 +2,9 @@
 # Author: Christian Varner
 # Purpose: Implement barzilai-borwein.
 
+"""
+TODO - documentation
+"""
 function barzilai_borwein_gd(
     func::AbstractNLPModel{T, S},     # objective function
     x0::S,                            # initial point
