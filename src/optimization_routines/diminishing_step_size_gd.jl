@@ -30,8 +30,8 @@ function diminishing_step_size_gd(
     # do diminishing step size
     k = 1
     while k <= max_iter
-        grad!(gk, func, sk)
-        xk .-= step_size(k) * gk # TODO - I am not sure what parameters should be passed to this
+        grad!(gk, func, xk)
+        xk .-= step_size(k) .* gk # TODO - I am not sure what parameters should be passed to this
         k += 1
     end
 

@@ -20,6 +20,10 @@ export diminishing_step_size_gd
 # Algorithm Includes
 ############################
 
+# step size util 
+include("optimization_routines/step_size_util/inverse_k.jl")
+include("optimization_routines/step_size_util/root_k.jl")
+
 # Objective function free methods
 include("optimization_routines/barzilai_borwein_gd.jl")
 
