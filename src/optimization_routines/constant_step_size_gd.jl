@@ -3,7 +3,15 @@
 # Purpose: Implement constant step size gradient descent
 
 """
-TODO - Documentation
+    constant_step_size_gd(func, x0, max_iter; alfa0)
+
+Implementation of constant step size method using negative gradient directions.
+
+# Arguments
+- `func :: AbstractNLPModel{T, S}`, function to optimize. Must have grad! implemented.
+- `x0 :: S`, initial starting value.
+- `max_iter :: Int64`, max iteration limit.
+- `alfa0 :: T = 1e-4` (Optional), constant step size.
 """
 function constant_step_size_gd(
     func :: AbstractNLPModel{T, S},
