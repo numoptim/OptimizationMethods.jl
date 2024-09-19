@@ -5,7 +5,7 @@
 """
 TODO - documentation
 """
-function root_k(c :: Int64)
+function root_k(c :: Float64)
     function step_size(k :: Int64)
         return c / sqrt(k)
     end

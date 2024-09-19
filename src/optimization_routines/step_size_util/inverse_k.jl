@@ -4,7 +4,7 @@
 
 """
 """
-function inverse_k(c :: Int64)
+function inverse_k(c :: Float64)
     function step_size(k :: Int64)
         return c / k
     end
