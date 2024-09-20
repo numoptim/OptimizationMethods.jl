@@ -10,7 +10,7 @@ using NLPModels, LinearAlgebra
 ############################
 
 # For objectives
-export obj, grad, grad!, hess, hess!
+export initialize
 
 # For optimization methods
 
@@ -27,7 +27,7 @@ export obj, grad, grad!, hess, hess!
 ############################
 
 # simple functions -- for testing code
-include("objective_functions/simple_least_squares.jl")
+include("objective_functions/gaussian_least_squares.jl")
 
 # quasi-likelihood 
 
