@@ -1,6 +1,8 @@
 name = "OptimizationMethods"
 uuid = "5d16ec4c-3308-46eb-bccb-6dfd9ce745e1"
-authors = ["Vivak Patel <vivak.patel@wisc.edu>", "Daniel Adrian Maldonado <maldonadod@anl.gov>"]
+authors = ["Vivak Patel <vivak.patel@wisc.edu>",
+           "Christian Varner <cvarner@wisc.edu>",
+           "Daniel Adrian Maldonado <maldonadod@anl.gov>"]
 version = "0.0.0"
 
 [compat]
