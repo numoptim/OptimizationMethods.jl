@@ -13,14 +13,12 @@ using NLPModels, LinearAlgebra
 export obj, grad, grad!, hess, hess!
 
 # For optimization methods
-export barzilai_borwein_gd
 
 ############################
 # Algorithm Includes
 ############################
 
 # Objective function free methods
-include("optimization_routines/barzilai_borwein_gd.jl")
 
 # Methods that ensure descent 
 
