@@ -2,6 +2,21 @@
 # Author: Christian Varner
 # Purpose: Implement barzilai-borwein.
 
+"""
+    barzilai_borwein_gd(func, x0, max_iter; alfa0, long)
+
+Implementation of barzilai-borwein step size method using negative gradient
+directions. To see more about the method, take a look at
+
+Barzilai and Borwein. "Two-Point Step Size Gradient Methods". IMA Journal of Numerical Analysis.
+
+# Arguments
+- `func::AbstractNLPModel{T, S}`, function to optimize. Must have grad! implemented.
+- `x0::S`, initial starting value.
+- `max_iter::Int64`, max iteration limit.
+- `alfa0::T = 1e-4` (Optional), initial step size.
+- `long::Bool = true` (Optional), flag to indicate the use of the long version or the short version
+"""
 function barzilai_borwein_gd(
     func::AbstractNLPModel{T, S},     # objective function
     x0::S,                            # initial point
@@ -43,7 +58,16 @@ function barzilai_borwein_gd(
     while k <= max_iter
         # one iteration of barzilai-borwein
         grad!(gk, func, xk)
-        alfak = step_size(xk - xprev, gk - gprev) # TODO: remove the extra allocations
+
+        # use buffer to compute step size efficiently
+        xprev .*= -1
+        xprev .+= xk
+
+        gprev .*= -1
+        gprev .+= gk
+
+        # compute step size
+        alfak = step_size(xprev, gprev) 
 
         # do not update with a nan alfak
         if isnan(alfak)

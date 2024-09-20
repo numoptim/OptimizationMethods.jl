@@ -15,16 +15,25 @@ using Test, OptimizationMethods, LinearAlgebra, Random
     # testing problem
     func = OptimizationMethods.SimpleLinearLeastSquares()
 
-    # test first iteration -- default value
+    # test first iteration -- alfa0 default value -- long true
     xres = barzilai_borwein_gd(func, func.meta.x0, 1)
     @test norm( xres - func.meta.x0 + (1e-4 * grad(func, func.meta.x0)) ) < eps()
 
-    # test first iteration -- other value
+    # test first iteration -- alfa0 default value -- long false
+    xres = barzilai_borwein_gd(func, func.meta.x0, 1; long = false)
+    @test norm( xres - func.meta.x0 + (1e-4 * grad(func, func.meta.x0)) ) < eps()
+
+    # test first iteration -- alfa0 set -- long true
     afla0 :: Float64 = rand(1)[1]
     xres = barzilai_borwein_gd(func, func.meta.x0, 1; alfa0 = afla0)
+    @test norm( xres - func.meta.x0 + (afla0 * grad(func, func.meta.x0)) ) < eps()
+    
+    # test first iteration -- alfa0 set -- long false
+    afla0 = rand(1)[1]
+    xres = barzilai_borwein_gd(func, func.meta.x0, 1; long = false, alfa0 = afla0)
     @test norm( xres - func.meta.x0 + (afla0 * grad(func, func.meta.x0)) ) < eps() 
 
-    # test first three iterations -- default value
+    # test first three iterations -- long true
     x1 = barzilai_borwein_gd(func, func.meta.x0, 1)
     x2 = barzilai_borwein_gd(func, func.meta.x0, 2)
     x3 = barzilai_borwein_gd(func, func.meta.x0, 3)
@@ -35,7 +44,7 @@ using Test, OptimizationMethods, LinearAlgebra, Random
 
     @test norm( x3 - x2 + (long_step * grad(func, x2)) ) < eps()
 
-    # test first three iterations -- short step
+    # test first three iterations -- long false
     x1 = barzilai_borwein_gd(func, func.meta.x0, 1; long = false)
     x2 = barzilai_borwein_gd(func, func.meta.x0, 2; long = false)
     x3 = barzilai_borwein_gd(func, func.meta.x0, 3; long = false)
@@ -46,7 +55,7 @@ using Test, OptimizationMethods, LinearAlgebra, Random
 
     @test norm( x3 - x2 + (long_step * grad(func, x2)) ) < eps()
 
-    # test full algorithm
+    # test full algorithm output
     xres = barzilai_borwein_gd(func, func.meta.x0, 100)
     @test norm(xres - func.xstar) < eps()
 

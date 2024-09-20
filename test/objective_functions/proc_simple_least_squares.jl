@@ -31,7 +31,7 @@ using Test, OptimizationMethods, LinearAlgebra, Random
 
     # test functionality
     x = randn(2) 
-    @test abs(obj(func, x) - (.5*norm(A * x - b)^2)) < eps()
+    @test abs(obj(func, x) - (.5 * norm(A * x - b) ^ 2)) < eps()
     @test norm(grad(func, x) - (func.A_squared * x - func.Ab) ) < eps()
     @test norm(hess(func, x) - func.A_squared) < eps()
 
@@ -76,7 +76,7 @@ using Test, OptimizationMethods, LinearAlgebra, Random
 
     # test functionality
     x = randn(dim) 
-    @test abs(obj(func, x) - (.5*norm(A * x - b)^2)) < eps()
+    @test abs(obj(func, x) - (.5 * norm(A * x - b) ^ 2)) < eps()
     @test norm(grad(func, x) - (func.A_squared * x - func.Ab) ) < eps()
     @test norm(hess(func, x) - func.A_squared) < eps()
 
