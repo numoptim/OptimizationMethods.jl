@@ -24,11 +24,11 @@ F(x) = A * x - b.
 - `nls_meta::NLSMeta{T, S}`, data structure for nonlinear least squares models
 - `counters::NLSCounters`, counters for nonlinear least squares models
 - `coef::Matrix{T}`, coefficient matrix, `A`, for least squares problem 
-- `cons::Vector{T}`, constantct vecotr, `b`, for least squares problem
+- `cons::Vector{T}`, constant vector, `b`, for least squares problem
 
 # Constructors
 
-    GaussianLeastSquares(::Type{T};nequ=1000, nvar=50) where {T}
+    GaussianLeastSquares(::Type{T}; nequ=1000, nvar=50) where {T}
 
 Constructs a least squares problems with `1000` equations and `50` unknowns,
     where the entries of the matrix and constant vector are independent
@@ -128,13 +128,13 @@ Immutable structure for preallocating important quantities for the Gaussian
     AllocateGLS(prog::GaussianLeastSquares{T,S}) where {T,S}
     AllocateGLS(
         prog::GaussianLeastSquares{T,S},
-        precomp::precomputeGLS{T},
+        preComp::precomputeGLS{T},
     ) where {T,S}
 
 Preallocates data structures for Gaussian Least Squares based on optimization
     problem's data. The values of `r` and `grad` are set to zero of type `T`.
-    `jac` and `hess` are set to `A` and `A'*A`. If `precomp` is supplied, then
-    `hess` is set to `precomp.coef_t_coef`.
+    `jac` and `hess` are set to `A` and `A'*A`. If `preComp` is supplied, then
+    `hess` is set to `preComp.coef_t_coef`.
 """
 struct AllocateGLS{T} <: AbstractProblemAllocate{T}
     res::Vector{T}
@@ -155,14 +155,14 @@ end
 
 function AllocateGLS(
     prog::GaussianLeastSquares{T,S},
-    precomp::PrecomputeGLS{T}
+    preComp::PrecomputeGLS{T}
 ) where {T,S}
 
     return AllocateGLS(
         zeros(T, prog.nls_meta.nequ),
         prog.coef,
         zeros(T, prog.nls_meta.nvar),
-        precomp.coef_t_coef,
+        preComp.coef_t_coef,
     )
 end
 
@@ -234,7 +234,7 @@ args = [
    @doc """
         grad(
             $(join(string.(args),",\n\t    "))
-        )
+        ) where {T,S}
 
     Computes the gradient of the objective function at `x`. This is `A'(A*x-b)`,
         which is equivalent to `J'*r` where `J` is the Jacobian and `r` is the 
@@ -248,6 +248,19 @@ args = [
     end
 
     @doc """
+        objgrad(
+            $(join(string.(args),",\n\t    "))
+        ) where {T,S}
+    
+    Computes the objective function at `x` and gradient of the objective function at `x`.
+    """
+    function NLPModels.objgrad($(args...)) where {T, S}
+        o = obj(progData, x)
+        g = grad(progData, x)
+        return o, f
+    end
+
+    @doc """
         hess(
             $(join(string.(args),",\n\t    "))
         ) where {T,S}
@@ -255,7 +268,7 @@ args = [
     Computes the Hessian of the objective function at `x`. This is `A'A`.
     """
     function hess($(args...)) where {T,S}
-        increment!(prog_data, :neval_hess)
+        increment!(progData, :neval_hess)
         return progData.coef'*progData.coef
     end
 end
@@ -308,14 +321,28 @@ args_pre = [
     @doc """
         grad(
             $(join(string.(args_pre),",\n\t    "))
-        )
+        ) where {T,S}
 
     Computes the gradient of the objective function at `x`. This is `A'(A*x-b)`,
         which is equivalent to `A'A * x - A*b`
     """
     function NLPModels.grad($(args_pre...)) where {T,S}
         increment!(progData, :neval_grad)
-        return precomp.coef_t_coef * x - precomp.coef_t_cons
+        return preComp.coef_t_coef * x - preComp.coef_t_cons
+    end
+
+    @doc """
+        objgrad(
+            $(join(string.(args_pre),",\n\t    "))
+        ) where {T,S}
+
+    Compute the objective function at `x`, and computes the gradient of the objective at 'x' using
+        the pr.
+    """
+    function NLPModels.objgrad($(args_pre...)) where {T, S}
+        o = obj(progData, preComp, x)
+        g = grad(progData, preComp, x)
+        return o, g
     end
 
     @doc """
@@ -324,11 +351,11 @@ args_pre = [
         ) where {T,S}
         
     Computes the Hessian of the objective function at `x`. This is `A'A`. Returns
-        the value `precomp.coef_t_coef` which contains this calculation.
+        the value `preComp.coef_t_coef` which contains this calculation.
     """
     function hess($(args_pre...)) where {T,S}
         increment!(progData, :neval_hess)
-        return precomp.coef_t_coef
+        return preComp.coef_t_coef
     end
 end
 
@@ -338,7 +365,7 @@ end
 
 args_store = [
     :(progData::GaussianLeastSquares{T,S}),
-    :(precomp::PrecomputeGLS{T}),
+    :(preComp::PrecomputeGLS{T}),
     :(store::AllocateGLS{T}),
     :(x::Vector{T})
 ]
@@ -350,7 +377,7 @@ args_store = [
             $(join(string.(args_store),",\n\t    "))
         ) where {T,S}
 
-    Computes the residual and updates it in `store.res`. `precomp` is not used.
+    Computes the residual and updates it in `store.res`. `preComp` is not used.
     """
     function NLPModels.residual!($(args_store...)) where {T,S}
         increment!(progData, :neval_residual)
@@ -371,7 +398,7 @@ args_store = [
     function NLPModels.obj($(args_store...); recompute::Bool=true) where {T,S}
         # Only update residual at x if recompute is true, otherwise just compute 
         # objective function value with current value of r (residual)
-        recompute && residual!(progData, precomp, store, x)
+        recompute && residual!(progData, preComp, store, x)
         increment!(progData, :neval_obj)
         return 0.5 * dot(store.res, store.res)
     end
@@ -390,28 +417,43 @@ args_store = [
         return nothing 
     end
 
-    """
+    @doc """
         grad!(
             $(join(string.(args_store),",\n\t    "))
         ) where {T,S}
         
     Compute the gradient of the objective function at `x`, which is `A'(A*x-b)`.
         This calculation is performed by using precomputed values of `A'A` and 
-        `A'b`. The value is `store.grad` is updated. 
+        `A'b`. The value of `store.grad` is updated. 
     """
     function NLPModels.grad!($(args_store...); recompute::Bool=true) where {T,S}
         increment!(progData, :neval_grad)
-        store.grad .= precomp.coef_t_coef * x - precomp.coef_t_cons
+        store.grad .= preComp.coef_t_coef * x - preComp.coef_t_cons
         return nothing
     end
 
+    @doc """
+        objgrad!(
+            $(join(string.(args_store),",\n\t    "))
+        ) where {T, S}
+    
+    Compute the objective function at `x`, and the gradient of the objective function
+        at `x`. This calculation uses the precomputed values of `A'A` and `A'b`. The
+        value of `store.res` and `store.grad` is updated.
     """
+    function NLPModels.objgrad!($(args_store...); recompute::Bool=true) where {T,S}
+        o = obj(progData, preComp, store, x; recompute = recompute)
+        grad!(progData, preComp, store, x; recompute = recompute)
+        return o
+    end
+
+    @doc """
         hess!(
             $(join(string.(args_store),",\n\t    "))
         ) where {T,S}
 
     Computes the Hessian of the objective function at `x`, which is `A'A`. This is
-        already stored in `precomp.coef_t_coef` and `store.hess`. So only the 
+        already stored in `preComp.coef_t_coef` and `store.hess`. So only the 
         counter is updated. No other calculations are performed.
     """
     function hess!($(args_store...); recompute::Bool=true) where {T,S}
