@@ -125,19 +125,102 @@ using Test, OptimizationMethods, Random, LinearAlgebra
     store = OptimizationMethods.AllocateGLS(nlp)
 
     ## test field
+    @test store.res == zeros(Float16, nlp.nls_meta.nequ)
+    @test store.jac == nlp.coef
+    @test store.grad == zeros(Float16, nlp.meta.nvar)
+    @test store.hess == nlp.coef' * nlp.coef
 
     ## test field types
+    @test typeof(store.res) == Vector{Float16}
+    @test typeof(store.jac) == Matrix{Float16}
+    @test typeof(store.grad) == Vector{Float16}
+    @test typeof(store.hess) == Matrix{Float16}
 
     # test constructor -- no precomp -- non-default values
+    nequ = rand(1:1000)[1]
+    nvar = rand(1:1000)[1] 
+    nlp = OptimizationMethods.GaussianLeastSquares(Float32; nequ = nequ, nvar = nvar) 
+    store = OptimizationMethods.AllocateGLS(nlp)
+
+    ## test field
+    @test store.res == zeros(Float32, nlp.nls_meta.nequ)
+    @test store.jac == nlp.coef
+    @test store.grad == zeros(Float32, nlp.meta.nvar)
+    @test store.hess == nlp.coef' * nlp.coef
+
+    ## test field types
+    @test typeof(store.res) == Vector{Float32}
+    @test typeof(store.jac) == Matrix{Float32}
+    @test typeof(store.grad) == Vector{Float32}
+    @test typeof(store.hess) == Matrix{Float32}
 
     # test constructor -- precomp -- default value
+    nlp = OptimizationMethods.GaussianLeastSquares(Float16) 
+    precomp = OptimizationMethods.PrecomputeGLS(nlp)
+    store = OptimizationMethods.AllocateGLS(nlp, precomp)
+
+    ## test field
+    @test store.res == zeros(Float16, nlp.nls_meta.nequ)
+    @test store.jac == nlp.coef
+    @test store.grad == zeros(Float16, nlp.meta.nvar)
+    @test store.hess == precomp.coef_t_coef
+
+    ## test field types
+    @test typeof(store.res) == Vector{Float16}
+    @test typeof(store.jac) == Matrix{Float16}
+    @test typeof(store.grad) == Vector{Float16}
+    @test typeof(store.hess) == Matrix{Float16}
 
     # test constructor -- precomp -- non-default value
+    nequ = rand(1:1000)[1]
+    nvar = rand(1:1000)[1] 
+    nlp = OptimizationMethods.GaussianLeastSquares(Float64) 
+    precomp = OptimizationMethods.PrecomputeGLS(nlp)
+    store = OptimizationMethods.AllocateGLS(nlp)
+
+    ## test field
+    @test store.res == zeros(Float64, nlp.nls_meta.nequ)
+    @test store.jac == nlp.coef
+    @test store.grad == zeros(Float64, nlp.meta.nvar)
+    @test store.hess == precomp.coef_t_coef
+
+    ## test field types
+    @test typeof(store.res) == Vector{Float64}
+    @test typeof(store.jac) == Matrix{Float64}
+    @test typeof(store.grad) == Vector{Float64}
+    @test typeof(store.hess) == Matrix{Float64}
     
     ######################################
     # Test Functionality: initialize(...)
     ######################################
 
+    # testing with default values
+    nlp = OptimizationMethods.GaussianLeastSquares(Float16) 
+    precomp = OptimizationMethods.PrecomputeGLS(nlp)
+    store = OptimizationMethods.AllocateGLS(nlp) 
+
+    ## initialize storage and precomputed values
+    init_precompute, init_store = OptimizationMethods.initialize(nlp)
+
+    ## check fields of precompute
+    @test init_precompute.coef_t_coef == precomp.coef_t_coef
+    @test init_precompute.coef_t_cons == precomp.coef_t_cons
+
+    ## check types of store
+    @test typeof(init_precompute.coef_t_coef) == Matrix{Float16}
+    @test typeof(init_precompute.coef_t_cons) == Vector{Float16}
+
+    ## check fields of store
+    @test init_store.res == store.res
+    @test init_store.jac == store.jac
+    @test init_store.grad == store.grad
+    @test init_store.hess == store.hess
+
+    ## check types of store
+    @test typeof(init_store.res) == Vector{Float16}
+    @test typeof(init_store.jac) == Matrix{Float16}
+    @test typeof(init_store.grad) == Vector{Float16}
+    @test typeof(init_store.hess) == Matrix{Float16}
 
     ################################################################################
     # Test Functionality: Operations - not in-place and not using precomputed values
