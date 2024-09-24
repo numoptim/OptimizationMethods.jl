@@ -76,8 +76,8 @@ function GaussianLeastSquares(
         meta, 
         nls_meta, 
         NLSCounters(),
-        randn(nequ, nvar),
-        randn(nequ)
+        randn(T, nequ, nvar),
+        randn(T, nequ)
     )
 end
 
