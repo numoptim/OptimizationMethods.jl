@@ -242,7 +242,7 @@ args = [
     """
     function NLPModels.grad($(args...)) where {T,S}
         r = residual(progData, x)
-        J = residual(progData, x)
+        J = jac_residual(progData, x)
         increment!(progData, :neval_grad)
         return J'*r
     end
@@ -257,7 +257,7 @@ args = [
     function NLPModels.objgrad($(args...)) where {T, S}
         o = obj(progData, x)
         g = grad(progData, x)
-        return o, f
+        return o, g
     end
 
     @doc """

@@ -174,7 +174,7 @@ using Test, OptimizationMethods, Random, LinearAlgebra
     # test constructor -- precomp -- non-default value
     nequ = rand(1:1000)[1]
     nvar = rand(1:1000)[1] 
-    nlp = OptimizationMethods.GaussianLeastSquares(Float64) 
+    nlp = OptimizationMethods.GaussianLeastSquares(Float64; nequ = nequ, nvar = nvar) 
     precomp = OptimizationMethods.PrecomputeGLS(nlp)
     store = OptimizationMethods.AllocateGLS(nlp)
 
@@ -226,16 +226,76 @@ using Test, OptimizationMethods, Random, LinearAlgebra
     # Test Functionality: Operations - not in-place and not using precomputed values
     ################################################################################
 
+    nlp = OptimizationMethods.GaussianLeastSquares(Float64) 
+    x0 = randn(50)
+
+    # residual
+    res = OptimizationMethods.residual(nlp, x0)
+    @test res ≈ nlp.coef * x0 - nlp.cons
+    @test nlp.counters.neval_residual == 1
+
+    # obj
+    obj = OptimizationMethods.obj(nlp, x0)
+    @test obj ≈ .5 * (norm(nlp.coef * x0 - nlp.cons) ^ 2)
+    @test nlp.counters.neval_obj == 1
+    @test nlp.counters.neval_residual == 2
+
+    # jac_residual
+    jac = OptimizationMethods.jac_residual(nlp, x0)
+    @test jac ≈ nlp.coef
+    @test nlp.counters.neval_jac_residual == 1
+
+    # grad
+    grad = OptimizationMethods.grad(nlp, x0)
+    @test grad ≈ nlp.coef' * nlp.coef * x0 - nlp.coef' * nlp.cons 
+    @test nlp.counters.neval_jac_residual == 2
+    @test nlp.counters.neval_residual == 3
+    @test nlp.counters.neval_grad == 1
+
+    # objgrad
+    o, g = OptimizationMethods.objgrad(nlp, x0)
+    @test obj ≈ .5 * (norm(nlp.coef * x0 - nlp.cons) ^ 2)
+    @test grad ≈ nlp.coef' * nlp.coef * x0 - nlp.coef' * nlp.cons 
+    @test nlp.counters.neval_obj == 2
+    @test nlp.counters.neval_residual == 5
+    @test nlp.counters.neval_grad == 2
+
+    # hess
+    hess = OptimizationMethods.hess(nlp, x0)
+    @test hess ≈ nlp.coef' * nlp.coef
+    @test nlp.counters.neval_hess == 1
 
     ################################################################################
     # Test Functionality: Operations - not in-place and using precomputed values
     ################################################################################
 
+    # residual
+
+    # obj
+
+    # jac_residual
+
+    # grad
+
+    # objgrad
+
+    # hess
 
     ################################################################################
     # Test Functionality: Operations - in-place and using precomputed values
     ################################################################################
 
+    # residual!
+
+    # obj
+
+    # jac_residual!
+
+    # grad!
+
+    # objgrad!
+
+    # hess!
 
 end # end test
 
