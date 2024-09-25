@@ -19,6 +19,13 @@ using Test, OptimizationMethods, Random, LinearAlgebra
     # test supertype
     @test supertype(OptimizationMethods.GaussianLeastSquares) == OptimizationMethods.AbstractNLSModel
 
+    # test fields
+    @test :meta in fieldnames(OptimizationMethods.GaussianLeastSquares)
+    @test :nls_meta in fieldnames(OptimizationMethods.GaussianLeastSquares)
+    @test :counters in fieldnames(OptimizationMethods.GaussianLeastSquares)
+    @test :coef in fieldnames(OptimizationMethods.GaussianLeastSquares) 
+    @test :cons in fieldnames(OptimizationMethods.GaussianLeastSquares) 
+
     # test constructor -- default values
     nlp = OptimizationMethods.GaussianLeastSquares(Float64)
 
