@@ -226,24 +226,27 @@ using Test, OptimizationMethods, Random, LinearAlgebra
     # Test Functionality: Operations - not in-place and not using precomputed values
     ################################################################################
 
-    nlp = OptimizationMethods.GaussianLeastSquares(Float64) 
-    x0 = randn(50)
+    nlp = OptimizationMethods.GaussianLeastSquares(Float32) 
+    x0 = randn(Float32, 50)
 
     # residual
     res = OptimizationMethods.residual(nlp, x0)
     @test res ≈ nlp.coef * x0 - nlp.cons
     @test nlp.counters.neval_residual == 1
+    @test typeof(res) == Vector{Float32}
 
     # obj
     obj = OptimizationMethods.obj(nlp, x0)
     @test obj ≈ .5 * (norm(nlp.coef * x0 - nlp.cons) ^ 2)
     @test nlp.counters.neval_obj == 1
     @test nlp.counters.neval_residual == 2
+    @test typeof(obj) == Float32
 
     # jac_residual
     jac = OptimizationMethods.jac_residual(nlp, x0)
     @test jac ≈ nlp.coef
     @test nlp.counters.neval_jac_residual == 1
+    @test typeof(jac) == Matrix{Float32}
 
     # grad
     grad = OptimizationMethods.grad(nlp, x0)
@@ -251,51 +254,181 @@ using Test, OptimizationMethods, Random, LinearAlgebra
     @test nlp.counters.neval_jac_residual == 2
     @test nlp.counters.neval_residual == 3
     @test nlp.counters.neval_grad == 1
+    @test typeof(grad) == Vector{Float32}
 
     # objgrad
     o, g = OptimizationMethods.objgrad(nlp, x0)
-    @test obj ≈ .5 * (norm(nlp.coef * x0 - nlp.cons) ^ 2)
+    @test o ≈ .5 * (norm(nlp.coef * x0 - nlp.cons) ^ 2)
     @test grad ≈ nlp.coef' * nlp.coef * x0 - nlp.coef' * nlp.cons 
     @test nlp.counters.neval_obj == 2
     @test nlp.counters.neval_residual == 5
     @test nlp.counters.neval_grad == 2
+    @test typeof(o) == Float32
+    @test typeof(g) == Vector{Float32}
 
     # hess
     hess = OptimizationMethods.hess(nlp, x0)
     @test hess ≈ nlp.coef' * nlp.coef
     @test nlp.counters.neval_hess == 1
+    @test typeof(hess) == Matrix{Float32}
 
     ################################################################################
     # Test Functionality: Operations - not in-place and using precomputed values
     ################################################################################
 
+    nlp = OptimizationMethods.GaussianLeastSquares(Float16)
+    precomp, store = OptimizationMethods.initialize(nlp)
+    x0 = randn(Float16, 50)
+
     # residual
+    res = nlp.coef * x0 - nlp.cons
+    returned_res = OptimizationMethods.residual(nlp, precomp, x0)
+    @test res ≈ returned_res
+    @test nlp.counters.neval_residual == 1
+    @test typeof(returned_res) == Vector{Float16}
 
     # obj
+    obj = .5 * dot(res, res)
+    returned_obj = OptimizationMethods.obj(nlp, precomp, x0)
+    @test obj ≈ returned_obj
+    @test nlp.counters.neval_residual == 2
+    @test nlp.counters.neval_obj == 1
+    @test typeof(returned_obj) == Float16
 
     # jac_residual
+    jac = nlp.coef
+    returned_jac = OptimizationMethods.jac_residual(nlp, precomp, x0)
+    @test jac == returned_jac
+    @test nlp.counters.neval_jac_residual == 1
+    @test typeof(returned_jac) == Matrix{Float16}
 
     # grad
+    grad = nlp.coef' * nlp.coef * x0 - nlp.coef' * nlp.cons
+    returned_grad = OptimizationMethods.grad(nlp, precomp, x0)
+    @test grad ≈ returned_grad
+    @test nlp.counters.neval_grad == 1
+    @test typeof(returned_grad) == Vector{Float16}
 
     # objgrad
+    returned_obj, returned_grad = OptimizationMethods.objgrad(nlp, precomp, x0)
+    @test obj ≈ returned_obj 
+    @test grad ≈ returned_grad
+    @test nlp.counters.neval_residual == 3
+    @test nlp.counters.neval_obj == 2
+    @test nlp.counters.neval_grad == 2
+    @test typeof(returned_obj) == Float16
+    @test typeof(returned_grad) == Vector{Float16}
 
     # hess
+    hess = nlp.coef' * nlp.coef
+    returned_hess = OptimizationMethods.hess(nlp, precomp, x0)
+    @test hess ≈ returned_hess
+    @test nlp.counters.neval_hess == 1
+    @test typeof(hess) == Matrix{Float16}
 
     ################################################################################
     # Test Functionality: Operations - in-place and using precomputed values
     ################################################################################
 
-    # residual!
+    nlp = OptimizationMethods.GaussianLeastSquares(Float32)
+    precomp, store = OptimizationMethods.initialize(nlp)
+    x0 = randn(Float32, 50)
 
-    # obj
+    # residual!
+    res = nlp.coef * x0 - nlp.cons
+    val = OptimizationMethods.residual!(nlp, precomp, store, x0)
+    @test isnothing(val)
+    @test res ≈ store.res
+    @test nlp.counters.neval_residual == 1
+    @test typeof(store.res) == Vector{Float32} 
+
+    # obj - recompute True
+    obj = .5 * res' * res
+    returned_obj = OptimizationMethods.obj(nlp, precomp, store, x0)
+    @test obj ≈ returned_obj
+    @test nlp.counters.neval_residual == 2
+    @test nlp.counters.neval_obj == 1
+    @test typeof(returned_obj) == Float32
+
+    # obj - recompute False
+    returned_obj = OptimizationMethods.obj(nlp, precomp, store, x0; recompute = false)
+    @test obj ≈ returned_obj
+    @test nlp.counters.neval_residual == 2
+    @test nlp.counters.neval_obj == 2
+    @test typeof(returned_obj) == Float32
 
     # jac_residual!
 
+    ## jac_residual! - recompute true
+    jac = nlp.coef
+    val = OptimizationMethods.jac_residual!(nlp, precomp, store, x0)
+    @test isnothing(val)
+    @test jac == store.jac
+    @test nlp.counters.neval_jac_residual == 1
+    @test typeof(jac) == Matrix{Float32}
+
+    ## jac_residual! -- recompute false
+    jac = nlp.coef
+    val = OptimizationMethods.jac_residual!(nlp, precomp, store, x0; recompute = false)
+    @test isnothing(val)
+    @test jac == store.jac
+    @test nlp.counters.neval_jac_residual == 2
+    @test typeof(jac) == Matrix{Float32} 
+
     # grad!
+
+    ## grad! -- recompute true
+    grad = nlp.coef' * nlp.coef * x0 - nlp.coef' * nlp.cons
+    val = OptimizationMethods.grad!(nlp, precomp, store, x0)
+    @test isnothing(val)
+    @test grad ≈ store.grad
+    @test nlp.counters.neval_grad == 1
+    @test typeof(grad) == Vector{Float32}
+
+    ## grad! -- recompute false
+    val = OptimizationMethods.grad!(nlp, precomp, store, x0; recompute = false)
+    @test isnothing(val)
+    @test grad ≈ store.grad
+    @test nlp.counters.neval_grad == 2
+    @test typeof(grad) == Vector{Float32}
 
     # objgrad!
 
+    ## recompute true
+    o = OptimizationMethods.objgrad!(nlp, precomp, store, x0; recompute = true)
+    @test obj ≈ o
+    @test grad ≈ store.grad
+    @test nlp.counters.neval_residual == 3
+    @test nlp.counters.neval_obj == 3
+    @test nlp.counters.neval_grad == 3
+    @test typeof(o) == Float32
+    @test typeof(store.grad) == Vector{Float32}
+
+    ## recompute false
+    o = OptimizationMethods.objgrad!(nlp, precomp, store, x0; recompute = false)
+    @test obj ≈ o
+    @test grad ≈ store.grad
+    @test nlp.counters.neval_residual == 3
+    @test nlp.counters.neval_obj == 4
+    @test nlp.counters.neval_grad == 4
+    @test typeof(o) == Float32
+    @test typeof(store.grad) == Vector{Float32}
+
     # hess!
+
+    ## recompute true
+    hess = nlp.coef' * nlp.coef
+    val = OptimizationMethods.hess!(nlp, precomp, store, x0)
+    @test hess ≈ store.hess
+    @test nlp.counters.neval_hess == 1
+    @test typeof(hess) == Matrix{Float32}
+
+    ## recompute false
+    hess = nlp.coef' * nlp.coef
+    val = OptimizationMethods.hess!(nlp, precomp, store, x0; recompute = false)
+    @test hess ≈ store.hess
+    @test nlp.counters.neval_hess == 2
+    @test typeof(hess) == Matrix{Float32}
 
 end # end test
 

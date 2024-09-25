@@ -214,7 +214,7 @@ args = [
     function NLPModels.obj($(args...)) where {T,S}
         r = residual(progData, x)
         increment!(progData, :neval_obj)
-        return 0.5 * dot(r,r)
+        return T(0.5 * r' * r)
     end
 
     @doc """
@@ -393,14 +393,15 @@ args_store = [
         
     Computes the objective function using the existing value in `store.res`. If
         `recompute` is `true`, then `store.res` is updated at the current value of 
-        `x` before the objective function is computed.
+        `x` before the objective function is computed. Note, that if the `store`
+        is just initialized, `recompute` should be set to `true`.
     """
     function NLPModels.obj($(args_store...); recompute::Bool=true) where {T,S}
         # Only update residual at x if recompute is true, otherwise just compute 
         # objective function value with current value of r (residual)
         recompute && residual!(progData, preComp, store, x)
         increment!(progData, :neval_obj)
-        return 0.5 * dot(store.res, store.res)
+        return T(0.5 * dot(store.res, store.res))
     end
 
     @doc """
@@ -439,7 +440,7 @@ args_store = [
     
     Compute the objective function at `x`, and the gradient of the objective function
         at `x`. This calculation uses the precomputed values of `A'A` and `A'b`. The
-        value of `store.res` and `store.grad` is updated.
+        value of `store.res` is updated if `recompute = true` and `store.grad` is updated.
     """
     function NLPModels.objgrad!($(args_store...); recompute::Bool=true) where {T,S}
         o = obj(progData, preComp, store, x; recompute = recompute)
@@ -457,7 +458,7 @@ args_store = [
         counter is updated. No other calculations are performed.
     """
     function hess!($(args_store...); recompute::Bool=true) where {T,S}
-        incretment!(progData, :neval_hess)
+        increment!(progData, :neval_hess)
         return nothing
     end
 end
