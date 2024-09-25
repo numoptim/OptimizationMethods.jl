@@ -90,6 +90,10 @@ using Test, OptimizationMethods, Random, LinearAlgebra
     # test supertype
     @test supertype(OptimizationMethods.PrecomputeGLS) == OptimizationMethods.AbstractPrecompute
 
+    # test fields
+    @test :coef_t_coef in fieldnames(OptimizationMethods.PrecomputeGLS)
+    @test :coef_t_cons in fieldnames(OptimizationMethods.PrecomputeGLS)
+
     # test constructor -- default values
     nlp = OptimizationMethods.GaussianLeastSquares(Float16)
     precomp = OptimizationMethods.PrecomputeGLS(nlp)
@@ -126,6 +130,12 @@ using Test, OptimizationMethods, Random, LinearAlgebra
 
     # test supertype
     @test supertype(OptimizationMethods.AllocateGLS) == OptimizationMethods.AbstractProblemAllocate
+
+    # test fields
+    @test :res in fieldnames(OptimizationMethods.AllocateGLS)
+    @test :jac in fieldnames(OptimizationMethods.AllocateGLS)
+    @test :grad in fieldnames(OptimizationMethods.AllocateGLS)
+    @test :hess in fieldnames(OptimizationMethods.AllocateGLS)
 
     # test constructor -- no precomp -- default values
     nlp = OptimizationMethods.GaussianLeastSquares(Float16) 

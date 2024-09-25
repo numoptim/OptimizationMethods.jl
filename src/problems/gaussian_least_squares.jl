@@ -20,7 +20,7 @@ F(x) = A * x - b.
 
 # Fields 
 
-- `meta::NLPModelMeta{T, S}`, data structure for nonlinear programming models 
+- `meta::NLPModelMeta{T, S}`, data structure for nonlinear programming models
 - `nls_meta::NLSMeta{T, S}`, data structure for nonlinear least squares models
 - `counters::NLSCounters`, counters for nonlinear least squares models
 - `coef::Matrix{T}`, coefficient matrix, `A`, for least squares problem 
@@ -54,8 +54,8 @@ end
 
 function GaussianLeastSquares(
     ::Type{T};
-    nequ::Int64=1000, 
-    nvar::Int64=50
+    nequ::Int64 = 1000, 
+    nvar::Int64 = 50
 ) where {T}
 
     meta = NLPModelMeta(
@@ -67,9 +67,9 @@ function GaussianLeastSquares(
     nls_meta = NLSMeta{T, Vector{T}}(
         nequ,
         nvar,
-        nnzj = nequ*nvar,
-        nnzh = nvar*nvar,
-        lin = collect(1:nequ)
+        nnzj = nequ * nvar,
+        nnzh = nvar * nvar,
+        lin = collect(1:nequ),
     )
 
     return GaussianLeastSquares(
@@ -77,7 +77,7 @@ function GaussianLeastSquares(
         nls_meta, 
         NLSCounters(),
         randn(T, nequ, nvar),
-        randn(T, nequ)
+        randn(T, nequ),
     )
 end
 
@@ -149,7 +149,7 @@ function AllocateGLS(prog::GaussianLeastSquares{T,S}) where {T,S}
         zeros(T, prog.nls_meta.nequ),
         prog.coef,
         zeros(T, prog.nls_meta.nvar),
-        prog.coef'*prog.coef,
+        prog.coef' * prog.coef,
     )
 end
 
@@ -214,7 +214,7 @@ args = [
     function NLPModels.obj($(args...)) where {T,S}
         r = residual(progData, x)
         increment!(progData, :neval_obj)
-        return T(0.5 * r' * r)
+        return T(0.5 * dot(r, r))
     end
 
     @doc """
@@ -252,7 +252,7 @@ args = [
             $(join(string.(args),",\n\t    "))
         ) where {T,S}
     
-    Computes the objective function at `x` and gradient of the objective function at `x`.
+    Computes the objective function at `x`, and gradient of the objective function at `x`.
     """
     function NLPModels.objgrad($(args...)) where {T, S}
         o = obj(progData, x)
@@ -336,8 +336,9 @@ args_pre = [
             $(join(string.(args_pre),",\n\t    "))
         ) where {T,S}
 
-    Compute the objective function at `x`, and computes the gradient of the objective at 'x' using
-        the pr.
+    Compute the objective function at `x`, and computes the gradient of the objective at 'x'.
+    The computation of the gradient uses the precomputed values `precomp.coef_t_coef` and
+    `precomp.coef_t_cons`.
     """
     function NLPModels.objgrad($(args_pre...)) where {T, S}
         o = obj(progData, preComp, x)
@@ -394,7 +395,8 @@ args_store = [
     Computes the objective function using the existing value in `store.res`. If
         `recompute` is `true`, then `store.res` is updated at the current value of 
         `x` before the objective function is computed. Note, that if the `store`
-        is just initialized, `recompute` should be set to `true`.
+        is just initialized, `recompute` should be set to `true`, otherwise
+        the returned value might not be correct.
     """
     function NLPModels.obj($(args_store...); recompute::Bool=true) where {T,S}
         # Only update residual at x if recompute is true, otherwise just compute 
@@ -439,8 +441,9 @@ args_store = [
         ) where {T, S}
     
     Compute the objective function at `x`, and the gradient of the objective function
-        at `x`. This calculation uses the precomputed values of `A'A` and `A'b`. The
-        value of `store.res` is updated if `recompute = true` and `store.grad` is updated.
+        at `x`. This calculation uses the precomputed values of `A'A` and `A'b`. 
+        The value of `store.res` is updated if `recompute = true` and `store.grad` 
+        is updated regardless of `recompute`. The value of the objective is returned.
     """
     function NLPModels.objgrad!($(args_store...); recompute::Bool=true) where {T,S}
         o = obj(progData, preComp, store, x; recompute = recompute)
