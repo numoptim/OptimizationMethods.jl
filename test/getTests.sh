@@ -18,3 +18,9 @@ for f in $PROBLEM
 do
     echo $f >> test.txt
 done
+
+ROUTINES=$(ls optimization_routines/*.jl)
+for f in $ROUTINES
+do
+    echo $f >> test.txt
+done

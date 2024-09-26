@@ -24,4 +24,7 @@ abstract type AbstractProblemAllocate{T} end
 ## Specific Problems 
 include("problems/gaussian_least_squares.jl")
 
+## Optimization Routines
+include("optimization_routines/barzilai_borwein_gd.jl")
+
 end
