@@ -1,14 +1,15 @@
 name = "OptimizationMethods"
 uuid = "5d16ec4c-3308-46eb-bccb-6dfd9ce745e1"
-authors = ["Vivak Patel <vivak.patel@wisc.edu>", "Daniel Adrian Maldonado <maldonadod@anl.gov>"]
+authors = ["Vivak Patel <vivak.patel@wisc.edu>", "Christian Varner <cvarner@wisc.edu>", "Daniel Adrian Maldonado <maldonadod@anl.gov>"]
 version = "0.0.0"
 
 [deps]
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 NLPModels = "a4795742-8479-5a88-8948-cc11e1c8c1a6"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 
-[compat]	
-julia = "1"	
+[compat]
+julia = "1"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"

@@ -1,36 +1,27 @@
 module OptimizationMethods
 
-############################
-# Packages Includes
-############################
-using NLPModels, LinearAlgebra
+# Dependencies
+using LinearAlgebra
+using NLPModels
 
-############################
-# Exports 
-############################
+# Optimization Problems 
 
-# For objectives
-export obj, grad, grad!, hess, hess!
+## Data Structures
+"""
+    AbstractPrecompute{T}
 
-# For optimization methods
-export barzilai_borwein_gd
+Parametric type for storing precomputed values of an optimization problem. 
+"""
+abstract type AbstractPrecompute{T} end
 
-############################
-# Algorithm Includes
-############################
+"""
+    AbstractProblemAllocate{T}
 
-# Objective function free methods
-include("optimization_routines/barzilai_borwein_gd.jl")
+Parametric type for pre-allocating data structures for an optimization problem.
+"""
+abstract type AbstractProblemAllocate{T} end
 
-# Methods that ensure descent 
-
-############################
-# Objective Includes
-############################
-
-# simple functions -- for testing code
-include("objective_functions/simple_least_squares.jl")
-
-# quasi-likelihood 
+## Specific Problems 
+include("problems/gaussian_least_squares.jl")
 
 end
