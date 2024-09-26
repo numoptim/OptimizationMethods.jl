@@ -56,7 +56,7 @@ function barzilai_borwein_gd(
     alfak :: T = zero(T)
 
     # first iteration
-    OptimizationMethods.grad!(progData, precomp, store, xk) 
+    OptimizationMethods.grad!(progData, precomp, store, xk) # TODO - implement function wrapper to get around this
     xk .-= alfa0 .* store.grad
     gprev .= store.grad
 

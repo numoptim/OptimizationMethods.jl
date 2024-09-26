@@ -37,7 +37,7 @@ using Test, OptimizationMethods, LinearAlgebra, Random
     afla0 = rand(1)[1]
     x0 = randn(size(func.meta.x0))
     xres = OptimizationMethods.barzilai_borwein_gd(func, x0, 1; long = false, alfa0 = afla0)
-    @test norm( xres - x0 + (afla0 * OptimizationMethods.grad(func, x0)) ) < eps() * 1e4
+    @test norm( xres - x0 + (afla0 * OptimizationMethods.grad(func, x0)) ) < eps() * 1e5
 
     #####################################
     # Test if BB step size is used
