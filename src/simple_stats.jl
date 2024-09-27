@@ -9,9 +9,8 @@ Mutable struct that keeps track of some simple stats for optimizers.
 
     SimpleStats(::Type{T})
 
-Constructs a simple stats struct with default values. Everything is set to 0 except
-    for `grad_norm` and `status` which are both set to `-1` to indicate the optimization
-    did not make a single iteration.
+Constructs a simple stats struct with default values. By default, everything is set to 0 except
+    for `grad_norm` and `status` which are both set to `-1`.
 
 # Fields
 
@@ -21,8 +20,8 @@ Constructs a simple stats struct with default values. Everything is set to 0 exc
 - `ngrad :: Int64`, number of gradient evaluations
 - `nhess :: Int64`, number of hessian evaluations
 - `time :: Float64`, elapsed time of the method
-- `status :: Tuple{Int64, T}`, First element is status code: `0`` if the `grad_norm` is below some tolerance, or `1`` if the `grad_norm` is above some tolerance, and `-1` upon initialization. Second element is the gradient tolerance checked to compute the status code.
-- `status_message :: String`, information about the status of the algorithm.
+- `status :: Tuple{Int64, T}`, first element represents a status code: `0`` if the `grad_norm` is below some tolerance, or `1`` if the `grad_norm` is above some tolerance, and `-1` upon initialization. Second element is the gradient tolerance checked to compute the status code.
+- `status_message :: String`, information about what led to termination of the algorithm.
 
 """
 mutable struct SimpleStats{T}
