@@ -7,7 +7,8 @@
 
 Implementation of constant step size method using negative gradient directions.
 
-# Arguments
+## Arguments
+
 - `func :: AbstractNLPModel{T, S}`, function to optimize. Must have grad! implemented.
 - `x0 :: S`, initial starting value.
 - `max_iter :: Int64`, max iteration limit.

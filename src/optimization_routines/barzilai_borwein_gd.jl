@@ -14,6 +14,7 @@ The method will take advantage of precomputed values and allocated space initial
 by calling `initialize(progData)` (see documentation for problems).
 
 ## Arguments
+
 - `progData::AbstractNLPModel{T, S}`, function to optimize
 - `x::S`, initial starting value
 - `max_iter::Int64`, max iteration limit
