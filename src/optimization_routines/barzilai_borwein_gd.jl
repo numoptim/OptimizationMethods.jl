@@ -24,7 +24,7 @@ function barzilai_borwein_gd(
     progData::AbstractNLPModel{T, S},  # objective function
     x::S,                              # initial point
     max_iter::Int64;                   # max iteration
-    alfa0::T = T(1e-4),                   # initial step size
+    alfa0::T = T(1e-4),                # initial step size
     long::Bool = true                  # whether to use long or short step sizes
 ) where S <: Vector{T} where T <: Real
 
@@ -38,7 +38,7 @@ function barzilai_borwein_gd(
         return (Δx' * Δg) / (Δg' * Δg)
     end
 
-    # get function
+    # get step size function
     step_size = long ? _long_step_size : _short_step_size
 
     # initialize progData
@@ -56,7 +56,7 @@ function barzilai_borwein_gd(
     alfak :: T = zero(T)
 
     # first iteration
-    OptimizationMethods.grad!(progData, precomp, store, xk) # TODO - implement function wrapper to get around this
+    OptimizationMethods.grad!(progData, precomp, store, xk)
     xk .-= alfa0 .* store.grad
     gprev .= store.grad
 
