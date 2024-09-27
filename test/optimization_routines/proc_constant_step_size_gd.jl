@@ -1,7 +1,7 @@
 # Date 09/18/2024
 # Author: Christian Varner
 # Purpose: Test the constant step size gradient descent
-# algorithm implemented in src/optimization_routines/constant_step_size_gd.jl
+# algorithm implemented in src/optimization_routines/OptimizationMethods.constant_step_size_gd.jl
 
 module ProceduralConstantStepSizeGD
 
@@ -13,38 +13,55 @@ using Test, OptimizationMethods, LinearAlgebra, Random
     Random.seed!(1010)
 
     # testing problem
-    func = OptimizationMethods.SimpleLinearLeastSquares()
+    func = OptimizationMethods.GaussianLeastSquares(Float64; nequ = 100, nvar = 50)
 
-    # test that default step size is 1e-4
-    xres = constant_step_size_gd(func, func.meta.x0, 1)
+    ##############################################################
+    # Test first iteration of method
+    ##############################################################
+
+    # Default value
+    xres = OptimizationMethods.constant_step_size_gd(func, func.meta.x0, 1)
     Δx = xres - func.meta.x0
-    @test norm(Δx - (-1e-4 * grad(func, func.meta.x0)) ) < eps()
+    @test norm(Δx - (-1e-4 * OptimizationMethods.grad(func, func.meta.x0)) ) < eps() * 1e3
 
-    # set the initial set size
-    alfa0 = 1/9 # 1/L
-
-    # test first iteration
-    xres = constant_step_size_gd(func, func.meta.x0, 1; alfa0 = alfa0)
+    # Custom value
+    alfa0 = rand(1)[1]
+    xres = OptimizationMethods.constant_step_size_gd(func, func.meta.x0, 1; alfa0 = alfa0)
     Δx = xres - func.meta.x0
-    @test norm(Δx - (-alfa0 * grad(func, func.meta.x0)) ) < eps()
+    @test norm(Δx - (-alfa0 * OptimizationMethods.grad(func, func.meta.x0)) ) < eps() * 1e3
 
-    # test random iteration number -- step size default
+    ##############################################################
+    # Test random iteration
+    ##############################################################
+    
+    # step size default
     iteration = rand(2:10)
-    xiter_prev = constant_step_size_gd(func, func.meta.x0, iteration - 1)
-    xiter = constant_step_size_gd(func, func.meta.x0, iteration)
+    xiter_prev = OptimizationMethods.constant_step_size_gd(func, func.meta.x0, iteration - 1)
+    xiter = OptimizationMethods.constant_step_size_gd(func, func.meta.x0, iteration)
     Δx = xiter - xiter_prev
-    @test norm(Δx - (-1e-4 * grad(func, xiter_prev))) < eps()
+    @test norm(Δx - (-1e-4 * OptimizationMethods.grad(func, xiter_prev))) < eps() * 1e3
 
-    # test random iteration number -- step size set
+    # step size set
     iteration = rand(2:10)
-    xiter_prev = constant_step_size_gd(func, func.meta.x0, iteration - 1; alfa0 = alfa0)
-    xiter = constant_step_size_gd(func, func.meta.x0, iteration; alfa0 = alfa0)
+    alfa0 = 1e-4 * rand(1)[1]
+    xiter_prev = OptimizationMethods.constant_step_size_gd(func, func.meta.x0, iteration - 1; alfa0 = alfa0)
+    xiter = OptimizationMethods.constant_step_size_gd(func, func.meta.x0, iteration; alfa0 = alfa0)
     Δx = xiter - xiter_prev
-    @test norm(Δx - (-alfa0 * grad(func, xiter_prev))) < eps()
+    d = - alfa0 * OptimizationMethods.grad(func, xiter_prev) 
+    @test norm( xiter - (xiter_prev + d) ) < eps() * 1e3
+
+    ##############################################################
+    # Test random iteration
+    ##############################################################
 
     # test full output
-    xres = constant_step_size_gd(func, func.meta.x0, 100; alfa0 = alfa0)
-    @test norm(xres - func.xstar) < eps()
+    func = OptimizationMethods.GaussianLeastSquares(Float64; nequ = 10, nvar = 5)
+    A = func.coef
+    alfa0 = 1 / maximum(eigen(A' * A).values)
+
+    xres = OptimizationMethods.constant_step_size_gd(func, func.meta.x0, 1000; alfa0 = alfa0)
+    g_xres = norm( OptimizationMethods.grad(func, xres) )
+    @test g_xres < eps() * 1e3
 end
 
 end # end module

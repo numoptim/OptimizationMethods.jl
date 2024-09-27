@@ -14,24 +14,24 @@ Implementation of constant step size method using negative gradient directions.
 - `alfa0 :: T = 1e-4` (Optional), constant step size.
 """
 function constant_step_size_gd(
-    func :: AbstractNLPModel{T, S},
+    progData :: AbstractNLPModel{T, S},
     x0 :: S,
     max_iter :: Int64;
-    alfa0 :: T = 1e-4
+    alfa0 :: T = T(1e-4)
 ) where S <: Vector{T} where T <: Real
 
     # iterate initialization
     xk = zeros(T, size(x0))
     xk .= x0
 
-    # gradient buffer
-    gk = zeros(T, size(x0))
+    # initialize NLPModel with progData
+    precomp, store = OptimizationMethods.initialize(progData)
 
     # do constant step size gradient descent
     k = 1
     while k <= max_iter
-        grad!(gk, func, xk)
-        xk .-= alfa0 .* gk
+        OptimizationMethods.grad!(progData, precomp, store, xk)
+        xk .-= alfa0 .* store.grad
         k += 1
     end
 

@@ -24,7 +24,7 @@ function barzilai_borwein_gd(
     progData::AbstractNLPModel{T, S},  # objective function
     x::S,                              # initial point
     max_iter::Int64;                   # max iteration
-    alfa0::T = T(1e-4),                   # initial step size
+    alfa0::T = T(1e-4),                # initial step size
     long::Bool = true                  # whether to use long or short step sizes
 ) where S <: Vector{T} where T <: Real
 
