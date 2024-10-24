@@ -91,23 +91,26 @@ Immutable structure for initializing and storing repeatedly used calculations
 
 - `coef_t_coef::Matrix{T}`, stores `A'*A`
 - `coef_t_cons::Vector{T}`, stores `A'*b`
+- `cons_t_cons::T`, stores `b'*b`
 
 # Constructors
 
     PrecomputeGLS(prog::GaussianLeastSquares{T,S}) where {T,S}
 
-Computes `A'*A` and `A'*b` given a Gaussian Least Squares program, `prog`. 
+Computes `A'*A`, `A'*b`, `b'*b` given a Gaussian Least Squares program, `prog`. 
 """
 struct PrecomputeGLS{T} <: AbstractPrecompute{T}
     coef_t_coef::Matrix{T}
     coef_t_cons::Vector{T}
+    cons_t_cons::T
 end
 
 function PrecomputeGLS(prog::GaussianLeastSquares{T,S}) where {T,S}
     coef_t_coef = prog.coef'*prog.coef
     coef_t_cons = prog.coef'*prog.cons 
+    cons_t_cons = prog.cons'*prog.cons
 
-    return PrecomputeGLS(coef_t_coef, coef_t_cons)
+    return PrecomputeGLS(coef_t_coef, coef_t_cons, cons_t_cons)
 end
 
 """
@@ -447,12 +450,12 @@ args_store = [
     function NLPModels.objgrad!($(args_store...)) where {T,S}
         increment!(progData, :neval_obj)
         increment!(progData, :neval_grad)
-        store.grad .= precomp.coef_t_coef * x - precomp.coef_t_cons
+        store.grad .= preComp.coef_t_coef * x - preComp.coef_t_cons
 
         #Store grad = A'A*x - A'b; 
         #We use this to compute (x'A'Ax - x'A'b) - (x'A'b) + b'b. 
-        obj_value = 0.5*( dot(x, store.grad) - dot(x, precomp.coef_t_cons) +
-            precomp.cons_t_cons)
+        obj_value = T(0.5)*( dot(x, store.grad) - dot(x, preComp.coef_t_cons) +
+            preComp.cons_t_cons)
         return obj_value
     end
 
