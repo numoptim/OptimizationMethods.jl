@@ -1,1 +1,1 @@
-problems/proc_gaussian_least_squares.jl
+problems/gaussian_least_squares.jl
