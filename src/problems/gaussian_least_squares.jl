@@ -435,20 +435,25 @@ args_store = [
         return nothing
     end
 
-    @doc """
+   @doc """
         objgrad!(
             $(join(string.(args_store),",\n\t    "))
-        ) where {T, S}
+        ) where {T,S}
     
-    Compute the objective function at `x`, and the gradient of the objective function
-        at `x`. This calculation uses the precomputed values of `A'A` and `A'b`. 
-        The value of `store.res` is updated if `recompute = true` and `store.grad` 
-        is updated regardless of `recompute`. The value of the objective is returned.
+    Simultaneously computes the objective function and the gradient function.
+        The objective function is computed as `0.5(x'A'Ax - 2x'A'b + b'b)`.
+        The gradient function is computed as `A'Ax - A'b`. 
     """
-    function NLPModels.objgrad!($(args_store...); recompute::Bool=true) where {T,S}
-        o = obj(progData, preComp, store, x; recompute = recompute)
-        grad!(progData, preComp, store, x; recompute = recompute)
-        return o
+    function NLPModels.objgrad!($(args_store...)) where {T,S}
+        increment!(progData, :neval_obj)
+        increment!(progData, :neval_grad)
+        store.grad .= precomp.coef_t_coef * x - precomp.coef_t_cons
+
+        #Store grad = A'A*x - A'b; 
+        #We use this to compute (x'A'Ax - x'A'b) - (x'A'b) + b'b. 
+        obj_value = 0.5*( dot(x, store.grad) - dot(x, precomp.coef_t_cons) +
+            precomp.cons_t_cons)
+        return obj_value
     end
 
     @doc """
