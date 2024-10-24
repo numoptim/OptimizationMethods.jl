@@ -24,4 +24,10 @@ abstract type AbstractProblemAllocate{T} end
 ## Specific Problems 
 include("problems/gaussian_least_squares.jl")
 
+
+abstract type AbstractOptimizerData{T} end
+
+## Specific Optimizers
+include("methods/gd_fixed.jl")
+
 end
