@@ -10,8 +10,17 @@ optData = OptimizationMethods.FixedStepGD(
 )
 
 x = OptimizationMethods.fixed_step_gd(optData, progData);
-obj = optData.obj_val_hist[optData.stop_iteration]
-gra = optData.gra_val_hist[optData.stop_iteration]
+
+# Compute objective and residual evals during optimization 
+obj_evals = progData.counters.neval_obj
+res_evals = progData.counters.neval_residual 
+
+# Compute objective values of different iterates for reporting purposes
+obj_init = OptimizationMethods.obj(progData, optData.iter_hist[1])
+obj_term = OptimizationMethods.obj(progData, 
+    optData.iter_hist[optData.stop_iteration])
+
+
 
 println(
 """
@@ -22,16 +31,16 @@ println(
     Max Iterations Allowed: $(optData.max_iterations)
     Gradient Stopping Threshold: $(optData.threshold)
 
-    Initial Objective: $(optData.obj_val_hist[1])
+    Initial Objective: $obj_init
     Initial Grad Norm: $(optData.gra_val_hist[1])
 
     Terminal Iteration: $(optData.stop_iteration)
-    Terminal Objective: $(optData.obj_val_hist[optData.stop_iteration])
+    Terminal Objective: $obj_term
     Terminal Grad Norm: $(optData.gra_val_hist[optData.stop_iteration])
 
-    Objective Evaluations: $(progData.counters.neval_obj)
+    Objective Evaluations: $obj_evals
     Gradient Evaluations: $(progData.counters.neval_grad)
-    Residual Evaluations: $(progData.counters.neval_residual)
+    Residual Evaluations: $res_evals
     Jacobian Evaluations: $(progData.counters.neval_jac_residual)
 """
 )

@@ -9,13 +9,12 @@ A structure for storing data about fixed step-size gradient descent, and the
 # Fields
 
 - `name::String`, name of the solver for reference
-- `initial_iterate::Vector{T}`, the initial iterate for the optimization method
 - `step_size::T`, the step-size selection for the optimization procedure
 - `threshold::T`, the threshold on the norm of the gradient to induce stopping
 - `max_iterations::Int`, the maximum allowed iterations
-- `obj_val_hist::Vector{T}`, a vector for storing `max_iterations+1` objective 
-    function values. The first entry corresponds to iteration `0`. The `k+1`
-    entry corresponds to the objective value at iteration `k`
+- `iter_hist::Vector{Vector{T}}`, a history of the iterates. The first entry
+    corresponds to the initial iterate (i.e., at iteration `0`). The `k+1` entry
+    corresponds to the iterate at iteration `k`.
 - `gra_val_hist::Vector{T}`, a vector for storing `max_iterations+1` gradient
     norm values. The first entry corresponds to iteration `0`. The `k+1` entry
     correpsonds to the gradient norm at iteration `k`
@@ -40,11 +39,10 @@ Constructs the `struct` for the optimizer.
 """
 mutable struct FixedStepGD{T} <: AbstractOptimizerData{T}
     name::String
-    initial_iterate::Vector{T}
     step_size::T
     threshold::T
     max_iterations::Int64
-    obj_val_hist::Vector{T}
+    iter_hist::Vector{Vector{T}}
     gra_val_hist::Vector{T}
     stop_iteration::Int64
 end
@@ -56,12 +54,15 @@ function FixedStepGD(
     max_iterations::Int,
 )  where {T}
 
-    obj_val_hist = Vector{T}(undef, max_iterations+1)
+    d = length(x0)
+    iter_hist = Vector{T}[ Vector{T}(undef, d) for i = 1:max_iterations+1]
+    iter_hist[1] = x0
+
     gra_val_hist = Vector{T}(undef, max_iterations+1)
     stop_iteration = -1 #Not stopped
 
     return FixedStepGD("Gradient Descent with Fixed Step Size",
-        x0, step_size, threshold, max_iterations, obj_val_hist,
+        step_size, threshold, max_iterations, iter_hist,
         gra_val_hist, stop_iteration)
 
 end
@@ -103,20 +104,19 @@ function fixed_step_gd(
     precomp, store = initialize(progData)
 
     iter = 0
-    x = optData.initial_iterate
-    obj = objgrad!(progData, precomp, store, x)
+    x = copy(optData.iter_hist[iter+1])
+    grad!(progData, precomp, store, x)
     gra_norm = norm(store.grad)
 
-    optData.obj_val_hist[iter+1] = obj
     optData.gra_val_hist[iter+1] = gra_norm
 
     while (gra_norm > optData.threshold) && (iter < optData.max_iterations)
         iter += 1
-        x -= optData.step_size * store.grad
-        obj = objgrad!(progData, precomp, store, x)
+        x .-= optData.step_size * store.grad
+        grad!(progData, precomp, store, x)
         gra_norm = norm(store.grad)
 
-        optData.obj_val_hist[iter+1] = obj
+        optData.iter_hist[iter+1] .= x
         optData.gra_val_hist[iter+1] = norm(store.grad)
     end
 
