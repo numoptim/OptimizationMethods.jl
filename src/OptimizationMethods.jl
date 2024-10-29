@@ -21,13 +21,17 @@ Parametric type for pre-allocating data structures for an optimization problem.
 """
 abstract type AbstractProblemAllocate{T} end
 
-## Util
-include("simple_stats.jl")
 
 ## Specific Problems 
 include("problems/gaussian_least_squares.jl")
 
-## Optimization Routines
-include("optimization_routines/barzilai_borwein_gd.jl")
+
+abstract type AbstractOptimizerData{T} end
+
+## Exports - Optimizers
+export BarzilaiBorweinGD, barzilai_borwein_gd
+
+## Specific Optimizers
+include("methods/barzilai_borwein_gd.jl")
 
 end

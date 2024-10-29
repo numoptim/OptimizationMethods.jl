@@ -3,6 +3,39 @@
 # Purpose: Implement barzilai-borwein.
 
 """
+"""
+mutable struct BarzilaiBorweinGD{T} <: AbstractOptimizerData{T}
+    name::String
+    alfa0::T
+    long::Bool
+    threshold::T
+    max_iterations::Int64
+    iter_hist::Vector{Vector{T}}
+    gra_val_hist::Vector{T}
+    stop_iteration::Int64
+end
+function BarzilaiBorweinGD(
+    ::Type{T};
+    x0::Vector{T},
+    alfa0::T,
+    long::Bool,
+    threshold::T,
+    max_iterations::Int,
+) where {T}
+
+    d = length(x0)
+
+    iter_hist = Vector{T}[Vector{T}(undef, d) for i in 1:max_iterations + 1]
+    iter_hist[1] = x0
+
+    gra_val_hist = Vector{T}(undef, max_iterations + 1)
+    stop_iteration = -1
+
+    return BarzilaiBorweinGD("Gradient Descent with Barzilai-Borwein", alfa0, long, threshold, max_iterations, iter_hist, gra_val_hist,
+    stop_iteration)
+end
+
+"""
     (x, stats) = barzilai_borwein_gd(progData, x, max_iter; alfa0, long)
 
 Implementation of barzilai-borwein step size method using negative gradient
@@ -24,13 +57,9 @@ by calling `initialize(progData)` (see documentation for problems).
 
 """
 function barzilai_borwein_gd(
-    progData::AbstractNLPModel{T, S},           # objective function
-    x::S,                                       # initial point
-    max_iter::Int64;                            # max iteration
-    gradient_condition :: T = T(1e-10),         # gradient tolerance
-    alfa0::T = T(1e-4),                         # initial step size
-    long::Bool = true                           # whether to use long or short step sizes
-) where S <: Vector{T} where T <: Real
+    optData::BarzilaiBorweinGD{T},
+    progData::P where P <: AbstractNLPModel{T, S}
+) where {T,S} 
 
     # step size helper functions -- long variant of step size
     function _long_step_size(Δx::S, Δg::S)
@@ -42,115 +71,47 @@ function barzilai_borwein_gd(
         return (Δx' * Δg) / (Δg' * Δg)
     end
 
-    # Initialization of simple stats
-    stats = OptimizationMethods.SimpleStats(T)
-    start_time = time()
-
-    # initializations -- iterates
-    xprev :: S = zeros(T, size(x))
-    xk :: S = zeros(T, size(x))
-    xprev .= xk .= x
-
-    # if max_iter is negative then just return
-    if max_iter <= 0
-        stats.time = time() - start_time 
-        stats.status_message = "max_iter is smaller than or equal to 0."
-        return xk, stats
-    end
-
-    # get step size function
-    step_size = long ? _long_step_size : _short_step_size
-
-    # initializations -- gradient condition, gradient buffer, and step size
-    grad_above_tol(g :: S) = (gradient_condition < 0) || (norm(g) > gradient_condition) ? true : false
-    gprev :: S  = zeros(T, size(x))
-    alfak :: T = zero(T)
-
-    # initialize optimization problem with program data
+    # initialization
+    iter = 0
     precomp, store = OptimizationMethods.initialize(progData) 
+    step_size = optData.long ? _long_step_size : _short_step_size
+    x = copy(optData.iter_hist[iter + 1]) 
 
-    # check if stopping conditions are already satisfied
-    OptimizationMethods.grad!(progData, precomp, store, xk)
-    if !grad_above_tol(store.grad)
-        # update the simple stats
-        stats.time = time() - start_time 
-        stats.total_iters = 0
-        stats.grad_norm = norm(store.grad)
-        stats.nobj = progData.counters.neval_obj
-        stats.ngrad = progData.counters.neval_grad
-        stats.nhess = progData.counters.neval_hess
+    # buffer for previous gradient value
+    gprev :: S  = zeros(T, size(x))
 
-        # update the status code and message
-        stats.status = (!grad_above_tol(store.grad), gradient_condition)
-        stats.status_message = "Gradient at initial point was already below tolerance."
+    # save initial values 
+    OptimizationMethods.grad!(progData, precomp, store, x)
+    optData.gra_val_hist[iter + 1] = norm(store.grad)
 
-        return xk, stats
-    end
-
-    # first iteration with beginning step size
-    xk .-= alfa0 .* store.grad
+    # first step
+    iter += 1
+    x .-= optData.alfa0 .* store.grad
     gprev .= store.grad
-    OptimizationMethods.grad!(progData, precomp, store, xk) 
+
+    OptimizationMethods.grad!(progData, precomp, store, x)
+    optData.iter_hist[iter + 1] .= x
+    optData.gra_val_hist[iter + 1] = norm(store.grad)
 
     # main iteration
-    k = 2
-    while k <= max_iter && grad_above_tol(store.grad)
-        # compute Δx
-        xprev .*= -1
-        xprev .+= xk
+    while (iter < optData.max_iterations) && (optData.gra_val_hist[iter + 1] > optData.threshold)
+        iter += 1
 
-        # compute Δg
+        # compute Δx and Δg for the step size using memory already allocated
+        optData.iter_hist[iter + 1] .= x - optData.iter_hist[iter - 1]
         gprev .*= -1
-        gprev .+= store.grad
-
-        # compute step size
-        alfak = step_size(xprev, gprev) 
-
-        # do not update with a nan or inf alfak
-        if isnan(alfak) || isinf(alfak)
-
-            # update the simple stats
-            stats.time = time() - start_time 
-            stats.total_iters = k - 1
-            stats.grad_norm = norm(store.grad)
-            stats.nobj = progData.counters.neval_obj
-            stats.ngrad = progData.counters.neval_grad
-            stats.nhess = progData.counters.neval_hess
-
-            # update the status code and message
-            stats.status = (!grad_above_tol(store.grad), gradient_condition)
-            stats.status_message = "Termination due to step size being nan or inf."
-            
-            return xk, stats
-        end
+        gprev .+= store.grad # store.grad - gprev
 
         # update
-        xprev .= xk
-        xk .-= alfak .* store.grad 
+        x .-= step_size(optData.iter_hist[iter + 1], gprev) .* store.grad 
         gprev .= store.grad
 
-        # one iteration of barzilai-borwein
-        OptimizationMethods.grad!(progData, precomp, store, xk) 
-        
-        # update iteration number
-        k += 1
+        # save values
+        OptimizationMethods.grad!(progData, precomp, store, x)
+        optData.iter_hist[iter + 1] .= x
+        optData.gra_val_hist[iter + 1] = norm(store.grad) 
     end
+    optData.stop_iteration = iter
 
-    # update the simple stats
-    stats.time = time() - start_time 
-    stats.total_iters = k - 1
-    stats.grad_norm = norm(store.grad)
-    stats.nobj = progData.counters.neval_obj
-    stats.ngrad = progData.counters.neval_grad
-    stats.nhess = progData.counters.neval_hess
-
-    # update the status code
-    stats.status = (!grad_above_tol(store.grad), gradient_condition)
-
-    # update status message
-    (k > max_iter) && (stats.status_message = "Max iteration was reached.")
-    (!grad_above_tol(store.grad)) && (stats.status_message = "Gradient tolerance was reached.")
-
-    # return data
-    return xk, stats
+    return x
 end
