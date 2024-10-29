@@ -23,6 +23,7 @@ abstract type AbstractProblemAllocate{T} end
 
 ## Specific Problems 
 include("problems/gaussian_least_squares.jl")
+include("problems/logistic_regression.jl")
 
 
 # Optimization Methods and there abstract types
