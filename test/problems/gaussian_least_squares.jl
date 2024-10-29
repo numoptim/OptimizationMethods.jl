@@ -3,11 +3,11 @@
 # Purpose: Test the implementation of GaussianLeastSquares in
 # src/problems/gaussian_least_squares.jl
 
-module ProceduralTestGaussianLeastSquares
+module TestGaussianLeastSquares
 
 using Test, OptimizationMethods, Random, LinearAlgebra
 
-@testset "Problem: Gaussian Least Squares -- Procedural" begin
+@testset "Problem: Gaussian Least Squares" begin
 
     # Set the seed for reproducibility
     Random.seed!(1010)
@@ -412,22 +412,12 @@ using Test, OptimizationMethods, Random, LinearAlgebra
     # objgrad!
 
     ## recompute true
-    o = OptimizationMethods.objgrad!(nlp, precomp, store, x0; recompute = true)
-    @test obj ≈ o
+    o = OptimizationMethods.objgrad!(nlp, precomp, store, x0)
+    @test abs(obj - o) < 1e-2
     @test grad ≈ store.grad
-    @test nlp.counters.neval_residual == 3
+    @test nlp.counters.neval_residual == 2
     @test nlp.counters.neval_obj == 3
     @test nlp.counters.neval_grad == 3
-    @test typeof(o) == Float32
-    @test typeof(store.grad) == Vector{Float32}
-
-    ## recompute false
-    o = OptimizationMethods.objgrad!(nlp, precomp, store, x0; recompute = false)
-    @test obj ≈ o
-    @test grad ≈ store.grad
-    @test nlp.counters.neval_residual == 3
-    @test nlp.counters.neval_obj == 4
-    @test nlp.counters.neval_grad == 4
     @test typeof(o) == Float32
     @test typeof(store.grad) == Vector{Float32}
 

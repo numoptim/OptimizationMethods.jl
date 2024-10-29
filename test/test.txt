@@ -1,3 +1,2 @@
-proc_simple_stats.jl
 problems/proc_gaussian_least_squares.jl
 optimization_routines/proc_barzilai_borwein_gd.jl

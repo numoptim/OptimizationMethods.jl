@@ -91,23 +91,26 @@ Immutable structure for initializing and storing repeatedly used calculations
 
 - `coef_t_coef::Matrix{T}`, stores `A'*A`
 - `coef_t_cons::Vector{T}`, stores `A'*b`
+- `cons_t_cons::T`, stores `b'*b`
 
 # Constructors
 
     PrecomputeGLS(prog::GaussianLeastSquares{T,S}) where {T,S}
 
-Computes `A'*A` and `A'*b` given a Gaussian Least Squares program, `prog`. 
+Computes `A'*A`, `A'*b`, `b'*b` given a Gaussian Least Squares program, `prog`. 
 """
 struct PrecomputeGLS{T} <: AbstractPrecompute{T}
     coef_t_coef::Matrix{T}
     coef_t_cons::Vector{T}
+    cons_t_cons::T
 end
 
 function PrecomputeGLS(prog::GaussianLeastSquares{T,S}) where {T,S}
     coef_t_coef = prog.coef'*prog.coef
     coef_t_cons = prog.coef'*prog.cons 
+    cons_t_cons = prog.cons'*prog.cons
 
-    return PrecomputeGLS(coef_t_coef, coef_t_cons)
+    return PrecomputeGLS(coef_t_coef, coef_t_cons, cons_t_cons)
 end
 
 """
@@ -435,20 +438,25 @@ args_store = [
         return nothing
     end
 
-    @doc """
+   @doc """
         objgrad!(
             $(join(string.(args_store),",\n\t    "))
-        ) where {T, S}
+        ) where {T,S}
     
-    Compute the objective function at `x`, and the gradient of the objective function
-        at `x`. This calculation uses the precomputed values of `A'A` and `A'b`. 
-        The value of `store.res` is updated if `recompute = true` and `store.grad` 
-        is updated regardless of `recompute`. The value of the objective is returned.
+    Simultaneously computes the objective function and the gradient function.
+        The objective function is computed as `0.5(x'A'Ax - 2x'A'b + b'b)`.
+        The gradient function is computed as `A'Ax - A'b`. 
     """
-    function NLPModels.objgrad!($(args_store...); recompute::Bool=true) where {T,S}
-        o = obj(progData, preComp, store, x; recompute = recompute)
-        grad!(progData, preComp, store, x; recompute = recompute)
-        return o
+    function NLPModels.objgrad!($(args_store...)) where {T,S}
+        increment!(progData, :neval_obj)
+        increment!(progData, :neval_grad)
+        store.grad .= preComp.coef_t_coef * x - preComp.coef_t_cons
+
+        #Store grad = A'A*x - A'b; 
+        #We use this to compute (x'A'Ax - x'A'b) - (x'A'b) + b'b. 
+        obj_value = T(0.5)*( dot(x, store.grad) - dot(x, preComp.coef_t_cons) +
+            preComp.cons_t_cons)
+        return obj_value
     end
 
     @doc """
