@@ -27,6 +27,10 @@ include("problems/gaussian_least_squares.jl")
 
 abstract type AbstractOptimizerData{T} end
 
+## Exports - Optimizers
+export FixedStepGD, fixed_step_gd
+
+
 ## Specific Optimizers
 include("methods/gd_fixed.jl")
 
