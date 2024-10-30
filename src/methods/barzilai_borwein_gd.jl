@@ -3,6 +3,44 @@
 # Purpose: Implement barzilai-borwein.
 
 """
+    BarzilaiBorweinGD{T} <: AbstractOptimizerData{T}
+
+A structure for storing data about gradient descent using the Barzilai-Borwein step size,
+    and the progress of its application on an optimization problem.
+
+# Fields
+
+- `name:String`, name of the solver for reference.
+- `alfa0::T`, initial step size to start the method.
+- `long::Bool`, flag for step size; if true, use the long version of Barzilai-Borwein, if false, use the short version.
+- `threshold::T`, gradient threshold. If the norm gradient is below this, then iteration stops.
+- `max_iterations::Int64`, max number of iterations (gradient steps) taken by the solver.
+- `iter_hist::Vector{Vector{T}}`, a history of the iterates. The first entry
+    corresponds to the initial iterate (i.e., at iteration `0`). The `k+1` entry
+    corresponds to the iterate at iteration `k`.
+- `gra_val_hist::Vector{T}`, a vector for storing `max_iterations+1` gradient
+    norm values. The first entry corresponds to iteration `0`. The `k+1` entry
+    correpsonds to the gradient norm at iteration `k`.
+- `stop_iteration::Int64`, the iteration number that the solver stopped on.
+    The terminal iterate is saved at `iter_hist[stop_iteration+1]`.
+
+# Constructors
+
+    BarzilaiBorweinGD(::Type{T}; x0::Vector{T}, alfa0::T, long::Bool, threshold::T,
+    max_iterations::Int) where {T}
+
+## Arguments
+
+- `T::DataType`, specific data type used for calculations.
+
+## Keyword Arguments
+
+- `x0::Vector{T}`, initial point to start the solver at.
+- `alfa0::T`, initial step size used for the first iteration.
+- `long::Bool`, flag for step size; if true, use the long version of Barzilai-Borwein, if false, use the short version. 
+- `threshold::T`, gradient threshold. If the norm gradient is below this, then iteration is terminated. 
+- `max_iterations::Int`, max number of iterations (gradient steps) taken by the solver.
+
 """
 mutable struct BarzilaiBorweinGD{T} <: AbstractOptimizerData{T}
     name::String
@@ -36,25 +74,29 @@ function BarzilaiBorweinGD(
 end
 
 """
-    (x, stats) = barzilai_borwein_gd(progData, x, max_iter; alfa0, long)
 
-Implementation of barzilai-borwein step size method using negative gradient
-directions. To see more about the method, take a look at:
+    barzilai_borwein_gd(optData::BarzilaiBorweinGD{T}, progData::P where P <: AbstractNLPModel{T, S}) 
+        where {T,S} 
+
+Implements gradient descent with Barzilai-Borwein step size
+and applies the method to the optimization problem specified by `progData`. 
+To see more about the method, take a look at:
 
 Barzilai and Borwein. "Two-Point Step Size Gradient Methods". IMA Journal of Numerical Analysis.
 
 The method will take advantage of precomputed values and allocated space initialized 
 by calling `initialize(progData)` (see documentation for problems).
 
-## Arguments
+# Arguments
 
-- `progData::AbstractNLPModel{T, S}`, function to optimize
-- `x::S`, initial starting value
-- `max_iter::Int64`, max iteration limit
-- `gradient_condition`, if positive, the algorithm stops once the gradient is less than or equal to `gradient_condition`. If negative the condition is not checked.
-- `alfa0::T = 1e-4` (Optional), initial step size
-- `long::Bool = true` (Optional), flag to indicate the use of the long version or the short version
+- `optData::FixedStepGD{T}`, the specification for the optimization method.
+- `progData<:AbstractNLPModel{T,S}`, the specification for the optimization
+    problem. 
 
+!!! warning
+    `progData` must have an `initialize` function that returns subtypes of
+    `AbstractPrecompute` and `AbstractProblemAllocate`, where the latter has
+    a `grad` argument.
 """
 function barzilai_borwein_gd(
     optData::BarzilaiBorweinGD{T},
@@ -78,7 +120,7 @@ function barzilai_borwein_gd(
     x = copy(optData.iter_hist[iter + 1]) 
 
     # buffer for previous gradient value
-    gprev :: S  = zeros(T, size(x))
+    gprev::S = zeros(T, size(x))
 
     # save initial values 
     OptimizationMethods.grad!(progData, precomp, store, x)
