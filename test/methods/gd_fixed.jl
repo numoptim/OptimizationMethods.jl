@@ -198,6 +198,28 @@ using Test, OptimizationMethods, Random, LinearAlgebra
     
     
     # Test that the gradient tolerance condition is triggered + iteration is counted correctly
+    optData = OptimizationMethods.FixedStepGD(
+        Float64,
+        x0 = x0,
+        step_size = 0.0005,
+        threshold = 1e-1,
+        max_iterations = 1000 
+    )
+    xk = fixed_step_gd(optData, progData) 
+    
+    ## test that the struct values are correct and that the iteration is correct
+    for iter in 1:optData.stop_iteration
+        x0 .-= 0.0005 * OptimizationMethods.grad(progData, x0) 
+        @test optData.iter_hist[iter + 1] ≈ x0
+        
+        # this test can fail if iter_hist is not correctly saved OR
+        # gra val hist is not saved correctly
+        gi = OptimizationMethods.grad(progData, optData.iter_hist[iter + 1])
+        @test optData.gra_val_hist[iter + 1] ≈ norm(gi)
+    end
+
+    @test optData.gra_val_hist[optData.stop_iteration + 1] <= 1e-1
+    @test optData.gra_val_hist[optData.stop_iteration] > 1e-1
 
     
     ##########################################
