@@ -141,20 +141,60 @@ Immutable structure for initializing and storing repeatedly used calculations.
 struct PrecomputeLogReg{T} <: AbstractPrecompute{T}
 end
 
-# TODO: Pre-allocation struct 
 """
     AllocateLogReg{T} <: AbstractProblemAllocate{T}
 
 Immutable structure for preallocating important quantities for the logistic
     regression problem. 
+
+# Fields 
+
+- `linear_effect::Vector{T}`, stores the estimated linear effect
+- `probabilities::Vector{T}`, stores the estimated probabilities of observing `1` 
+- `residuals::Vector{T}`, stores the difference between the responses and the 
+    estimated probabilities.
+- `grad::Vector{T}`, stores the gradient vector 
+- `hess::Matrix{T}`, stores the Hessian matrix
+
+# Constructor 
+
+    AllocateLogReg(prog::LogisticRegression{T,S}) where {T,S}
+
+Preallocates the data structures for optimizing the logistic regression function.
 """
 struct AllocateLogReg{T} <: AbstractProblemAllocate{T}
-    weighted_design::Matrix{T}
-    weighted_response::Vector{T}
+    linear_effect::Vector{T}
     probabilities::Vector{T}
+    residuals::Vector{T}
+    grad::Vector{T}
+    hess::Matrix{T}
 end
 
-# TODO: Function initialize
+function AllocateLogReg(progData::LogisticRegression{T,S}) where {T,S}
+    nobs = size(progData.design, 1)
+    nvar = progData.meta.nvar
+
+    return AllocateLogReg(
+        zeros(T, nobs),
+        zeros(T, nobs),
+        zeros(T, nobs),
+        zeros(T, nvar),
+        zeros(T, nvar, nvar)
+    )
+end
+
+"""
+    initialize(progData::LogisticRegression{T,S}) where {T,S}
+
+Generates the precomputed and storage structs given a Logistic Regression
+    problem.
+"""
+function initialize(progData::LogisticRegression{T,S}) where {T,S}
+    precompute = PrecomputeLogReg{T}()
+    store = AllocateLogReg(progData)
+
+    return precompute, store
+end
 
 ################################################################################
 # Utilities
@@ -188,9 +228,10 @@ args = [
             $(join(string.(args),",\n\t    "))
         ) where {T,S}
     
-    Computes the objective function at the value `x`
+    Computes the objective function at the value `x`.
     """
     function NLPModels.obj($(args...)) where {T,S}
+        increment!(progData, :neval_obj)
         η = progData.design * x
         η .= logit.(η)
         l = T(0)
@@ -206,9 +247,10 @@ args = [
             $(join(string.(args),",\n\t    "))
         ) where {T,S}
 
-    Computes the gradient function value at `x`
+    Computes the gradient function value at `x`.
     """
     function NLPModels.grad($(args...)) where {T,S}
+        increment!(progData, :neval_grad)
         η = progData.design * x 
         η .= logit.(η)
         return -progData.design' * (progData.response - η)
@@ -224,6 +266,8 @@ args = [
         gradient function value. 
     """
     function NLPModels.objgrad($(args...)) where {T,S}
+        increment!(progData, :neval_obj)
+        increment!(progData, :neval_grad)
         η = progData.design * x
         η .= logit.(η)
         l, g = T(0), zeros(T, length(x))
@@ -235,10 +279,166 @@ args = [
         return -l, -g
     end
 
-    #TODO: hess
     @doc """
-        
+        hess(
+            $(join(string.(args),",\n\t    "))
+        ) where {T,S}
+    
+    Computes the Hessian function value at `x`.
     """
+    function hess($(args...)) where {T,S}
+        increment!(progData, :neval_hess)
+        η = progData.design * x
+        η .= logit.(η)
+        η .= η .* (1 .- η)
+
+        return progData.design'*(η .* progData.design)
+    end
+end
+
+###############################################################################
+# Operations that are not in-place. Makes use of precomputed values. 
+###############################################################################
+
+args_pre = [
+    :(progData::LogisticRegression{T,S}),
+    :(preComp::PrecomputeLogReg{T}),
+    :(x::Vector{T})
+]
+
+funcs = Dict(
+    :(NLPModels.obj) => "Computes the objective function value at `x`.",
+    :(NLPModels.grad) => "Computes the gradient function value at `x`.",
+    :(NLPModels.objgrad) => "Computes the objective and gradient at `x`. 
+        Returns the objective value, then the gradient value.",
+    :(hess) => "Computes the Hessian value at `x`."
+)
+
+for (func, desc) in funcs
+    
+    #Precompute does not have any additional information.
+    #This loop will call the version of the function that uses only 
+    #progData and x.
+    @eval begin
+        @doc """
+            $(string($func))(
+                $(join(string.(args_pre),",\n\t    "))
+            ) where {T,S}
+        
+        $($desc)
+        """
+        function $func($(args_pre...)) where {T,S}
+            return $func(progData, x)
+        end
+
+    end
+end 
+
+###############################################################################
+# Operations that are in-place. Makes use of precomputed values. 
+###############################################################################
+  
+args_store = [
+    :(progData::LogisticRegression{T,S}),
+    :(preComp::PrecomputeLogReg{T}),
+    :(store::AllocateLogReg{T}),
+    :(x::Vector{T})
+]
+
+
+@eval begin 
+
+    @doc """
+        obj(
+            $(join(string.(args_store),"\n\t    "))
+        ) where {T,S}
+
+    Computes the objective function at the value `x`.
+    """
+    function NLPModels.obj($(args_store...)) where {T,S}
+        increment!(progData, :neval_obj)
+        store.linear_effect .= progData.design * x
+        store.probabilities .= logit.(store.linear_effect)
+        l = T(0)
+        for i = 1:size(progData.design, 1)
+            l += progData.response[i] ? log(store.probabilities[i]) : 
+                log(1 - store.probabilities[i])
+        end
+
+        return -l
+    end
+
+    @doc """
+        grad!(
+            $(join(string.(args_store),",\n\t    "))
+        ) where {T,S}
+
+    Computes the gradient function value at `x`. The gradient is computed in
+        place and saved in `store.grad`.
+    """
+    function NLPModels.grad!($(args_store...)) where {T,S}
+        increment!(progData, :neval_grad)
+        store.linear_effect .= progData.design * x 
+        store.probabilities .= logit.(store.linear_effect)
+        store.residuals .= progData.response - store.probabilities
+
+        # Update gradient 
+        store.grad .= -(progData.design' * store.residuals)
+
+        return nothing 
+    end
+
+    @doc """
+         objgrad!(
+            $(join(string.(args_store),",\n\t    "))
+        ) where {T,S}
+
+    Computes the objective function and gradient function value at `x`. The
+        objective function value is returned. The gradient function value is 
+        stored in `store.grad`. 
+    """
+    function NLPModels.objgrad!($(args_store...)) where {T,S}
+        increment!(progData, :neval_obj)
+        increment!(progData, :neval_grad)
+
+        store.linear_effect .= progData.design * x 
+        store.probabilities .= logit.(store.linear_effect)
+        store.residuals .= progData.response - store.probabilities
+
+        l = T(0)
+        store.grad .= zeros(T, length(x))
+
+        for i = 1:size(progData.design, 1)
+            l += progData.response[i] ? log(store.probabilities[i]) : 
+                log(1 - store.probabilities[i])
+            store.grad .-= store.residuals[i] * progData.design[i,:]
+        end
+
+        return -l
+    end
+
+
+    @doc """
+        hess!(
+            $(join(string.(args_store),",\n\t    "))
+        ) where {T,S}
+    
+    Computes the Hessian function value at `x`. The Hessian function value is
+        stored in `store.hess`.
+    """
+    function hess!($(args_store...)) where {T,S}
+        increment!(progData, :neval_hess)
+        store.linear_effect .= progData.design * x
+        store.probabilities .= logit.(store.linear_effect)
+        
+        store.hess .= zeros(T, length(x), length(x))
+        for i = 1:size(progData.design, 1)
+            store.hess .+= store.probabilities[i] * (1 - store.probabilities[i]) *
+                progData.design[i,:] * progData.design[i,:]'
+        end
+
+        return nothing
+    end
 
 
 end
