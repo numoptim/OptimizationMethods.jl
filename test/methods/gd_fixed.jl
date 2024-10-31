@@ -1,7 +1,7 @@
 # Date: 10/29/2024
 # Author: Christian Varner
 # Purpose: Test the implementation of Gradient Descent with Fixed 
-# step size
+# step size found in src/methods/gd-fixed.jl
 
 module TestGDFixed
 
@@ -145,7 +145,7 @@ using Test, OptimizationMethods, Random, LinearAlgebra
     @test optData.gra_val_hist[2] == norm(OptimizationMethods.grad(progData, x1))
     @test optData.stop_iteration == 1
 
-    # test random iteration and step size
+    # test random iteration 
     k = rand(collect(3:10))
     optData = OptimizationMethods.FixedStepGD(
         Float64,
@@ -196,6 +196,31 @@ using Test, OptimizationMethods, Random, LinearAlgebra
 
     @test optData.stop_iteration == k
     
+    ## test random iteration and random step size and random threshold
+    k = rand(collect(3:10))
+    step_size = abs(randn(1)[1])
+    optData = OptimizationMethods.FixedStepGD(
+        Float64,
+        x0 = x0,
+        step_size = step_size,
+        threshold = 1e-5*abs(randn(1)[1]),
+        max_iterations = k 
+    )
+    
+    xk = fixed_step_gd(optData, progData)  
+
+    ## test that the struct values are correct and that the iteration is correct
+    for iter in 1:k
+        x0 .-= step_size * OptimizationMethods.grad(progData, x0) 
+        @test optData.iter_hist[iter + 1] ≈ x0
+        
+        # this test can fail if iter_hist is not correctly saved OR
+        # gra val hist is not saved correctly
+        gi = OptimizationMethods.grad(progData, optData.iter_hist[iter + 1])
+        @test optData.gra_val_hist[iter + 1] ≈ norm(gi)
+    end
+
+    @test optData.stop_iteration == k
     
     # Test that the gradient tolerance condition is triggered + iteration is counted correctly
     optData = OptimizationMethods.FixedStepGD(
