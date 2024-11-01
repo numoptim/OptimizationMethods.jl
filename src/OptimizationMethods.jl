@@ -24,4 +24,20 @@ abstract type AbstractProblemAllocate{T} end
 ## Specific Problems 
 include("problems/gaussian_least_squares.jl")
 
+
+# Optimization Methods and there abstract types
+
+"""
+  AbstractOptimizerData{T}
+
+Parametric abstract type for storing parameters and progress of an optimizer.
+"""
+abstract type AbstractOptimizerData{T} end
+
+## Exports - Optimizers
+export FixedStepGD, fixed_step_gd
+
+## Specific Optimizers
+include("methods/gd_fixed.jl")
+
 end
