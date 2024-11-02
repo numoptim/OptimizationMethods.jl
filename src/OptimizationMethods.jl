@@ -44,8 +44,7 @@ export BarzilaiBorweinGD, barzilai_borwein_gd
 export FixedStepGD, fixed_step_gd
 
 ## Source Code 
-include("methods/barzilai_borwein_gd.jl")
+include("methods/gd_barzilai_borwein.jl")
 include("methods/gd_fixed.jl")
-
 
 end
