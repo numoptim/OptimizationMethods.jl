@@ -1,2 +1,2 @@
-problems/proc_gaussian_least_squares.jl
-optimization_routines/proc_barzilai_borwein_gd.jl
+problems/gaussian_least_squares.jl
+methods/gd_fixed.jl
