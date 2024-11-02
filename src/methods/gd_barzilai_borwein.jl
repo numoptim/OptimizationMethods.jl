@@ -16,6 +16,10 @@ A structure for storing data about gradient descent using the Barzilai-Borwein
     iteration stops.
 - `max_iterations::Int64`, max number of iterations (gradient steps) taken by 
     the solver.
+- `iter_diff::Vector{T}`, a buffer for storing differences between subsequent
+    iterate values that are used for computing the step size
+- `grad_diff::Vector{T}`, a buffer for storign differences between gradient 
+    values at adjacent iterates, which is used for compute the step size
 - `iter_hist::Vector{Vector{T}}`, a history of the iterates. The first entry
     corresponds to the initial iterate (i.e., at iteration `0`). The `k+1` entry
     corresponds to the iterate at iteration `k`.
@@ -54,6 +58,8 @@ mutable struct BarzilaiBorweinGD{T} <: AbstractOptimizerData{T}
     long_stepsize::Bool 
     threshold::T
     max_iterations::Int64
+    iter_diff::Vector{T}
+    grad_diff::Vector{T}
     iter_hist::Vector{Vector{T}}
     grad_val_hist::Vector{T}
     stop_iteration::Int64
@@ -69,6 +75,9 @@ function BarzilaiBorweinGD(
 
     d = length(x0)
 
+    iter_diff = zeros(T, d)
+    grad_diff = zeros(T, d)
+
     iter_hist = Vector{T}[Vector{T}(undef, d) for i in 1:max_iterations + 1]
     iter_hist[1] = x0
 
@@ -77,8 +86,30 @@ function BarzilaiBorweinGD(
 
     return BarzilaiBorweinGD("Gradient Descent with Barzilai-Borwein Step Size", 
         init_stepsize, long_stepsize, threshold, max_iterations, 
-        iter_hist, grad_val_hist, stop_iteration)
+        iter_diff, grad_diff, iter_hist, grad_val_hist, stop_iteration)
 end
+
+# Utility Functions 
+"""
+    bb_long_step_size(Δx::S, Δg::S) where S <: AbstractVector 
+
+Computes the long step size for the Borwein-Barzilai Method. See documentation
+    for `barzilai_borwein_gd` for more details. 
+"""
+function bb_long_step_size(Δx::S, Δg::S) where S <: AbstractVector
+    return (Δx' * Δx) / (Δx' * Δg)
+end
+
+"""
+    bb_short_step_size(Δx::S, Δg::S) where S <: AbstractVector 
+
+Computes the short step size for the Borwein-Barzilai Method. See documentation
+    for `barzilai_borwein_gd` for more details. 
+"""
+function bb_short_step_size(Δx::S, Δg::S) where S <: AbstractVector
+    return (Δx' * Δg) / (Δg' * Δg)
+end
+
 
 """
 
@@ -133,56 +164,48 @@ function barzilai_borwein_gd(
     progData::P where P <: AbstractNLPModel{T, S}
 ) where {T,S} 
 
-    # step size helper functions -- long variant of step size
-    function _long_step_size(Δx::S, Δg::S)
-        return (Δx' * Δx) / (Δx' * Δg)
-    end
-
-    # step size helper function -- short variant of step size
-    function _short_step_size(Δx::S, Δg::S)
-        return (Δx' * Δg) / (Δg' * Δg)
-    end
-
-    # initialization
-    iter = 0
+    # initialize storage and pre-computed values
     precomp, store = OptimizationMethods.initialize(progData) 
-    step_size = optData.long_stepsize ? _long_step_size : _short_step_size
+
+    # select step size strategy 
+    bb_step_size = optData.long_stepsize ? bb_long_step_size : bb_short_step_size
+    
+    # Iteration 0
+    iter = 0
+
+    # Update iteration 
     x = copy(optData.iter_hist[iter + 1]) 
+    grad!(progData, precomp, store, x)
 
-    # buffer for previous gradient value
-    gprev::S = zeros(T, size(x))
+    # Compute step size to calculate x_{iter+1}
+    step_size = optData.init_stepsize
 
-    # save initial values 
-    OptimizationMethods.grad!(progData, precomp, store, x)
+    # Store Values
     optData.grad_val_hist[iter + 1] = norm(store.grad)
 
-    # first step
-    iter += 1
-    x .-= optData.init_stepsize .* store.grad
-    gprev .= store.grad
+    while (iter < optData.max_iterations) && 
+        (optData.grad_val_hist[iter + 1] > optData.threshold)
 
-    OptimizationMethods.grad!(progData, precomp, store, x)
-    optData.iter_hist[iter + 1] .= x
-    optData.grad_val_hist[iter + 1] = norm(store.grad)
-
-    # main iteration
-    while (iter < optData.max_iterations) && (optData.grad_val_hist[iter + 1] > optData.threshold)
         iter += 1
 
-        # compute Δx and Δg for the step size using memory already allocated
-        optData.iter_hist[iter + 1] .= x - optData.iter_hist[iter - 1]
-        gprev .*= -1
-        gprev .+= store.grad # store.grad - gprev
+        # Needed for calculate step size for updating x_{iter} to  x_{iter+1}
+        optData.iter_diff .= -x #Δx = -x_{iter-1}
+        optData.grad_diff .= -store.grad #Δg = -∇f(x_{iter-1})
+        
+        # Update iteration 
+        x .-= step_size * store.grad
+        grad!(progData, precomp, store, x)
 
-        # update
-        x .-= step_size(optData.iter_hist[iter + 1], gprev) .* store.grad 
-        gprev .= store.grad
+        # Compute step size to calculate x_{iter+1}
+        optData.iter_diff .+= x #Δx = x_{iter} - x_{iter-1}
+        optData.grad_diff .+= store.grad #Δg = ∇f(x_{iter}) - ∇f(x_{iter-1})
+        step_size = bb_step_size(optData.iter_diff, optData.grad_diff)
 
-        # save values
-        OptimizationMethods.grad!(progData, precomp, store, x)
+        # Store values
         optData.iter_hist[iter + 1] .= x
         optData.grad_val_hist[iter + 1] = norm(store.grad) 
     end
+
     optData.stop_iteration = iter
 
     return x
