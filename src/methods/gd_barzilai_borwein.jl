@@ -73,6 +73,8 @@ function BarzilaiBorweinGD(
     max_iterations::Int,
 ) where {T}
 
+    @assert init_stepsize > 0 "Initial step size must be a positive value."
+
     d = length(x0)
 
     iter_diff = zeros(T, d)
