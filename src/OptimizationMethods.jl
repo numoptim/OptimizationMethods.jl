@@ -36,8 +36,10 @@ abstract type AbstractOptimizerData{T} end
 
 ## Exports - Optimizers
 export FixedStepGD, fixed_step_gd
+export LipschitzApproxGD, lipschitz_approximation_gd
 
 ## Specific Optimizers
 include("methods/gd_fixed.jl")
+include("methods/gd_lipschitz_approximation.jl")
 
 end

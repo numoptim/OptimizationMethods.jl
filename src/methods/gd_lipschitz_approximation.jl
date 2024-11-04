@@ -12,7 +12,7 @@ A structure for storing data about adaptive gradient descent
 # Fields
 
 - `name::String`, name of the solver for reference
-- `alfa0::T`, the initial step size for the method
+- `init_stepsize::T`, the initial step size for the method
 - `threshold::T`, the threshold on the norm of the gradient to induce stopping
 - `max_iterations::Int`, the maximum allowed iterations
 - `iter_hist::Vector{Vector{T}}`, a history of the iterates. The first entry
@@ -26,7 +26,7 @@ A structure for storing data about adaptive gradient descent
 
 # Constructors
 
-    LipschitzApproxGD(::Type{T}; x0::Vector{T}, alfa0::T, threshold::T, 
+    LipschitzApproxGD(::Type{T}; x0::Vector{T}, init_stepsize::T, threshold::T, 
         max_iterations::Int) where {T}
 
 Constructs the `struct` for the optimizer.
@@ -38,13 +38,13 @@ Constructs the `struct` for the optimizer.
 ## Keyword Arguments
 
 - `x0::Vector{T}`, the initial iterate for the optimizers
-- `alfa0::T`, the initial step size for the method
+- `init_stepsize::T`, the initial step size for the method
 - `threshold::T`, the threshold on the norm of the gradient to induce stopping
 - `max_iterations::Int`, the maximum number of iterations allowed  
 """
 mutable struct LipschitzApproxGD{T} <: AbstractOptimizerData{T}
     name::String
-    alfa0::T
+    init_stepsize::T
     threshold::T
     max_iterations::Int64
     iter_hist::Vector{Vector{T}}
@@ -54,46 +54,92 @@ end
 function LipschitzApproxGD(
     ::Type{T};
     x0::Vector{T},
-    alfa0::T,
+    init_stepsize::T,
     threshold::T,
     max_iterations::Int,
-)
+) where {T}
 
     d = length(x0)
     iter_hist = Vector{T}[Vector{T}(undef, d) for i = 1:max_iterations + 1]
     iter_hist[1] = x0
 
-    grad_val_hist = Vector{T}(undef, max_iteration + 1)
+    grad_val_hist = Vector{T}(undef, max_iterations + 1)
     stop_iteration = -1 # dummy value
 
     return LipschitzApproxGD(
         "Gradient Descent with Lipschitz Approximation (AdGD)", 
-        alfa0, threshold, max_iterations, iter_hist, grad_val_hist, stop_iteration 
+        init_stepsize, threshold, max_iterations, iter_hist, grad_val_hist, stop_iteration 
     )
 end
 
 
 """
-TODO - Documentation
+    lipschitz_approximation_gd(optData::FixedStepGD{T}, progData::P where P <: AbstractNLPModel{T, S}) 
+        where {T, S}
+    
+Implements gradient descent with adaptive step size formed through a lipschitz approximation for the
+    desired optimization problem specified by `progData`.
+
+# References(s)
+
+Malitsky, Y. and Mishchenko, K. (2020). "Adaptive Gradient Descent without Descent." 
+    Proceedings of the 37th International Conference on Machine Learning, 
+    in Proceedings of Machine Learning Research 119:6702-6712.
+    Available from https://proceedings.mlr.press/v119/malitsky20a.html.
+
+
+# Method
+
+The iterates are updated according the procedure,
+
+```math
+x_{k+1} = x_{k} - \\alpha_k \\nabla f(x_{k}),
+```
+
+where ``\\alpha_k`` is the step size and ``\\nabla f`` is the gradient of the objective function ``f``.
+
+The step size is computed depending on ``k``. 
+When ``k = 0``, ``\\alpha_k = optData.init_stepsize``. 
+When ``k > 0``, 
+
+```math
+\\alpha_k = \\min\\left( \\sqrt{1 + \\theta_{k-1}}\\alpha_{k-1}, 
+    \\frac{||x_k - x_{k-1}||}{||\\nabla f(x_k) - \\nabla f(x_{k-1})||} \\right),
+```
+
+where ``\\theta_0 = \\inf`` and ``\\theta_k = \\alpha_k / \\alpha_{k-1}``.
+
+# Arguments 
+
+- `optData::FixedStepGD{T}`, the specification for the optimization method.
+- `progData<:AbstractNLPModel{T,S}`, the specification for the optimization
+    problem. 
+
+!!! warning
+    `progData` must have an `initialize` function that returns subtypes of
+    `AbstractPrecompute` and `AbstractProblemAllocate`, where the latter has
+    a `grad` argument. 
 """
 function lipschitz_approximation_gd(
-    optData::FixedStepGD{T},
+    optData::LipschitzApproxGD{T},
     progData::P where P <: AbstractNLPModel{T, S}
 ) where {T, S} 
 
     # initialize storage and pre-compute values
     precomp, store = initialize(progData)
 
+    # get initial iterate
+    iter = 0
+    x = copy(optData.iter_hist[iter + 1])
+
     # initialize additional buffer
-    gprev = zeros(T, size(x0))
+    gprev = zeros(T, size(x))
     L :: T = zero(T)
     alfa_prev :: T = zero(T)
     alfa :: T = zero(T)
     theta :: T = zero(T)
 
     # store values
-    iter = 0
-    x = copy(optData.iter_hist[iter + 1])
     grad!(progData, precomp, store, x)
     gra_norm = norm(store.grad)
 
@@ -101,9 +147,9 @@ function lipschitz_approximation_gd(
 
     # first iteration
     iter += 1
-    x .-= optData.alfa0 .* store.grad
+    x .-= optData.init_stepsize .* store.grad
     gprev .= store.grad
-    alfa_prev = alfa0
+    alfa_prev = optData.init_stepsize
 
     # update values
     grad!(progData, precomp, store, x)
@@ -133,7 +179,7 @@ function lipschitz_approximation_gd(
         gra_norm = norm(store.grad)
 
         optData.iter_hist[iter + 1] .= x
-        optData.grad_val_hist[iter + 1] = store.grad
+        optData.grad_val_hist[iter + 1] = gra_norm 
     end
 
     optData.stop_iteration = iter
