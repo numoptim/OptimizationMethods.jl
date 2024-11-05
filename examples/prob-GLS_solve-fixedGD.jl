@@ -32,11 +32,11 @@ println(
     Gradient Stopping Threshold: $(optData.threshold)
 
     Initial Objective: $obj_init
-    Initial Grad Norm: $(optData.gra_val_hist[1])
+    Initial Grad Norm: $(optData.grad_val_hist[1])
 
     Terminal Iteration: $(optData.stop_iteration)
     Terminal Objective: $obj_term
-    Terminal Grad Norm: $(optData.gra_val_hist[optData.stop_iteration])
+    Terminal Grad Norm: $(optData.grad_val_hist[optData.stop_iteration])
 
     Objective Evaluations: $obj_evals
     Gradient Evaluations: $(progData.counters.neval_grad)
