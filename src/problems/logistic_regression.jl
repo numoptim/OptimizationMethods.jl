@@ -10,9 +10,9 @@ Implements logistic regression problem with canonical link function. If
 # Objective Function 
 
 Let ``A`` be the covariate matrix and ``b`` denote the response vector. The
-    rows of ``A`` and corresponding entry of ``b`` correspond to the same 
-    observation. 
-    Let the ``A_i`` be the vector that is row `i` of ``A``,
+    rows of ``A`` and corresponding entry of ``b`` correspond to 
+    the predictors and response for the same experimental unit. 
+    Let ``A_i`` be the vector that is row `i` of ``A``,
     and let ``b_i`` be the `i` entry of ``b``. Note, ``b_i`` is either `0` or 
     `1`.
 
@@ -25,7 +25,7 @@ If ``A`` has ``n`` rows (i.e., ``n`` is the number of observations),
 then the objective function is negative log-likelihood function given by
 
 ```math
-F(x) = -\\sum_{i=1}^n b_i \\log( \\mu_i(x) ) + (1 - b_i) \\log(1- \\mu_i(x)).
+F(x) = -\\sum_{i=1}^n b_i \\log( \\mu_i(x) ) + (1 - b_i) \\log(1 - \\mu_i(x)).
 ```
 
 # Fields
@@ -56,7 +56,7 @@ Constructs a `LogisticRegression` problem with design matrix `design` and
     a scaling of the vector of ones. `x0` is optional. 
 """
 mutable struct LogisticRegression{T, S} <: AbstractNLPModel{T, S}
-    meta::NLPModelMeta{T,S}
+    meta::NLPModelMeta{T, S}
     counters::Counters
     design::Matrix{T}
     response::Vector{Bool}
@@ -70,18 +70,18 @@ function LogisticRegression(
     meta = NLPModelMeta(
         nvar,
         name = "LogisticRegression",
-        x0 = ones(T, nvar) ./ sqrt(nvar),
+        x0 = ones(T, nvar) ./ T(sqrt(nvar)),
     )
 
     # Constructs a design matrix of dimension nobs by nvar
     # Design matrix's first column is 1s
     # The remaining entries come from a normal distribution such that 
     # the variance of any row (excluding the first column) is 1. 
-    design = hcat(ones(T, nobs), randn(T, nobs, nvar-1) ./ sqrt(nvar - 1))
+    design = hcat(ones(T, nobs), randn(T, nobs, nvar-1) ./ T(sqrt(nvar - 1)))
 
     # Simulated solution (note, this may not be the solution to the optimization
     # problem, nor the maximum likelihood estimator)
-    β = randn(nvar) / sqrt(nvar)
+    β = randn(T, nvar) / T(sqrt(nvar))
 
     # Linear effect 
     η = design * β
@@ -200,15 +200,15 @@ end
 # Utilities
 ################################################################################
 """
-    logit(η::T} where T
+    logistic(η::T} where T
 
 Implements
     ```math
-        \\mathrm{logit}(\\eta) = \\frac{1}{1 + \\exp(-\\eta)},
+        \\mathrm{logistic}(\\eta) = \\frac{1}{1 + \\exp(-\\eta)},
     ```
     where `T` is a scalar value.
 """
-function logit(η::T) where T
+function logistic(η::T) where T
     return 1/(1 + exp(-η))
 end
 
