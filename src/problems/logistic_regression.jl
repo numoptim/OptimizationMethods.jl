@@ -69,7 +69,7 @@ function LogisticRegression(
 
     meta = NLPModelMeta(
         nvar,
-        name = "LogisticRegression",
+        name = "Logistic Regression",
         x0 = ones(T, nvar) ./ T(sqrt(nvar)),
     )
 
@@ -102,7 +102,7 @@ end
 function LogisticRegression(
     design::Matrix{T},
     response::Vector{Bool};
-    x0::Vector{T} = ones(T, size(design, 2)) ./ sqrt(size(design, 2))
+    x0::Vector{T} = ones(T, size(design, 2)) ./ T(sqrt(size(design, 2)))
 ) where T
 
     nobs, nvar = size(design)
