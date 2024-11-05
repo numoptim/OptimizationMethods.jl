@@ -18,8 +18,8 @@ A structure for storing data about gradient descent using the Barzilai-Borwein
     the solver.
 - `iter_diff::Vector{T}`, a buffer for storing differences between subsequent
     iterate values that are used for computing the step size
-- `grad_diff::Vector{T}`, a buffer for storign differences between gradient 
-    values at adjacent iterates, which is used for compute the step size
+- `grad_diff::Vector{T}`, a buffer for storing differences between gradient 
+    values at adjacent iterates, which is used to compute the step size
 - `iter_hist::Vector{Vector{T}}`, a history of the iterates. The first entry
     corresponds to the initial iterate (i.e., at iteration `0`). The `k+1` entry
     corresponds to the iterate at iteration `k`.
@@ -152,7 +152,7 @@ If ``k=0``, then ``\\alpha_0`` is set to `optData.init_stepsize`. For ``k>0``,
 
 # Arguments
 
-- `optData::FixedStepGD{T}`, the specification for the optimization method.
+- `optData::BarzilaiBorweinGD{T}`, the specification for the optimization method.
 - `progData<:AbstractNLPModel{T,S}`, the specification for the optimization
     problem. 
 
