@@ -71,11 +71,12 @@ function PoissonRegression(
     )
 end
 
-# Precomputed struct -- it might be useful at some point to allows things to control computed memory
+# Precomputed struct -- it might be useful at some point to allows things to 
+# control computed memory
 """
 """
 struct PrecomputePoissReg{T} <: AbstractPrecompute{T}
-    coef_coef_t::Matrix{T}
+    obs_obs_t::Matrix{T}
 end
 function PrecomputePoissReg(
     progData::PoissonRegression{T, S}
@@ -86,10 +87,12 @@ function PrecomputePoissReg(
     nobs, nvar = size(coef)
     
     # for hessian calculation
-    coef_coef_t = zeros(T, nobs, nvar, nvar)
+    obs_obs_t = zeros(T, nobs, nvar, nvar)
     for i in 1:n
-        coef_coef_t = coef[i] .* coef[i]'
+        obs_obs_t[i, :, :] .= view(coef, i, :) .* view(coef, i, :)'
     end
+
+    return PrecomputePoissReg{T}(obs_obs_t)
 end
 
 # Allocated memory struct
@@ -143,9 +146,17 @@ args = [
         ) where {T,S}
 
     Computes the objective function at the value `x`.
+
+    !!! Remark:
+        The objective function is computed up to a constant.
+        That is we compute `F(x)` and the negative log-likelihood
+        is `F(x) + C(y)` where `C(y)` depends on the responses.
     """
     function NLPModels.obj($(args...)) where {T,S}
         increment!(progData, :neval_obj)
+        linear_predictor = progData.design * x
+        predicted_rates = exp.(linear_predictor)
+        return sum(predicted_rates) - dot(progData.response, linear_predictor)
     end
 
    @doc """
@@ -159,6 +170,16 @@ args = [
     """
     function NLPModels.grad($(args...)) where {T,S}
         increment!(progData, :neval_grad)
+        linear_predictor = progData.design * x
+        predicted_rates = exp.(linear_predictor)
+        residual = predicted_rates - progData.response
+        
+        p = size(linear_predictor, 1)
+        g = zeros(T, p)
+        for i in 1:p
+            g .+= residual[i] .* view(progData.design, i, :)
+        end
+        return g 
     end
 
     @doc """
@@ -183,9 +204,174 @@ args = [
     """
     function hess($(args...)) where {T,S}
         increment!(progData, :neval_hess)
+        linear_predictor = progData.design * x
+        predicted_rates = exp.(linear_predictor)
+        p = size(linear_predictor, 1)
+        H = zeros(T, p, p)
+        for i in 1:p
+            H .+= predicted_rates[i] .* (view(progData.design, i, :) * view(progData.design, i, :)')
+        end
     end
 end
 
 ## operations with precomputed and without allocated memory
 
+args = [
+    :(progData::PoissonRegression{T, S}),
+    :(precomp::PrecomputePoissReg{T}),
+    :(x0::Vector{T})
+]
+
+@eval begin 
+
+    @doc """
+        obj(
+            $(join(string.(args),",\n\t    "))    
+        ) where {T,S}
+
+    Computes the objective function at the value `x`.
+
+    !!! Remark:
+        The objective function is computed up to a constant.
+        That is we compute `F(x)` and the negative log-likelihood
+        is `F(x) + C(y)` where `C(y)` depends on the responses.
+    """
+    function NLPModels.obj($(args...)) where {T,S}
+        return NLPModels.obj(progData, x0)
+    end
+
+   @doc """
+        grad(
+            $(join(string.(args),",\n\t    "))
+        ) where {T,S}
+
+    Computes the gradient of the objective function at `x`. This is `A'(A*x-b)`,
+        which is equivalent to `J'*r` where `J` is the Jacobian and `r` is the 
+        residual.
+    """
+    function NLPModels.grad($(args...)) where {T,S}
+        return NLPModels.grad(progData, x0)
+    end
+
+    @doc """
+        objgrad(
+            $(join(string.(args),",\n\t    "))
+        ) where {T,S}
+    
+    Computes the objective function at `x`, and gradient of the objective function at `x`.
+    """
+    function NLPModels.objgrad($(args...)) where {T, S}
+        o = obj(progData, x)
+        g = grad(progData, x)
+        return o, g
+    end
+
+    @doc """
+        hess(
+            $(join(string.(args),",\n\t    "))
+        ) where {T,S}
+        
+    Computes the Hessian of the objective function at `x`. This is `A'A`.
+    """
+    function hess($(args...)) where {T,S}
+        increment!(progData, :neval_hess)
+        linear_predictor = progData.design * x
+        predicted_rates = exp.(linear_predictor)
+        p = size(linear_predictor, 1)
+        H = zeros(T, p, p)
+        for i in 1:p
+            H .+= predicted_rates[i] .* view(precomp.obs_obs_t, i, :, :) 
+        end
+    end
+end
+
 ## operations with precompute and allocated memory
+
+args = [
+    :(progData::PoissonRegression{T, S}),
+    :(precomp::PrecomputePoissReg{T}),
+    :(store::AllocatePoissReg{T}),
+    :(x0::Vector{T})
+]
+
+@eval begin 
+
+    @doc """
+        obj(
+            $(join(string.(args),",\n\t    "))    
+        ) where {T,S}
+
+    Computes the objective function at the value `x`.
+
+    !!! Remark:
+        The objective function is computed up to a constant.
+        That is we compute `F(x)` and the negative log-likelihood
+        is `F(x) + C(y)` where `C(y)` depends on the responses.
+    """
+    function NLPModels.obj($(args...); recompute::Bool = true) where {T,S}
+        increment!(progData, :neval_obj)
+        if recompute
+            store.linear_effect = progData.design * x
+            store.predicted_rates = exp.(store.linear_effect)
+        end
+        return sum(store.predicted_rates) - dot(progData.responses, store.linear_effect)
+    end
+
+   @doc """
+        grad(
+            $(join(string.(args),",\n\t    "))
+        ) where {T,S}
+
+    Computes the gradient of the objective function at `x`. This is `A'(A*x-b)`,
+        which is equivalent to `J'*r` where `J` is the Jacobian and `r` is the 
+        residual.
+    """
+    function NLPModels.grad!($(args...); recompute::Bool = true) where {T,S}
+        increment!(progData, :neval_grad)
+        if recompute
+            store.linear_effect = progData.design * x
+            store.predicted_rates = exp.(store.linear_effect)
+            store.residual .= store.predicted_rates - progData.response
+        end
+        
+        p = size(progData.design, 2)
+        fill!(store.grad, 0)
+        for i in 1:p
+            store.grad .+= store.residual[i] .* view(progData, i, :)
+        end
+    end
+
+    @doc """
+        objgrad(
+            $(join(string.(args),",\n\t    "))
+        ) where {T,S}
+    
+    Computes the objective function at `x`, and gradient of the objective function at `x`.
+    """
+    function NLPModels.objgrad!($(args...); recompute::Bool = true) where {T, S}
+        NLPModels.grad!(progData, precomp, store, x0; recompute = recompute)
+        o = NLPModels.obj(progData, precomp, store, x0; recompute = false)
+        return o
+    end
+
+    @doc """
+        hess(
+            $(join(string.(args),",\n\t    "))
+        ) where {T,S}
+        
+    Computes the Hessian of the objective function at `x`. This is `A'A`.
+    """
+    function hess!($(args...); recompute::Bool = true) where {T,S}
+        increment!(progData, :neval_hess)
+        
+        if recompute
+            store.linear_effect .= progData.design * x
+            store.predicted_rates .= exp.(store.linear_effect)
+        end
+
+        p = size(linear_predictor, 1)
+        for i in 1:p
+            store.hess .+= predicted_rates[i] .* view(precomp.obs_obs_t, i, :, :) 
+        end
+    end
+end
