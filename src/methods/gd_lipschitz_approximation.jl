@@ -15,6 +15,10 @@ A structure for storing data about adaptive gradient descent
 - `init_stepsize::T`, the initial step size for the method
 - `threshold::T`, the threshold on the norm of the gradient to induce stopping
 - `max_iterations::Int`, the maximum allowed iterations
+- `iter_diff::Vector{T}`, a buffer for storing differences between subsequent
+    iterate values that are used for computing the step size
+- `grad_diff::Vector{T}`, a buffer for storing differences between gradient 
+    values at adjacent iterates, which is used to compute the step size
 - `iter_hist::Vector{Vector{T}}`, a history of the iterates. The first entry
     corresponds to the initial iterate (i.e., at iteration `0`). The `k+1` entry
     corresponds to the iterate at iteration `k`.
@@ -45,8 +49,13 @@ Constructs the `struct` for the optimizer.
 mutable struct LipschitzApproxGD{T} <: AbstractOptimizerData{T}
     name::String
     init_stepsize::T
+    prev_stepsize::T
+    theta::T
+    lipschitz_approximation::T
     threshold::T
     max_iterations::Int64
+    iter_diff::Vector{T}
+    grad_diff::Vector{T}
     iter_hist::Vector{Vector{T}}
     grad_val_hist::Vector{T}
     stop_iteration::Int64
@@ -63,12 +72,15 @@ function LipschitzApproxGD(
     iter_hist = Vector{T}[Vector{T}(undef, d) for i = 1:max_iterations + 1]
     iter_hist[1] = x0
 
+    iter_diff = Vector{T}(undef, d)
+    grad_diff = Vector{T}(undef, d)
     grad_val_hist = Vector{T}(undef, max_iterations + 1)
     stop_iteration = -1 # dummy value
 
     return LipschitzApproxGD(
         "Gradient Descent with Lipschitz Approximation (AdGD)", 
-        init_stepsize, threshold, max_iterations, iter_hist, grad_val_hist, stop_iteration 
+        init_stepsize, T(0), T(0), T(0), threshold, max_iterations, 
+        iter_diff, grad_diff, iter_hist, grad_val_hist, stop_iteration 
     )
 end
 
@@ -90,7 +102,7 @@ Malitsky, Y. and Mishchenko, K. (2020). "Adaptive Gradient Descent without Desce
 
 # Method
 
-The iterates are updated according the procedure,
+The iterates are updated according to the procedure,
 
 ```math
 x_{k+1} = x_{k} - \\alpha_k \\nabla f(x_{k}),
@@ -111,7 +123,7 @@ where ``\\theta_0 = \\inf`` and ``\\theta_k = \\alpha_k / \\alpha_{k-1}``.
 
 # Arguments 
 
-- `optData::FixedStepGD{T}`, the specification for the optimization method.
+- `optData::LipschitzApproxGD{T}`, the specification for the optimization method.
 - `progData<:AbstractNLPModel{T,S}`, the specification for the optimization
     problem. 
 
@@ -133,11 +145,7 @@ function lipschitz_approximation_gd(
     x = copy(optData.iter_hist[iter + 1])
 
     # initialize additional buffer
-    gprev = zeros(T, size(x))
-    L :: T = zero(T)
-    alfa_prev :: T = zero(T)
-    alfa :: T = zero(T)
-    theta :: T = zero(T)
+    step_size :: T = optData.init_stepsize # step size
 
     # store values
     grad!(progData, precomp, store, x)
@@ -145,45 +153,33 @@ function lipschitz_approximation_gd(
 
     optData.grad_val_hist[iter+1] = gra_norm
 
-    # first iteration
-    iter += 1
-    x .-= optData.init_stepsize .* store.grad
-    gprev .= store.grad
-    alfa_prev = optData.init_stepsize
-
-    # update values
-    grad!(progData, precomp, store, x)
-    gra_norm = norm(store.grad)
-    optData.iter_hist[iter + 1] .= x
-    optData.grad_val_hist[iter + 1] = gra_norm
-
     # main loop
     while (gra_norm > optData.threshold) && (iter < optData.max_iterations)
         iter += 1
 
+        # store values
+        optData.iter_diff .= -x
+        optData.grad_diff .= -store.grad
+
         # compute the step size
-        L = norm(store.grad - gprev) / norm(x - optData.iter_hist[iter - 1])
-        if iter == 2
-            alfa = 1 / (2 * L)
-        else
-            alfa = min(sqrt(1 + theta) * alfa_prev, 1 / (sqrt(2) * L))
-        end
-
-        # take step and update values
-        x .-= alfa * store.grad
-        gprev .= store.grad
-        theta = alfa / alfa_prev
-        alfa_prev = alfa
-
+        x .-= step_size * store.grad 
+        optData.iter_hist[iter + 1] .= x
+        
         grad!(progData, precomp, store, x)
         gra_norm = norm(store.grad)
+        optData.grad_val_hist[iter + 1] = gra_norm
 
-        optData.iter_hist[iter + 1] .= x
-        optData.grad_val_hist[iter + 1] = gra_norm 
+        # compute the step size for the next iteration
+        optData.iter_diff .+= x
+        optData.grad_diff .+= store.grad
+
+        optData.theta = step_size / optData.prev_stepsize
+        optData.prev_stepsize = step_size
+
+        optData.lipschitz_approximation = norm(optData.grad_diff) / norm(optData.iter_diff)
+        step_size = min(sqrt(1 + optData.theta) * optData.prev_stepsize, 1 / (sqrt(2) * optData.lipschitz_approximation))
     end
 
     optData.stop_iteration = iter
-
-    # return main iterate
     return x
 end
