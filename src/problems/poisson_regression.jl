@@ -72,6 +72,8 @@ function PoissonRegression(
 end
 
 # Precomputed struct -- it might be useful at some point to allows things to control computed memory
+"""
+"""
 struct PrecomputePoissReg{T} <: AbstractPrecompute{T}
     coef_coef_t::Matrix{T}
 end
@@ -91,6 +93,8 @@ function PrecomputePoissReg(
 end
 
 # Allocated memory struct
+"""
+"""
 struct AllocatePoissReg{T} <: AbstractProblemAllocate{T}
     linear_effect::Vector{T}
     predicted_rates::Vector{T}
@@ -113,9 +117,74 @@ function AllocatePoissReg(
     )
 end
 
+"""
+"""
+function initialize(progData::PoissonRegression{T, S}) where {T, S}
+    precomp = PrecomputePoissReg(progData)
+    store = AllocatePoissReg(progData)
+
+    return precomp, store
+end
+
 # Functionality
 
 ## operations without precomputed and allocated memory
+
+args = [
+    :(progData::PoissonRegression{T, S}),
+    :(x0::Vector{T})
+]
+
+@eval begin 
+
+    @doc """
+        obj(
+            $(join(string.(args),",\n\t    "))    
+        ) where {T,S}
+
+    Computes the objective function at the value `x`.
+    """
+    function NLPModels.obj($(args...)) where {T,S}
+        increment!(progData, :neval_obj)
+    end
+
+   @doc """
+        grad(
+            $(join(string.(args),",\n\t    "))
+        ) where {T,S}
+
+    Computes the gradient of the objective function at `x`. This is `A'(A*x-b)`,
+        which is equivalent to `J'*r` where `J` is the Jacobian and `r` is the 
+        residual.
+    """
+    function NLPModels.grad($(args...)) where {T,S}
+        increment!(progData, :neval_grad)
+    end
+
+    @doc """
+        objgrad(
+            $(join(string.(args),",\n\t    "))
+        ) where {T,S}
+    
+    Computes the objective function at `x`, and gradient of the objective function at `x`.
+    """
+    function NLPModels.objgrad($(args...)) where {T, S}
+        o = obj(progData, x)
+        g = grad(progData, x)
+        return o, g
+    end
+
+    @doc """
+        hess(
+            $(join(string.(args),",\n\t    "))
+        ) where {T,S}
+        
+    Computes the Hessian of the objective function at `x`. This is `A'A`.
+    """
+    function hess($(args...)) where {T,S}
+        increment!(progData, :neval_hess)
+    end
+end
 
 ## operations with precomputed and without allocated memory
 
