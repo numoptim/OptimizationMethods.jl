@@ -204,7 +204,9 @@ end
 
 Implements
     ```math
-        \\mathrm{logistic}(\\eta) = \\frac{1}{1 + \\exp(-\\eta)},
+ 
+
+ \\mathrm{logistic}(\\eta) = \\frac{1}{1 + \\exp(-\\eta)},
     ```
     where `T` is a scalar value.
 """
@@ -233,7 +235,7 @@ args = [
     function NLPModels.obj($(args...)) where {T,S}
         increment!(progData, :neval_obj)
         η = progData.design * x
-        η .= logit.(η)
+        η .= logistic.(η)
         l = T(0)
         for i = 1:size(progData.design, 1)
             l += progData.response[i] ? log(η[i]) : log(1 - η[i])
@@ -252,7 +254,7 @@ args = [
     function NLPModels.grad($(args...)) where {T,S}
         increment!(progData, :neval_grad)
         η = progData.design * x 
-        η .= logit.(η)
+        η .= logistic.(η)
         return -progData.design' * (progData.response - η)
     end
 
@@ -269,7 +271,7 @@ args = [
         increment!(progData, :neval_obj)
         increment!(progData, :neval_grad)
         η = progData.design * x
-        η .= logit.(η)
+        η .= logistic.(η)
         l, g = T(0), zeros(T, length(x))
         for i = 1:size(progData.design, 1)
             l += progData.response[i] ? log(η[i]) : log(1 - η[i])
@@ -289,7 +291,7 @@ args = [
     function hess($(args...)) where {T,S}
         increment!(progData, :neval_hess)
         η = progData.design * x
-        η .= logit.(η)
+        η .= logistic.(η)
         η .= η .* (1 .- η)
 
         return progData.design'*(η .* progData.design)

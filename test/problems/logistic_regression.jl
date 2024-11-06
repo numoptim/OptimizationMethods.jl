@@ -111,24 +111,120 @@ using Test, OptimizationMethods, Random, LinearAlgebra, NLPModels
     ####################################
     # Test Struct Precomputed
     ####################################
-
-    # TODO
-
+    
+    @test isdefined(OptimizationMethods, :PrecomputeLogReg)
+    @test size(fieldnames(OptimizationMethods.PrecomputeLogReg), 1) == 0
+    
     ####################################
     # Test Allocated struct
     ####################################
-    # TODO
+    
+    # Test if it is defined and the field names
+    @test isdefined(OptimizationMethods, :AllocateLogReg)
+    
+    field_names = [:linear_effect, :probabilities, :residuals, :grad, :hess]
+    for name in field_names
+        @test name in fieldnames(OptimizationMethods.AllocateLogReg)
+    end
+
+    # test constructor
+    progDataConstructor = OptimizationMethods.LogisticRegression
+    real_types = [Float16, Float32, Float64]
+    for first_constructor in [true, false]
+        for real_type in real_types
+            progData = first_constructor ? progDataConstructor(real_type) :
+            OptimizationMethods.LogisticRegression(Matrix{real_type}(randn(100, 10)), 
+                                                       Vector{Bool}(bitrand(nobs)),
+                                                       x0 = Vector{real_type}(randn(10)))
+            store = OptimizationMethods.AllocateLogReg(progData)
+            
+            @test typeof(store.linear_effect) == Vector{real_type}
+            @test typeof(store.probabilities) == Vector{real_type}
+            @test typeof(store.residuals) == Vector{real_type}
+            @test typeof(store.grad) == Vector{real_type}
+            @test typeof(store.hess) == Matrix{real_type}
+
+            @test size(store.linear_effect, 1) == size(progData.design, 1)
+            @test size(store.probabilities, 1) == size(progData.design, 1)
+            @test size(store.residuals, 1) == size(progData.design, 1)
+            @test size(store.grad, 1) == size(progData.design, 2)
+            @test size(store.hess) == (size(progData.design, 2), size(progData.design, 2))
+        end
+    end
 
     ####################################
     # Test initialize 
     ####################################
-    # TODO
+
+    progDataConstructor = OptimizationMethods.LogisticRegression
+    real_types = [Float16, Float32, Float64]
+    for first_constructor in [true, false]
+        for real_type in real_types
+            progData = first_constructor ? progDataConstructor(real_type) :
+            OptimizationMethods.LogisticRegression(Matrix{real_type}(randn(100, 10)), 
+                                                       Vector{Bool}(bitrand(nobs)),
+                                                       x0 = Vector{real_type}(randn(10)))
+            output = OptimizationMethods.initialize(progData)
+
+            @test size(output, 1) == 2
+
+            out1, out2 = output[1], output[2]
+            @test typeof(out1) == OptimizationMethods.PrecomputeLogReg{real_type}
+            @test typeof(out2) == OptimizationMethods.AllocateLogReg{real_type}
+        end
+    end
+
+    
+    ####################################
+    # Test Utilities - logistic
+    ####################################
+
+    test_values = Vector{Float64}(collect(-5:5:1))
+    for x in test_values
+        y = 1 / (1 + exp(-x))
+        
+        returned_val = OptimizationMethods.logistic(x)
+        @test isapprox(y, returned_val; atol = 1e-10)
+        @test typeof(returned_val) == Float64
+    end
 
     ####################################
     # Test functionality - group 1
     ####################################
 
-    # TODO
+    # test problem 1
+    p = 100
+    nobs = p
+    nvar = p
+
+    A = Matrix{Float64}(Matrix(I, p, p))
+    b = Vector{Bool}(bitrand(p))
+
+    progData = OptimizationMethods.LogisticRegression(A, b)
+    x = zeros(Float64, p)
+
+    ## test objective
+    o = obj(progData, x)
+    @test isapprox(o, -p*log(.5); atol = 1e-10)
+
+    ## test gradient
+    g = grad(progData, x)
+    @test isapprox(norm(g - ((.5) .* ones(p) - b)), 0, atol = 1e-10) 
+
+    ## test objgrad
+    output = objgrad(progData, x)
+    @test length(output) == 2
+
+    o, g = output[1], output[2]
+    @test isapprox(o, -p*log(.5); atol = 1e-10)
+    @test isapprox(norm(g - ((.5) .* ones(p) - b)), 0, atol = 1e-10) 
+
+    ## test hess
+    trueHessian = .25 .* A
+    h = OptimizationMethods.hess(progData, x)
+    @test isapprox(norm(h - trueHessian), 0; atol = 1e-10)
+
+    # test problem 2
 
     ####################################
     # Test functionality - group 2
