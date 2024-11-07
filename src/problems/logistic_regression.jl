@@ -360,7 +360,7 @@ args_store = [
     function NLPModels.obj($(args_store...)) where {T,S}
         increment!(progData, :neval_obj)
         store.linear_effect .= progData.design * x
-        store.probabilities .= logit.(store.linear_effect)
+        store.probabilities .= logistic.(store.linear_effect)
         l = T(0)
         for i = 1:size(progData.design, 1)
             l += progData.response[i] ? log(store.probabilities[i]) : 
@@ -381,7 +381,7 @@ args_store = [
     function NLPModels.grad!($(args_store...)) where {T,S}
         increment!(progData, :neval_grad)
         store.linear_effect .= progData.design * x 
-        store.probabilities .= logit.(store.linear_effect)
+        store.probabilities .= logistic.(store.linear_effect)
         store.residuals .= progData.response - store.probabilities
 
         # Update gradient 
@@ -404,7 +404,7 @@ args_store = [
         increment!(progData, :neval_grad)
 
         store.linear_effect .= progData.design * x 
-        store.probabilities .= logit.(store.linear_effect)
+        store.probabilities .= logistic.(store.linear_effect)
         store.residuals .= progData.response - store.probabilities
 
         l = T(0)
@@ -431,7 +431,7 @@ args_store = [
     function hess!($(args_store...)) where {T,S}
         increment!(progData, :neval_hess)
         store.linear_effect .= progData.design * x
-        store.probabilities .= logit.(store.linear_effect)
+        store.probabilities .= logistic.(store.linear_effect)
         
         store.hess .= zeros(T, length(x), length(x))
         for i = 1:size(progData.design, 1)

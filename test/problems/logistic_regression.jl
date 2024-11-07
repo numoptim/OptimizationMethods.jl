@@ -4,7 +4,7 @@
 
 module TestPoissonRegression
 
-using Test, OptimizationMethods, Random, LinearAlgebra, NLPModels
+using Test, ForwardDiff, OptimizationMethods, Random, LinearAlgebra, NLPModels
 
 @testset "Problem: Logistic Regression" begin
 
@@ -206,10 +206,16 @@ using Test, OptimizationMethods, Random, LinearAlgebra, NLPModels
     ## test objective
     o = obj(progData, x)
     @test isapprox(o, -p*log(.5); atol = 1e-10)
+    @test progData.counters.neval_obj == 1
+    @test progData.counters.neval_grad == 0
+    @test progData.counters.neval_hess == 0
 
     ## test gradient
     g = grad(progData, x)
-    @test isapprox(norm(g - ((.5) .* ones(p) - b)), 0, atol = 1e-10) 
+    @test isapprox(norm(g - ((.5) .* ones(p) - b)), 0, atol = 1e-10)
+    @test progData.counters.neval_obj == 1
+    @test progData.counters.neval_grad == 1
+    @test progData.counters.neval_hess == 0
 
     ## test objgrad
     output = objgrad(progData, x)
@@ -218,25 +224,236 @@ using Test, OptimizationMethods, Random, LinearAlgebra, NLPModels
     o, g = output[1], output[2]
     @test isapprox(o, -p*log(.5); atol = 1e-10)
     @test isapprox(norm(g - ((.5) .* ones(p) - b)), 0, atol = 1e-10) 
+    @test progData.counters.neval_obj == 2
+    @test progData.counters.neval_grad == 2
+    @test progData.counters.neval_hess == 0
 
     ## test hess
     trueHessian = .25 .* A
     h = OptimizationMethods.hess(progData, x)
     @test isapprox(norm(h - trueHessian), 0; atol = 1e-10)
+    @test progData.counters.neval_obj == 2
+    @test progData.counters.neval_grad == 2
+    @test progData.counters.neval_hess == 1
 
     # test problem 2
+    
+    progData = OptimizationMethods.LogisticRegression(Float64)
+    nobs, nvar = size(progData.design)
+    A = progData.design
+    b = progData.response
+    logistic = OptimizationMethods.logistic
+
+    function F(x::Vector)
+        probs = logistic.(A * x)
+        return - b' * log.(probs) - (1 .- b)' * log.(1 .- probs)
+    end
+
+    x = randn(nvar)
+
+    ## test objective
+    o = obj(progData, x)
+    o_true = F(x)
+    @test isapprox(o - o_true, 0, atol = 1e-10)
+
+    ## test gradient
+    g = grad(progData, x)
+    g_autodiff = ForwardDiff.gradient(F, x) 
+    @test isapprox(norm(g - g_autodiff), 0, atol = 1e-10)
+
+    ## test objgrad
+    output = objgrad(progData, x)
+    o, g = output[1], output[2]
+   
+    g_autodiff = ForwardDiff.gradient(F, x)
+    @test isapprox(norm(g - g_autodiff), 0, atol = 1e-10) 
+    @test isapprox(norm(o - F(x)), 0, atol = 1e-10)
+
+    ## test hess
+    h = OptimizationMethods.hess(progData, x)
+    h_autodiff = ForwardDiff.hessian(F, x)
+    @test isapprox(norm(h - h_autodiff), 0; atol = 1e-10)
 
     ####################################
     # Test functionality - group 2
     ####################################
+    
+    # test problem 1
+    p = 100
+    nobs = p
+    nvar = p
 
-    # TODO
+    A = Matrix{Float64}(Matrix(I, p, p))
+    b = Vector{Bool}(bitrand(p))
+
+    progData = OptimizationMethods.LogisticRegression(A, b)
+    precomp, store = OptimizationMethods.initialize(progData)
+    x = zeros(Float64, p)
+
+    ## test objective
+    o = obj(progData, precomp, x)
+    @test isapprox(o, -p*log(.5); atol = 1e-10)
+    @test progData.counters.neval_obj == 1
+    @test progData.counters.neval_grad == 0
+    @test progData.counters.neval_hess == 0
+
+    ## test gradient
+    g = grad(progData, precomp, x)
+    @test isapprox(norm(g - ((.5) .* ones(p) - b)), 0, atol = 1e-10) 
+    @test progData.counters.neval_obj == 1
+    @test progData.counters.neval_grad == 1
+    @test progData.counters.neval_hess == 0
+
+    ## test objgrad
+    output = objgrad(progData, precomp, x)
+    @test length(output) == 2
+
+    o, g = output[1], output[2]
+    @test isapprox(o, -p*log(.5); atol = 1e-10)
+    @test isapprox(norm(g - ((.5) .* ones(p) - b)), 0, atol = 1e-10) 
+    @test progData.counters.neval_obj == 2
+    @test progData.counters.neval_grad == 2
+    @test progData.counters.neval_hess == 0
+
+    ## test hess
+    trueHessian = .25 .* A
+    h = OptimizationMethods.hess(progData, precomp, x)
+    @test isapprox(norm(h - trueHessian), 0; atol = 1e-10)
+    @test progData.counters.neval_obj == 2
+    @test progData.counters.neval_grad == 2
+    @test progData.counters.neval_hess == 1
+    
+    # test problem 2
+
+    progData = OptimizationMethods.LogisticRegression(Float64)
+    precomp, store = OptimizationMethods.initialize(progData)
+    nobs, nvar = size(progData.design)
+    A = progData.design
+    b = progData.response
+    logistic = OptimizationMethods.logistic
+
+    function F(x::Vector)
+        probs = logistic.(A * x)
+        return - b' * log.(probs) - (1 .- b)' * log.(1 .- probs)
+    end
+
+    x = randn(nvar)
+
+    ## test objective
+    o = obj(progData, precomp, x)
+    o_true = F(x)
+    @test isapprox(o - o_true, 0, atol = 1e-10)
+
+    ## test gradient
+    g = grad(progData, precomp, x)
+    g_autodiff = ForwardDiff.gradient(F, x) 
+    @test isapprox(norm(g - g_autodiff), 0, atol = 1e-10)
+
+    ## test objgrad
+    output = objgrad(progData, precomp, x)
+    o, g = output[1], output[2]
+   
+    g_autodiff = ForwardDiff.gradient(F, x)
+    @test isapprox(norm(g - g_autodiff), 0, atol = 1e-10) 
+    @test isapprox(norm(o - F(x)), 0, atol = 1e-10)
+
+    ## test hess
+    h = OptimizationMethods.hess(progData, precomp, x)
+    h_autodiff = ForwardDiff.hessian(F, x)
+    @test isapprox(norm(h - h_autodiff), 0; atol = 1e-10)
     
     ####################################
     # Test functionality - group 3
     ####################################
 
-    # TODO
+    # test problem 1
+    p = 100
+    nobs = p
+    nvar = p
+
+    A = Matrix{Float64}(Matrix(I, p, p))
+    b = Vector{Bool}(bitrand(p))
+
+    progData = OptimizationMethods.LogisticRegression(A, b)
+    precomp, store = OptimizationMethods.initialize(progData)
+    x = zeros(Float64, p)
+
+    ## test objective
+    o = obj(progData, precomp, store, x)
+    @test isapprox(o, -p*log(.5); atol = 1e-10)
+    @test progData.counters.neval_obj == 1
+    @test progData.counters.neval_grad == 0
+    @test progData.counters.neval_hess == 0
+
+    ## test gradient
+    grad!(progData, precomp, store, x)
+    g = store.grad
+    @test isapprox(norm(g - ((.5) .* ones(p) - b)), 0, atol = 1e-10) 
+    @test progData.counters.neval_obj == 1
+    @test progData.counters.neval_grad == 1
+    @test progData.counters.neval_hess == 0
+
+    ## test objgrad
+    output = objgrad!(progData, precomp, store, x)
+    @test typeof(output) == Float64
+
+    o = output
+    g = store.grad
+    @test isapprox(o, -p*log(.5); atol = 1e-10)
+    @test isapprox(norm(g - ((.5) .* ones(p) - b)), 0, atol = 1e-10) 
+    @test progData.counters.neval_obj == 2
+    @test progData.counters.neval_grad == 2
+    @test progData.counters.neval_hess == 0
+
+    ## test hess
+    trueHessian = .25 .* A
+    OptimizationMethods.hess!(progData, precomp, store, x)
+    h = store.hess
+    @test isapprox(norm(h - trueHessian), 0; atol = 1e-10)
+    @test progData.counters.neval_obj == 2
+    @test progData.counters.neval_grad == 2
+    @test progData.counters.neval_hess == 1
+    
+    # Test problem 2
+
+    progData = OptimizationMethods.LogisticRegression(Float64)
+    precomp, store = OptimizationMethods.initialize(progData)
+    nobs, nvar = size(progData.design)
+    A = progData.design
+    b = progData.response
+    logistic = OptimizationMethods.logistic
+
+    function F(x::Vector)
+        probs = logistic.(A * x)
+        return - b' * log.(probs) - (1 .- b)' * log.(1 .- probs)
+    end
+
+    x = randn(nvar)
+
+    ## test objective
+    o = obj(progData, precomp, store, x)
+    o_true = F(x)
+    @test isapprox(o - o_true, 0, atol = 1e-10)
+
+    ## test gradient
+    grad!(progData, precomp, store, x)
+    g = store.grad
+    g_autodiff = ForwardDiff.gradient(F, x) 
+    @test isapprox(norm(g - g_autodiff), 0, atol = 1e-10)
+
+    ## test objgrad
+    output = objgrad!(progData, precomp, store, x)
+    o, g = output, store.grad
+   
+    g_autodiff = ForwardDiff.gradient(F, x)
+    @test isapprox(norm(g - g_autodiff), 0, atol = 1e-10) 
+    @test isapprox(norm(o - F(x)), 0, atol = 1e-10)
+
+    ## test hess
+    OptimizationMethods.hess!(progData, precomp, store, x)
+    h = store.hess
+    h_autodiff = ForwardDiff.hessian(F, x)
+    @test isapprox(norm(h - h_autodiff), 0; atol = 1e-10)
 end
 
 end # end module
