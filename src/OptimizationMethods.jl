@@ -3,6 +3,7 @@ module OptimizationMethods
 # Dependencies
 using LinearAlgebra
 using NLPModels
+using Distributions
 
 ################################################################################
 # Optimization Problems 
@@ -25,6 +26,7 @@ abstract type AbstractProblemAllocate{T} end
 
 ## Source Code
 include("problems/gaussian_least_squares.jl")
+include("problems/poisson_regression.jl")
 
 
 ################################################################################

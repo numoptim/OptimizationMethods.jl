@@ -7,15 +7,13 @@
     PoissonRegression{T, S} <: AbstractNLPModel{T, S}
 
 Implements poisson regression with the canonical link function. If the design
-matrix (i.e., the covariates) and responses are not supplied, we randomly generate
-them. When randomly generating the design matrix, the first column is always
-set to ones for an intercept term.
+matrix (i.e., the covariates) and responses are not supplied, they are randomly generated. 
 
 # Objective Function
 
 Let ``A`` be the design matrix, and ``b`` be the responses. Each row of ``A``
 and corresponding entry in ``b`` are the predictor and observation from one
-experimental unit. The entries in ``b`` must be integer values and non-negative.
+experimental unit. The entries in ``b`` must be integer valued and non-negative.
 
 Let ``A_i`` be row ``i`` of ``A`` and ``b_i`` entry ``i`` of ``b``. Let
 ```math
@@ -23,7 +21,7 @@ Let ``A_i`` be row ``i`` of ``A`` and ``b_i`` entry ``i`` of ``b``. Let
 ```
 
 Let ``n`` be the number of rows of ``A`` (i.e., number of observations), then
-the negative log-likelihood of the data is 
+the negative log-likelihood of the data is under the model is 
 ```math
 \\sum_{i=1}^n \\mu_i(x) - b_i (A_i^\\intercal x) + C(b),
 ```
@@ -37,35 +35,33 @@ to be the negative log-likelihood up to the constant term ``C(b)``. That is,
 
 - `meta::NLPModelMeta{T, S}`, NLPModel struct for storing meta information for the problem
 - `counters::Counters`, NLPModel Counter struct that provides evaluations tracking.
-- `design::Matrix{T}`, covariate matrix for the problem/experiment.
-- `response::Vector{T}`, observations for the problem/experiment.
+- `design::Matrix{T}`, covariate matrix for the problem/experiment (``A``).
+- `response::Vector{T}`, observations for the problem/experiment (``b``).
 
 # Constructors
 
-    function PoissonRegression(
-        ::Type{T};
-        nobs::Int64 = 1000,
-        nvar::Int64 = 50
-        ) where {T}
+    PoissonRegression(::Type{T}; nobs::Int64 = 1000, nvar::Int64 = 50) where {T}
 
 Construct the `struct` for PoissonRegression when simulated data is needed. 
-The design matrix (``A``) and response
-vector ``b`` are randomly generated as follows. For the design matrix, the first column 
-is all ones, and the rest are generated according to a normal distribution where
-each column has been normalized to have unit variance. For the response vector,
-let ``\\beta`` be the "true" relationship between the covariate and response vector
-for the poisson regression model, then the ``i``th entry of the response vector is generated 
-from a Poisson Distribution with rate parameter ``\\exp(A_i^\\intercal \\beta)``.
+The design matrix (``A``) and response vector ``b`` are randomly generated as follows. 
+For the design matrix, the first column is all ones, and the rest are generated according 
+to a normal distribution where each column has been normalized to have unit variance. 
+For the response vector, let ``\\beta`` be the "true" relationship between the covariates
+and response vector for the poisson regression model, then the ``i``th entry of the 
+response vector is generated from a Poisson Distribution with rate parameter 
+``\\exp(A_i^\\intercal \\beta)``.
 
-    function PoissonRegression(
-        design::Matrix{T},
-        response::Vector{T};
-        x0::Vector{T} = zeros(T, size(design)[2])
-    ) where {T}
+    PoissonRegression(design::Matrix{T}, response::Vector{T}; 
+    x0::Vector{T} = zeros(T, size(design)[2])) where {T}
 
 Constructs the `struct` PoissonRegression when the design matrix and response vector
 are known. The initial guess, `x0` is a keyword argument that is set to all
-zeros by default.
+zeros by default. 
+
+!!! Remark
+    When using this constructor, the number of rows of `design` must be equal to the size
+    of response. When providing `x0`, the number of entries must be the same as the number
+    of columns in `design`.
 """
 mutable struct PoissonRegression{T, S} <: AbstractNLPModel{T, S}
     meta::NLPModelMeta{T, S}
@@ -85,7 +81,7 @@ function PoissonRegression(
 
     # initialize the meta
     meta = NLPModelMeta(
-        nvar = nvar,
+        nvar,
         name = "Poisson Regression w/ Canonical Link",
         x0 = zeros(T, nvar)
     )
@@ -127,7 +123,7 @@ function PoissonRegression(
 
     # initialize meta
     meta = NLPModelMeta(
-        name = nvar,
+        size(design, 2),
         name = "Poisson Regression w/ Canonical Link",
         x0 = x0
     )
@@ -162,10 +158,10 @@ regression.
     PrecomputePoissReg(progData::PoissonRegression{T, S})
 
 Requests memory for `obs_obs_t` which is an `nobs` by `nvar` by `nvar` tensor, and
-compute the outer produce for each row of `A`. Returns the structure.
+computes the outer produce for each row of `A`. Returns the structure.
 """
 struct PrecomputePoissReg{T} <: AbstractPrecompute{T}
-    obs_obs_t::Matrix{T}
+    obs_obs_t::Array{Float64, 3}
 end
 function PrecomputePoissReg(
     progData::PoissonRegression{T, S}
@@ -177,7 +173,7 @@ function PrecomputePoissReg(
     
     # for hessian calculation
     obs_obs_t = zeros(T, nobs, nvar, nvar)
-    for i in 1:n
+    for i in 1:nobs
         obs_obs_t[i, :, :] .= view(coef, i, :) .* view(coef, i, :)'
     end
 
@@ -204,9 +200,9 @@ problem.
     AllocatePoissReg(progData::PoissonRegression{T, S}) where {T, S}
 
 Requests the memory for each of the fields and initializes each buffer to contain zeros.
-Returns the structor.
+Returns the structure.
 """
-struct AllocatePoissReg{T} <: AbstractProblemAllocate{T}
+mutable struct AllocatePoissReg{T} <: AbstractProblemAllocate{T}
     linear_effect::Vector{T}
     predicted_rates::Vector{T}
     residuals::Vector{T}
@@ -216,8 +212,8 @@ end
 function AllocatePoissReg(
     progData::PoissonRegression{T, S}
 ) where {T, S}
-    nobs = size(progData.coef)[1]
-    nvar = size(progData.coef)[2]
+    nobs = size(progData.design)[1]
+    nvar = size(progData.design)[2]
 
     return AllocatePoissReg(
         zeros(T, nobs),
@@ -247,7 +243,7 @@ end
 
 args = [
     :(progData::PoissonRegression{T, S}),
-    :(x0::Vector{T})
+    :(x::Vector{T})
 ]
 
 @eval begin 
@@ -284,9 +280,9 @@ args = [
         predicted_rates = exp.(linear_predictor)
         residual = predicted_rates - progData.response
         
-        p = size(linear_predictor, 1)
+        n, p = size(progData.design) 
         g = zeros(T, p)
-        for i in 1:p
+        for i in 1:n
             g .+= residual[i] .* view(progData.design, i, :)
         end
         return g 
@@ -316,11 +312,13 @@ args = [
         increment!(progData, :neval_hess)
         linear_predictor = progData.design * x
         predicted_rates = exp.(linear_predictor)
-        p = size(linear_predictor, 1)
+        n, p = size(progData.design)
         H = zeros(T, p, p)
-        for i in 1:p
-            H .+= predicted_rates[i] .* (view(progData.design, i, :) * view(progData.design, i, :)')
+        for i in 1:n
+            H .+= predicted_rates[i] .* 
+            (view(progData.design, i, :) * view(progData.design, i, :)')
         end
+        return H
     end
 end
 
@@ -329,7 +327,7 @@ end
 args = [
     :(progData::PoissonRegression{T, S}),
     :(precomp::PrecomputePoissReg{T}),
-    :(x0::Vector{T})
+    :(x::Vector{T})
 ]
 
 @eval begin 
@@ -347,7 +345,7 @@ args = [
         is `F(x) + C(y)` where `C(y)` depends on the responses.
     """
     function NLPModels.obj($(args...)) where {T,S}
-        return NLPModels.obj(progData, x0)
+        return NLPModels.obj(progData, x)
     end
 
    @doc """
@@ -358,7 +356,7 @@ args = [
     Computes the gradient of the objective function at `x`. 
     """
     function NLPModels.grad($(args...)) where {T,S}
-        return NLPModels.grad(progData, x0)
+        return NLPModels.grad(progData, x)
     end
 
     @doc """
@@ -386,11 +384,12 @@ args = [
         increment!(progData, :neval_hess)
         linear_predictor = progData.design * x
         predicted_rates = exp.(linear_predictor)
-        p = size(linear_predictor, 1)
+        n, p = size(progData.design)
         H = zeros(T, p, p)
-        for i in 1:p
+        for i in 1:n
             H .+= predicted_rates[i] .* view(precomp.obs_obs_t, i, :, :) 
         end
+        return H
     end
 end
 
@@ -400,7 +399,7 @@ args = [
     :(progData::PoissonRegression{T, S}),
     :(precomp::PrecomputePoissReg{T}),
     :(store::AllocatePoissReg{T}),
-    :(x0::Vector{T})
+    :(x::Vector{T})
 ]
 
 @eval begin 
@@ -412,7 +411,7 @@ args = [
 
     Computes the objective function at the value `x`. If `recompute = true`,
     the values in `store` relating to the objective function computation are recalculated.
-    Otherwise, the values in `store` are used to compute the objective.
+    Otherwise, the values already in `store` are used to compute the objective.
 
     !!! Remark:
         The objective function is computed up to a constant.
@@ -422,10 +421,10 @@ args = [
     function NLPModels.obj($(args...); recompute::Bool = true) where {T,S}
         increment!(progData, :neval_obj)
         if recompute
-            store.linear_effect = progData.design * x
-            store.predicted_rates = exp.(store.linear_effect)
+            store.linear_effect .= progData.design * x
+            store.predicted_rates .= exp.(store.linear_effect)
         end
-        return sum(store.predicted_rates) - dot(progData.responses, store.linear_effect)
+        return sum(store.predicted_rates) - dot(progData.response, store.linear_effect)
     end
 
    @doc """
@@ -436,20 +435,20 @@ args = [
     Computes the gradient of the objective function at `x`. Stores the result in 
     `store.grad`. If `recompute = true`, the values in `store` that are needed
     for the computation of the gradient are recomputed and used. Otherwise,
-    the values in `store` are used.
+    the values already in `store` are used to compute the gradient.
     """
     function NLPModels.grad!($(args...); recompute::Bool = true) where {T,S}
         increment!(progData, :neval_grad)
         if recompute
-            store.linear_effect = progData.design * x
-            store.predicted_rates = exp.(store.linear_effect)
-            store.residual .= store.predicted_rates - progData.response
+            store.linear_effect .= progData.design * x
+            store.predicted_rates .= exp.(store.linear_effect)
+            store.residuals .= store.predicted_rates - progData.response
         end
         
-        p = size(progData.design, 2)
+        n, p = size(progData.design)
         fill!(store.grad, 0)
-        for i in 1:p
-            store.grad .+= store.residual[i] .* view(progData, i, :)
+        for i in 1:n
+            store.grad .+= store.residuals[i] .* view(progData.design, i, :)
         end
     end
 
@@ -465,8 +464,8 @@ args = [
     the values in `store` are used to compute the gradient and objective.
     """
     function NLPModels.objgrad!($(args...); recompute::Bool = true) where {T, S}
-        NLPModels.grad!(progData, precomp, store, x0; recompute = recompute)
-        o = NLPModels.obj(progData, precomp, store, x0; recompute = false)
+        NLPModels.grad!(progData, precomp, store, x; recompute = recompute)
+        o = NLPModels.obj(progData, precomp, store, x; recompute = false)
         return o
     end
 
@@ -476,7 +475,7 @@ args = [
         ) where {T,S}
         
     Computes the Hessian of the objective function at `x`. The hessian is stored in
-    `store.grad`. If `recompute = true`, then values needed to compute the hessian in
+    `store.hess`. If `recompute = true`, then values needed to compute the hessian in
     `store` are recomputed and used. Otherwise, the values in `store` are used to compute
     the hessian.
     """
@@ -488,9 +487,9 @@ args = [
             store.predicted_rates .= exp.(store.linear_effect)
         end
 
-        p = size(linear_predictor, 1)
-        for i in 1:p
-            store.hess .+= predicted_rates[i] .* view(precomp.obs_obs_t, i, :, :) 
+        n = size(progData.design, 1)
+        for i in 1:n
+            store.hess .+= store.predicted_rates[i] .* view(precomp.obs_obs_t, i, :, :) 
         end
     end
 end
