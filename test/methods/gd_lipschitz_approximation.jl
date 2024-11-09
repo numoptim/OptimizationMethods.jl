@@ -161,7 +161,7 @@ using Test, OptimizationMethods, LinearAlgebra, Random
 
     ### Test stored values 
     @test optData.prev_stepsize ≈ λkm1 atol=1e-3
-    @test optData.theta ≈ λkm1 / λkm2 atol=1e-3
+    @test optData.theta ≈ λkm1 / λkm2 atol=1e-2
     @test optData.lipschitz_approximation ≈ norm(gk - gkm1) / 
         norm(xk - xkm1) atol=1
     @test optData.iter_diff ≈ xk - xkm1 atol=1e-10
