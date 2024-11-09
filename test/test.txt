@@ -1,4 +1,5 @@
 problems/gaussian_least_squares.jl
+problems/logistic_regression.jl
 methods/gd_fixed.jl
 methods/gd_barzilai_borwein.jl
-problems/logistic_regression.jl
+methods/gd_lipschitz_approximation.jl
