@@ -23,7 +23,7 @@ res_evals = progData.counters.neval_residual
 # Compute objective values of different iterates for reporting purposes
 obj_init = OptimizationMethods.obj(progData, optData.iter_hist[1])
 obj_term = OptimizationMethods.obj(progData, 
-    optData.iter_hist[optData.stop_iteration])
+    optData.iter_hist[optData.stop_iteration + 1])
 
 
 
@@ -41,7 +41,7 @@ println(
 
     Terminal Iteration: $(optData.stop_iteration)
     Terminal Objective: $obj_term
-    Terminal Grad Norm: $(optData.grad_val_hist[optData.stop_iteration])
+    Terminal Grad Norm: $(optData.grad_val_hist[optData.stop_iteration + 1])
 
     Objective Evaluations: $obj_evals
     Gradient Evaluations: $(progData.counters.neval_grad)

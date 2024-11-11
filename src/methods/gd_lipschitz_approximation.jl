@@ -13,6 +13,11 @@ A structure for storing data about adaptive gradient descent
 
 - `name::String`, name of the solver for reference
 - `init_stepsize::T`, the initial step size for the method
+- `prev_stepsize::T`, step size used at `iter - 1` when `iter > 1`.
+- `theta::T`, element used in the computation of the step size. See the 
+    referenced paper for more information.
+- `lipschitz_approximation::T`, help the lipschitz approximation used in the
+    computation of the step size. See the referenced paper for more information.
 - `threshold::T`, the threshold on the norm of the gradient to induce stopping
 - `max_iterations::Int64`, the maximum allowed iterations
 - `iter_diff::Vector{T}`, a buffer for storing differences between subsequent
@@ -94,7 +99,7 @@ end
     lipschitz_approximation_gd(optData::FixedStepGD{T}, progData::P where P 
         <: AbstractNLPModel{T, S}) where {T, S}
     
-Implements gradient descent with adaptive step size formed through a lipschitz 
+Implements gradient descent with adaptive step sizes formed through a lipschitz 
     approximation for the desired optimization problem specified by `progData`.
 
 !!! warning 
