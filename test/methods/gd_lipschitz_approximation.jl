@@ -20,10 +20,13 @@ using Test, OptimizationMethods, LinearAlgebra, Random
     @test supertype(LipschitzApproxGD) == 
         OptimizationMethods.AbstractOptimizerData
 
-    ## Test Field Names and Types 
+    ## Test Field Names, Types and Constructors 
     field_info(type::T) where T = [
         [:name, String], 
-        [:init_stepsize, type], 
+        [:init_stepsize, type],
+        [:prev_stepsize, type],
+        [:theta, type],
+        [:lipschitz_approximation, type], 
         [:threshold, type], 
         [:max_iterations, Int64],
         [:iter_diff, Vector{type}],
@@ -53,16 +56,17 @@ using Test, OptimizationMethods, LinearAlgebra, Random
             #Test Types
             @test field_elem[2] == typeof(getfield(optData, field_elem[1]))
         end
+        
+        # Test Assertions
+        @test_throws AssertionError LipschitzApproxGD(
+            Float64,
+            x0 = randn(param_dim),
+            init_stepsize = 0.0, 
+            threshold = 1e-4,
+            max_iterations = 100
+        )
     end
 
-    ## Test Assertions
-    @test_throws AssertionError LipschitzApproxGD(
-        Float64,
-        x0 = randn(param_dim),
-        init_stepsize = 0.0, 
-        threshold = 1e-4,
-        max_iterations = 100
-    )
 
     ##########################################
     # Test optimizer
