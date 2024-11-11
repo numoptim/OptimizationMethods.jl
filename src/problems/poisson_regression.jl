@@ -6,14 +6,15 @@
 """
     PoissonRegression{T, S} <: AbstractNLPModel{T, S}
 
-Implements poisson regression with the canonical link function. If the design
-matrix (i.e., the covariates) and responses are not supplied, they are randomly generated. 
+Implements Poisson regression with the canonical link function. If the design
+    matrix (i.e., the covariates) and responses are not supplied, they are 
+    randomly generated. 
 
 # Objective Function
 
 Let ``A`` be the design matrix, and ``b`` be the responses. Each row of ``A``
-and corresponding entry in ``b`` are the predictor and observation from one
-experimental unit. The entries in ``b`` must be integer valued and non-negative.
+    and corresponding entry in ``b`` are the predictor and observation from one 
+    unit. The entries in ``b`` must be integer valued and non-negative.
 
 Let ``A_i`` be row ``i`` of ``A`` and ``b_i`` entry ``i`` of ``b``. Let
 ```math
@@ -21,20 +22,23 @@ Let ``A_i`` be row ``i`` of ``A`` and ``b_i`` entry ``i`` of ``b``. Let
 ```
 
 Let ``n`` be the number of rows of ``A`` (i.e., number of observations), then
-the negative log-likelihood of the data is under the model is 
+    the negative log-likelihood of the model is 
 ```math
 \\sum_{i=1}^n \\mu_i(x) - b_i (A_i^\\intercal x) + C(b),
 ```
-where ``C(b)`` is a constant depending on the data. We implement the objective function
-to be the negative log-likelihood up to the constant term ``C(b)``. That is,
+where ``C(b)`` is a constant depending on the data. We implement the objective  
+    function to be the negative log-likelihood up to the constant term ``C(b)``. 
+    That is,
 ```math
-\\sum_{i=1}^n \\mu_i(x) - b_i (A_i^\\intercal x).
+F(x) = \\sum_{i=1}^n \\mu_i(x) - b_i (A_i^\\intercal x).
 ```
 
 # Fields
 
-- `meta::NLPModelMeta{T, S}`, NLPModel struct for storing meta information for the problem
-- `counters::Counters`, NLPModel Counter struct that provides evaluations tracking.
+- `meta::NLPModelMeta{T, S}`, NLPModel struct for storing meta information for 
+    the problem
+- `counters::Counters`, NLPModel Counter struct that provides evaluations 
+    tracking.
 - `design::Matrix{T}`, covariate matrix for the problem/experiment (``A``).
 - `response::Vector{T}`, observations for the problem/experiment (``b``).
 
@@ -42,26 +46,28 @@ to be the negative log-likelihood up to the constant term ``C(b)``. That is,
 
     PoissonRegression(::Type{T}; nobs::Int64 = 1000, nvar::Int64 = 50) where {T}
 
-Construct the `struct` for PoissonRegression when simulated data is needed. 
-The design matrix (``A``) and response vector ``b`` are randomly generated as follows. 
-For the design matrix, the first column is all ones, and the rest are generated according 
-to a normal distribution where each column has been normalized to have unit variance. 
-For the response vector, let ``\\beta`` be the "true" relationship between the covariates
-and response vector for the poisson regression model, then the ``i``th entry of the 
-response vector is generated from a Poisson Distribution with rate parameter 
-``\\exp(A_i^\\intercal \\beta)``.
+Construct the `struct` for Poisson Regression when simulated data is needed. 
+    The design matrix (``A``) and response vector ``b`` are randomly generated 
+    as follows. 
+    For the design matrix, the first column is all ones, and the rest are
+    generated according to a normal distribution where each column has been 
+    normalized to have unit variance. 
+    For the response vector, let ``\\beta`` be the "true" relationship between 
+    the covariates and response vector for the poisson regression model, 
+    then the ``i``th entry of the response vector is generated from a Poisson 
+    Distribution with rate parameter ``\\exp(A_i^\\intercal \\beta)``.
 
     PoissonRegression(design::Matrix{T}, response::Vector{T}; 
-    x0::Vector{T} = zeros(T, size(design)[2])) where {T}
+        x0::Vector{T} = zeros(T, size(design)[2])) where {T}
 
-Constructs the `struct` PoissonRegression when the design matrix and response vector
-are known. The initial guess, `x0` is a keyword argument that is set to all
-zeros by default. 
+Constructs the `struct` for Poisson Regression when the design matrix and response 
+    vector are known. The initial guess, `x0` is a keyword argument that is set 
+    to all zeros by default. 
 
 !!! Remark
-    When using this constructor, the number of rows of `design` must be equal to the size
-    of response. When providing `x0`, the number of entries must be the same as the number
-    of columns in `design`.
+    When using this constructor, the number of rows of `design` must be equal to 
+    the size of response. When providing `x0`, the number of entries must be the 
+    same as the number of columns in `design`.
 """
 mutable struct PoissonRegression{T, S} <: AbstractNLPModel{T, S}
     meta::NLPModelMeta{T, S}
@@ -73,7 +79,7 @@ function PoissonRegression(
     ::Type{T};
     nobs::Int64 = 1000,
     nvar::Int64 = 50
-) where {T}
+) where T
     
     # error checking
     @assert nobs > 0 "`nobs` is non-zero or negative"
