@@ -148,9 +148,9 @@ using Test, OptimizationMethods, LinearAlgebra, Random
 
     ### Test updated values
     k = optData.stop_iteration
-    xkm1 = optData.iter_hist[k-1]
-    xkm2 = optData.iter_hist[k-2]
-    xkm3 = optData.iter_hist[k-3]
+    xkm1 = optData.iter_hist[k]
+    xkm2 = optData.iter_hist[k-1]
+    xkm3 = optData.iter_hist[k-2]
    
     gkm3 = OptimizationMethods.grad(progData, xkm3)
     gkm2 = OptimizationMethods.grad(progData, xkm2)
@@ -159,7 +159,7 @@ using Test, OptimizationMethods, LinearAlgebra, Random
 
     λkm3 = - (xkm2[1] - xkm3[1]) / gkm3[1] 
     λkm2 = - (xkm1[1] - xkm2[1]) / gkm2[1]
-    θkm2 = λkm3 / λkm2 
+    θkm2 = λkm2 / λkm3
     λkm1 = min( sqrt(1 + θkm2)*λkm2, norm(xkm1 - xkm2)/(2*norm(gkm1 - gkm2)))
     @test xk ≈ xkm1 - λkm1 * gkm1
 
@@ -170,7 +170,7 @@ using Test, OptimizationMethods, LinearAlgebra, Random
         norm(xk - xkm1) atol=1
     @test optData.iter_diff ≈ xk - xkm1 atol=1e-10
     @test optData.grad_diff ≈ gk - gkm1 atol=1e-9
-    @test optData.grad_val_hist[k-1] ≈ norm(gkm1) atol=1e-9
-    @test optData.grad_val_hist[k] ≈ norm(gk) atol=1e-9
+    @test optData.grad_val_hist[k] ≈ norm(gkm1) atol=1e-9
+    @test optData.grad_val_hist[k + 1] ≈ norm(gk) atol=1e-9
 end
 end
