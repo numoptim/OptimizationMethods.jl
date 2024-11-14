@@ -170,7 +170,7 @@ Requests memory for `obs_obs_t` which is an `nobs` by `nvar` by `nvar` tensor,
     and computes the outer produce for each row of `A`. Returns the structure.
 """
 struct PrecomputePoissReg{T} <: AbstractPrecompute{T}
-    obs_obs_t::Array{Float64, 3}
+    obs_obs_t::Array{T, 3}
 end
 function PrecomputePoissReg(
     progData::PoissonRegression{T, S}
@@ -478,8 +478,7 @@ args = [
     """
     function NLPModels.objgrad!($(args...); recompute::Bool = true) where {T, S}
         NLPModels.grad!(progData, precomp, store, x; recompute = recompute)
-        o = NLPModels.obj(progData, precomp, store, x; recompute = false)
-        return o
+        return NLPModels.obj(progData, precomp, store, x; recompute = false)
     end
 
     @doc """
