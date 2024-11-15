@@ -33,6 +33,9 @@ Constructs an instance of type `WeightedNormDampingGD{T}`.
 ## Arguments
 
 - `T::DataType`, type for data and computation
+
+## Keyword Arguments
+
 - `x0::Vector{T}`, initial point to start the optimization routine. Saved in
     `iter_hist[1]`.
 - `init_norm_damping_factor::T`, initial damping factor. Inverse of the initial step size.
@@ -90,6 +93,11 @@ end
 Method that implements gradient descent with weighted norm damping step size using the
 specifications in `optData` on the problem specified by `progData`.
 
+# Reference
+
+Wu, Xiaoxia et. al. "WNGrad: Learn the Learning Rate in Gradient Descent". arxiv, 
+https://arxiv.org/abs/1803.02865
+
 # Method
 Let ``\\theta_k`` be the ``k^{th}`` iterate, and ``\\alpha_k`` be the ``k^{th}`` step size.
 The optimization method generate iterates following
@@ -108,12 +116,8 @@ is iteratively updated as
 \\alpha_k = (1/\\alpha_{k-1} + ||\\dot F(\\theta_k)||_2^2 * \\alpha_{k-1})^{-1}.
 ```
 
-For more information on the method, see the reference below.
-
-# Reference
-
-Wu, Xiaoxia et. al. "WNGrad: Learn the Learning Rate in Gradient Descent". arxiv, 
-https://arxiv.org/abs/1803.02865
+!!! warning
+    It is required by theory that ``\\alpha_0 < 1/||\\dot F(\\theta_k)||_2``.
 
 # Arguments
 
