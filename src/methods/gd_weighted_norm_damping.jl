@@ -72,7 +72,7 @@ function WeightedNormDampingGD(::Type{T};
     # initialize iter_hist and grad_val_hist
     d::Int64 = length(x0)
     iter_hist::Vector{Vector{T}} = 
-        Vector{Vector{T}}([Vector{T}(under, d) for i in 1:(max_iterations + 1)])
+        Vector{Vector{T}}([Vector{T}(undef, d) for i in 1:(max_iterations + 1)])
     iter_hist[1] = x0
 
     grad_val_hist::Vector{T} = Vector{T}(undef, max_iterations + 1) 
