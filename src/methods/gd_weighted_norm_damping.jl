@@ -5,17 +5,17 @@
 """
     WeightedNormDampingGD{T} <: AbstractOptimizerData{T}
 
-A mutable struct that represents gradient descent using the weighted-norm damping step size,
-storing the specification for the method and keeping track of values during iteration.
+A mutable struct that represents gradient descent using the weighted-norm damping step size
+It stores the specification for the method and records values during iteration.
 
 # Fields
 
 - `name::String`, name of the optimizer for recording purposes
 - `init_norm_damping_factor::T`, initial damping factor. Inverse of the initial step size.
-- `threshold::T`, norm gradient tolerance condition. Induces stopping when norm is strictly
-    smaller.
-- `max_iterations::Int64`, max number of iterates that are produced, not including the intial
-    iterate.
+- `threshold::T`, norm gradient tolerance condition. Induces stopping when norm at most
+    `threshold`.
+- `max_iterations::Int64`, max number of iterates that are produced, not including the 
+    initial iterate.
 - `iter_hist::Vector{Vector{T}}`, store the iterate sequence as the algorithm progresses.
     The initial iterate is stored in the first position.
 - `grad_val_hist::Vector{T}`, stores the norm gradient values at each iterate. The norm
@@ -36,11 +36,10 @@ Constructs an instance of type `WeightedNormDampingGD{T}`.
 - `x0::Vector{T}`, initial point to start the optimization routine. Saved in
     `iter_hist[1]`.
 - `init_norm_damping_factor::T`, initial damping factor. Inverse of the initial step size.
-- `threshold::T`, gradient tolerance condition. Induces stoppign when norm is strictly
-    smaller.
-- `max_iterations::Int64`, max number of iterates that are produced, not including the initial
-    iterate.
-
+- `threshold::T`, norm gradient tolerance condition. Induces stopping when norm at most
+    `threshold`.
+- `max_iterations::Int64`, max number of iterates that are produced, not including the 
+    initial iterate.
 """
 mutable struct WeightedNormDampingGD{T} <: AbstractOptimizerData{T}
     name::String
@@ -57,7 +56,8 @@ mutable struct WeightedNormDampingGD{T} <: AbstractOptimizerData{T}
         @assert init_norm_damping_factor > 0 "init_norm_damping_factor is non-zero or negative"
         @assert threshold > 0 "threshold is zero or negative"
         @assert max_iterations > 0 "max_iterations is zero or negative"
-        return new(name, init_norm_damping_factor, threshold, max_iterations, iter_hist, grad_val_hist, stop_iteration)
+        return new(name, init_norm_damping_factor, threshold, max_iterations, iter_hist, 
+            grad_val_hist, stop_iteration)
     end
 end
 function WeightedNormDampingGD(::Type{T};
@@ -71,11 +71,11 @@ function WeightedNormDampingGD(::Type{T};
     
     # initialize iter_hist and grad_val_hist
     d::Int64 = length(x0)
-    iter_hist::Vector{Vector{T}} = Vector{Vector{T}}([zeros(T, d) for i in 1:(max_iterations + 1)])
-
+    iter_hist::Vector{Vector{T}} = 
+        Vector{Vector{T}}([Vector{T}(under, d) for i in 1:(max_iterations + 1)])
     iter_hist[1] = x0
 
-    grad_val_hist::Vector{T} = zeros(T, max_iterations + 1)
+    grad_val_hist::Vector{T} = Vector{T}(undef, max_iterations + 1) 
     stop_iteration::Int64 = -1 ## dummy value
 
     # return objective
@@ -91,7 +91,7 @@ Method that implements gradient descent with weighted norm damping step size usi
 specifications in `optData` on the problem specified by `progData`.
 
 # Method
-Let ``\\theta_k`` be the ``k^th`` iterate, and ``\\alpha_k`` be the ``k^th`` step size.
+Let ``\\theta_k`` be the ``k^{th}`` iterate, and ``\\alpha_k`` be the ``k^{th}`` step size.
 The optimization method generate iterates following
 
 ```math
@@ -105,7 +105,7 @@ is ``\\alpha_0 = 1/optData.init_norm_damping_factor``. For ``k > 0``, the step s
 is iteratively updated as
 
 ```math
-\\alpha_k = 1/\\alpha_{k-1} + ||\\dot F(\\theta_k)||_2^2 * \\alpha_{k-1}.
+\\alpha_k = (1/\\alpha_{k-1} + ||\\dot F(\\theta_k)||_2^2 * \\alpha_{k-1})^{-1}.
 ```
 
 For more information on the method, see the reference below.
@@ -143,9 +143,7 @@ function weighted_norm_damping_gd(
 
     optData.grad_val_hist[1] = norm(store.grad)
 
-    while (iter < optData.max_iterations) && 
-        (optData.grad_val_hist[iter + 1] >= optData.threshold)
-
+    while (iter < optData.max_iterations) && (optData.grad_val_hist[iter + 1] > optData.threshold)
         iter += 1
 
         # take step

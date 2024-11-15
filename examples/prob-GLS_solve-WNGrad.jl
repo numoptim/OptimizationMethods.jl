@@ -10,7 +10,7 @@ optData = OptimizationMethods.WeightedNormDampingGD(
     x0=randn(50), 
     init_norm_damping_factor = 10000.0,
     threshold=1e-10, 
-    max_iterations=100
+    max_iterations=5000
 )
 
 x = OptimizationMethods.weighted_norm_damping_gd(optData, progData);
