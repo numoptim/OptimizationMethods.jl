@@ -503,6 +503,7 @@ args = [
             store.predicted_rates .= exp.(store.linear_effect)
         end
 
+        fill!(store.hess, 0)
         n = size(progData.design, 1)
         for i in 1:n
             store.hess .+= store.predicted_rates[i] .* view(precomp.obs_obs_t, i, :, :) 

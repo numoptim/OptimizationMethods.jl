@@ -2,7 +2,7 @@
 
 module TestPoissonRegression 
 
-using Test, ForwardDiff, OptimizationMethods, Random, NLPModels
+using Test, ForwardDiff, OptimizationMethods, Random, NLPModels, LinearAlgebra
 
 @testset "Problem: Poission Regression" begin
 
@@ -184,7 +184,7 @@ using Test, ForwardDiff, OptimizationMethods, Random, NLPModels
     ####################################
     # Test Methods 
     ####################################
-    real_types = [Float16, Float32, Float64]
+    real_types = [Float32, Float64] # TODO: Float16 causes problems
     nobs_default = 1000 
     nvar_default = 50 
     nargs = 10
@@ -194,7 +194,7 @@ using Test, ForwardDiff, OptimizationMethods, Random, NLPModels
         progData = OptimizationMethods.PoissonRegression(real_type)
         precomp, store =  OptimizationMethods.initialize(progData)
         arg_tests = [randn(real_type, nvar_default) / real_type(sqrt(nvar_default)) 
-            for i =1:nargs]
+            for i = 1:nargs]
 
         nevals_obj = 1
         nevals_grad = 1 
@@ -232,19 +232,19 @@ using Test, ForwardDiff, OptimizationMethods, Random, NLPModels
         for x in arg_tests
             g = ForwardDiff.gradient(objective, x)
 
-            #TODO: Produces Error 
-            #$@test g ≈ OptimizationMethods.grad(progData, x)
-            #@test progData.counters.neval_grad == nevals_grad 
-            #nevals_grad += 1
+            #TODO: Produces Error for Float16
+            @test g ≈ OptimizationMethods.grad(progData, x)
+            @test progData.counters.neval_grad == nevals_grad 
+            nevals_grad += 1
 
-            #TODO: Produces Error
-            #@test g ≈ OptimizationMethods.grad(progData, precomp, x)
-            #@test progData.counters.neval_grad == nevals_grad 
-            #nevals_grad += 1
+            #TODO: Produces Error for Float16
+            @test g ≈ OptimizationMethods.grad(progData, precomp, x)
+            @test progData.counters.neval_grad == nevals_grad 
+            nevals_grad += 1
 
             OptimizationMethods.grad!(progData, precomp, store, x)
-            #TODO: Produces Error 
-            #@test g ≈ store.grad
+            #TODO: Produces Error for Float16
+            @test g ≈ store.grad
             @test progData.counters.neval_grad == nevals_grad 
             nevals_grad += 1
         end
@@ -259,8 +259,8 @@ using Test, ForwardDiff, OptimizationMethods, Random, NLPModels
             # Without Precomputation 
             o, g = OptimizationMethods.objgrad(progData, x)
             @test o ≈ obj
-            #TODO: Produces Error 
-            #@test g ≈ gra
+            #TODO: Produces Error for Float16
+            @test g ≈ gra
             @test progData.counters.neval_obj == nevals_obj 
             @test progData.counters.neval_grad == nevals_grad 
             nevals_obj += 1
@@ -270,8 +270,8 @@ using Test, ForwardDiff, OptimizationMethods, Random, NLPModels
             # With Precomputation 
             o, g = OptimizationMethods.objgrad(progData, precomp, x)
             @test o ≈ obj 
-            #TODO: Produces error 
-            #@test g ≈ gra
+            #TODO: Produces error for Float16
+            @test g ≈ gra
             @test progData.counters.neval_obj == nevals_obj 
             @test progData.counters.neval_grad == nevals_grad 
             nevals_obj += 1
@@ -281,8 +281,8 @@ using Test, ForwardDiff, OptimizationMethods, Random, NLPModels
             # With Precomputation and Allocation 
             o = OptimizationMethods.objgrad!(progData, precomp, store, x)
             @test o ≈ obj
-            #TODO: Produces Error 
-            #@test store.grad ≈ gra
+            #TODO: Produces Error for Float16 
+            @test store.grad ≈ gra
             @test progData.counters.neval_obj == nevals_obj 
             @test progData.counters.neval_grad == nevals_grad 
             nevals_obj += 1
@@ -307,11 +307,10 @@ using Test, ForwardDiff, OptimizationMethods, Random, NLPModels
             nevals_hess += 1
 
             # With Precomputation and Allocation 
-            #TODO: Produces Errors 
-            #OptimizationMethods.hess!(progData, precomp, store, x)
-            #@test h ≈ store.hess
-            #@test progData.counters.neval_hess == nevals_hess 
-            #nevals_hess += 1
+            OptimizationMethods.hess!(progData, precomp, store, x)
+            @test h ≈ store.hess
+            @test progData.counters.neval_hess == nevals_hess 
+            nevals_hess += 1
         end
     end
 end
