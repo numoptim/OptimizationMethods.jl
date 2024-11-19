@@ -2,7 +2,7 @@
 # Author: Christian Varner
 # Purpose: Implement some test cases for logistic regression
 
-module TestPoissonRegression
+module TestLogisticRegression
 
 using Test, ForwardDiff, OptimizationMethods, Random, LinearAlgebra, NLPModels
 
