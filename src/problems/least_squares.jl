@@ -43,6 +43,21 @@ Constructs a least squares problems with `1000` equations and `50` unknowns,
 - `nequ::Int64=1000`, the number of equations in the system 
 - `nvar::Int64=50`, the number of parameters in the system 
 
+    LeastSquares(design::Matrix{T}, response::Vector{T}; 
+        x0 = ones(T, size(design, 2))) where {T}    
+
+Constructs a least squares problem using the `design` as the `coef` matrix
+and the `response` as the `cons` vector. 
+
+## Arguments
+
+- `design::Matrix{T}`, coefficient matrix for least squares.
+- `response::Vector{T}`, constant vector for least squares.
+
+## Optional Keyword Arguments
+
+- `x0::Vector{T}=ones(T, size(design, 2))`, default starting point for 
+    optimization algorithms.
 """
 mutable struct LeastSquares{T, S} <: AbstractNLSModel{T, S}
     meta::NLPModelMeta{T, S}
@@ -51,6 +66,7 @@ mutable struct LeastSquares{T, S} <: AbstractNLSModel{T, S}
     coef::Matrix{T}
     cons::Vector{T}
 
+    # inner constructor for to check invariant properties
     LeastSquares{T, S}(meta, nls_meta, counters, coef, cons) where {T, S} =
     begin
         @assert size(coef, 1) == length(cons) "Number of responses is not 
@@ -64,6 +80,7 @@ function LeastSquares(
     nvar::Int64 = 50
 ) where {T}
 
+    # Create structs from NLPModel
     meta = NLPModelMeta(
         nvar, 
         name = "Least Squares",
@@ -78,6 +95,7 @@ function LeastSquares(
         lin = collect(1:nequ),
     )
 
+    # return struct
     return LeastSquares{T, Vector{T}}(
         meta, 
         nls_meta, 
@@ -93,8 +111,6 @@ function LeastSquares(
 ) where {T}
 
     nequ, nvar = size(design)
-    @assert nvar == length(x0) "Number of columns in `design` is not
-    equal to number of entires in `x0`"
 
     meta = NLPModelMeta(
         nvar,
@@ -110,6 +126,7 @@ function LeastSquares(
         lin = collect(1:nequ),
     )
 
+    # return struct
     return LeastSquares{T, Vector{T}}(
         meta,
         nls_meta,

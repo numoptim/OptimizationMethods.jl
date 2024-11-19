@@ -5,7 +5,7 @@
 
 module TestLeastSquares
 
-using Test, OptimizationMethods, Random, LinearAlgebra
+using Test, OptimizationMethods, Random, LinearAlgebra, NLPModels
 
 @testset "Problem: Least Squares" begin
 
@@ -82,6 +82,51 @@ using Test, OptimizationMethods, Random, LinearAlgebra
     @test size(nlp.coef) == (nequ, nvar)
     @test typeof(nlp.cons) == Vector{Float64}
     @test size(nlp.cons)[1] == nequ
+
+    # test second constructor
+    real_types = [Float16, Float32, Float64]
+    nobs = 1000
+    nobs_error = 900
+    nvar = 50
+    nvar_error = 40
+    for real_type in real_types
+
+        ## test that error gets thrown -- incorrect response dimension
+        A = randn(real_type, nobs, nvar)
+        b = randn(real_type, nobs_error)
+        
+        @test_throws AssertionError OptimizationMethods.LeastSquares(A, b) 
+        "Number of responses is not equal to number of rows in `coef`"
+
+        ## test that error gets thrown -- incorrect initial point 
+        ## dimension
+        b = randn(real_type, nobs)
+        x = randn(real_type, nvar_error)
+        
+        @test_throws NLPModels.DimensionError OptimizationMethods.LeastSquares(A, b; x0 = x) 
+        "Input x0 should have length $(size(A, 2)) not $(length(x))"
+
+        ## test the types and correct values
+        x = randn(real_type, nvar)        
+        progData = OptimizationMethods.LeastSquares(A, b; x0 = x)
+
+        @test typeof(progData.coef) == Matrix{real_type}
+        @test typeof(progData.cons) == Vector{real_type}
+
+        ### field values
+        @test progData.coef == A
+        @test progData.cons == b
+
+        ### meta is correctly initialized
+        @test progData.meta.x0 == x
+        @test progData.meta.name == "Least Squares"
+        @test progData.meta.nvar == nvar
+        @test progData.nls_meta.nequ == nobs
+        @test progData.nls_meta.nvar == nvar
+        @test progData.nls_meta.nnzj == nobs * nvar
+        @test progData.nls_meta.nnzh == nvar * nvar
+        @test progData.nls_meta.lin == collect(1:nobs)
+    end
 
     ####################################
     # Test Struct: PrecomputeGLS 
