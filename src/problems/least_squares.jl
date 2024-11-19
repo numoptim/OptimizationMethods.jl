@@ -136,7 +136,7 @@ function LeastSquares(
 end
 
 """
-    PrecomputeGLS{T} <: AbstractPrecompute{T}
+    PrecomputeLS{T} <: AbstractPrecompute{T}
 
 Immutable structure for initializing and storing repeatedly used calculations
     related to coefficient matrix `A` and constant vector `b`.
@@ -149,26 +149,26 @@ Immutable structure for initializing and storing repeatedly used calculations
 
 # Constructors
 
-    PrecomputeGLS(prog::LeastSquares{T,S}) where {T,S}
+    PrecomputeLS(prog::LeastSquares{T,S}) where {T,S}
 
 Computes `A'*A`, `A'*b`, `b'*b` given a Least Squares program, `prog`. 
 """
-struct PrecomputeGLS{T} <: AbstractPrecompute{T}
+struct PrecomputeLS{T} <: AbstractPrecompute{T}
     coef_t_coef::Matrix{T}
     coef_t_cons::Vector{T}
     cons_t_cons::T
 end
 
-function PrecomputeGLS(prog::LeastSquares{T,S}) where {T,S}
+function PrecomputeLS(prog::LeastSquares{T,S}) where {T,S}
     coef_t_coef = prog.coef'*prog.coef
     coef_t_cons = prog.coef'*prog.cons 
     cons_t_cons = prog.cons'*prog.cons
 
-    return PrecomputeGLS(coef_t_coef, coef_t_cons, cons_t_cons)
+    return PrecomputeLS(coef_t_coef, coef_t_cons, cons_t_cons)
 end
 
 """
-    AllocateGLS{T} <: AbstractProblemAllocate{T}
+    AllocateLS{T} <: AbstractProblemAllocate{T}
 
 Immutable structure for preallocating important quantities for the
     Least Squares problem.
@@ -182,10 +182,10 @@ Immutable structure for preallocating important quantities for the
 
 # Constructors
 
-    AllocateGLS(prog::LeastSquares{T,S}) where {T,S}
-    AllocateGLS(
+    AllocateLS(prog::LeastSquares{T,S}) where {T,S}
+    AllocateLS(
         prog::LeastSquares{T,S},
-        preComp::precomputeGLS{T},
+        preComp::precomputeLS{T},
     ) where {T,S}
 
 Preallocates data structures for Least Squares based on optimization
@@ -193,16 +193,16 @@ Preallocates data structures for Least Squares based on optimization
     `jac` and `hess` are set to `A` and `A'*A`. If `preComp` is supplied, then
     `hess` is set to `preComp.coef_t_coef`.
 """
-struct AllocateGLS{T} <: AbstractProblemAllocate{T}
+struct AllocateLS{T} <: AbstractProblemAllocate{T}
     res::Vector{T}
     jac::Matrix{T}
     grad::Vector{T}
     hess::Matrix{T}
 end
 
-function AllocateGLS(prog::LeastSquares{T,S}) where {T,S}
+function AllocateLS(prog::LeastSquares{T,S}) where {T,S}
 
-    return AllocateGLS(
+    return AllocateLS(
         zeros(T, prog.nls_meta.nequ),
         prog.coef,
         zeros(T, prog.nls_meta.nvar),
@@ -210,12 +210,12 @@ function AllocateGLS(prog::LeastSquares{T,S}) where {T,S}
     )
 end
 
-function AllocateGLS(
+function AllocateLS(
     prog::LeastSquares{T,S},
-    preComp::PrecomputeGLS{T}
+    preComp::PrecomputeLS{T}
 ) where {T,S}
 
-    return AllocateGLS(
+    return AllocateLS(
         zeros(T, prog.nls_meta.nequ),
         prog.coef,
         zeros(T, prog.nls_meta.nvar),
@@ -231,8 +231,8 @@ Generates the precomputed and storage structs given a Least Squares
 """
 function initialize(progData::LeastSquares{T,S}) where {T,S}
 
-    precompute = PrecomputeGLS(progData)
-    store = AllocateGLS(progData, precompute)
+    precompute = PrecomputeLS(progData)
+    store = AllocateLS(progData, precompute)
 
     return precompute, store
 end
@@ -336,7 +336,7 @@ end
 
 args_pre = [
     :(progData::LeastSquares{T,S}),
-    :(preComp::PrecomputeGLS{T}),
+    :(preComp::PrecomputeLS{T}),
     :(x::Vector{T})
 ]
 
@@ -423,8 +423,8 @@ end
 
 args_store = [
     :(progData::LeastSquares{T,S}),
-    :(preComp::PrecomputeGLS{T}),
-    :(store::AllocateGLS{T}),
+    :(preComp::PrecomputeLS{T}),
+    :(store::AllocateLS{T}),
     :(x::Vector{T})
 ]
 

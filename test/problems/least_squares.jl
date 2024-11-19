@@ -13,98 +13,71 @@ using Test, OptimizationMethods, Random, LinearAlgebra, NLPModels
     Random.seed!(1010)
 
     ####################################
-    # Test Struct: LeastSquares
+    # Test Struct: Least Squares
     ####################################
 
+    # check if struct is defined 
+    @test isdefined(OptimizationMethods, :LeastSquares)
+
     # test supertype
-    @test supertype(OptimizationMethods.LeastSquares) == OptimizationMethods.AbstractNLSModel
+    @test supertype(OptimizationMethods.LeastSquares) == 
+        AbstractNLSModel
 
     # test fields
-    @test :meta in fieldnames(OptimizationMethods.LeastSquares)
-    @test :nls_meta in fieldnames(OptimizationMethods.LeastSquares)
-    @test :counters in fieldnames(OptimizationMethods.LeastSquares)
-    @test :coef in fieldnames(OptimizationMethods.LeastSquares) 
-    @test :cons in fieldnames(OptimizationMethods.LeastSquares) 
+    field_names = [:meta, :nls_meta, :counters, :coef, :cons]
 
-    # test constructor -- default values
-    nlp = OptimizationMethods.LeastSquares(Float64)
+    for name in field_names
+        @test name in fieldnames(OptimizationMethods.LeastSquares)
+    end 
 
-    ## test arguments
-    @test nlp.nls_meta.nequ == 1000
-    @test nlp.nls_meta.nvar == 50
-    @test nlp.nls_meta.nnzj == 1000 * 50
-    @test nlp.nls_meta.nnzh == 50 * 50
-    @test nlp.nls_meta.lin == collect(1:1000)
-    @test nlp.meta.nvar == 50
-
-    ## test fields of structure
-    @test typeof(nlp.meta.x0) == Vector{Float64}
-    @test size(nlp.meta.x0) == (50, )
-    @test typeof(nlp.coef) == Matrix{Float64}
-    @test size(nlp.coef) == (1000, 50)
-    @test typeof(nlp.cons) == Vector{Float64}
-    @test size(nlp.cons)[1] == 1000
-
-    # test constructor -- different type
-    nlp = OptimizationMethods.LeastSquares(Float16)
-
-    ## test arguments
-    @test nlp.nls_meta.nequ == 1000
-    @test nlp.nls_meta.nvar == 50
-    @test nlp.nls_meta.nnzj == 1000 * 50
-    @test nlp.nls_meta.nnzh == 50 * 50
-    @test nlp.nls_meta.lin == collect(1:1000)
-    
-    ## test fields of structure
-    @test typeof(nlp.meta.x0) == Vector{Float16}
-    @test size(nlp.meta.x0) == (50, )
-    @test typeof(nlp.coef) == Matrix{Float16}
-    @test size(nlp.coef) == (1000, 50)
-    @test typeof(nlp.cons) == Vector{Float16}
-    @test size(nlp.cons)[1] == 1000
-
-    # test constructor -- non-default values
-    nequ = rand(1:1000)[1]
-    nvar = rand(1:1000)[1]
-    nlp = OptimizationMethods.LeastSquares(Float64; nequ = nequ, nvar = nvar)
-
-    ## test arguments
-    @test nlp.nls_meta.nequ == nequ
-    @test nlp.nls_meta.nvar == nvar
-    @test nlp.nls_meta.nnzj == nequ * nvar
-    @test nlp.nls_meta.nnzh == nvar * nvar
-    @test nlp.nls_meta.lin == collect(1:nequ)
-
-    ## test fields of structure
-    @test typeof(nlp.meta.x0) == Vector{Float64}
-    @test size(nlp.meta.x0) == (nvar, )
-    @test typeof(nlp.coef) == Matrix{Float64}
-    @test size(nlp.coef) == (nequ, nvar)
-    @test typeof(nlp.cons) == Vector{Float64}
-    @test size(nlp.cons)[1] == nequ
-
-    # test second constructor
+    ####################################
+    # Test constructor 
+    ####################################
     real_types = [Float16, Float32, Float64]
     nobs = 1000
-    nobs_error = 900
-    nvar = 50
-    nvar_error = 40
+    nvar = 50 
+
+
+    # Test Generative Constructor 
+    for real_type in real_types
+        progData = OptimizationMethods.LeastSquares(real_type)
+
+        # Test Type and Value: coef 
+        @test typeof(progData.coef) == Matrix{real_type}
+        @test size(progData.coef) == (nobs, nvar)
+
+        # Test Type and Value: const
+        @test typeof(progData.cons) == Vector{real_type}
+        @test length(progData.cons) == nobs
+
+        # Test Type and Value: x0
+        @test typeof(progData.meta.x0) == Vector{real_type}
+        @test length(progData.meta.x0) == nvar
+    end
+    
+    # Test Data-supplied Constructor 
+    real_types = [Float16, Float32, Float64]
+    nobs = 100
+    nvar = 5
+    nobs_error = 90
+    nvar_error = 3
+
     for real_type in real_types
 
         ## test that error gets thrown -- incorrect response dimension
-        A = randn(real_type, nobs, nvar)
-        b = randn(real_type, nobs_error)
+        A = rand(real_type, nobs, nvar)
+        b = rand(real_type, nobs_error)
         
-        @test_throws AssertionError OptimizationMethods.LeastSquares(A, b) 
-        "Number of responses is not equal to number of rows in `coef`"
+        @test_throws AssertionError OptimizationMethods.LeastSquares(A, b)  
 
         ## test that error gets thrown -- incorrect initial point 
         ## dimension
         b = randn(real_type, nobs)
         x = randn(real_type, nvar_error)
         
-        @test_throws NLPModels.DimensionError OptimizationMethods.LeastSquares(A, b; x0 = x) 
-        "Input x0 should have length $(size(A, 2)) not $(length(x))"
+        @test_throws NLPModels.DimensionError OptimizationMethods.LeastSquares(
+            A, b; x0 = x) 
+            "Input x0 should have length $(nvar) not $(nvar_error)"
 
         ## test the types and correct values
         x = randn(real_type, nvar)        
@@ -129,19 +102,20 @@ using Test, OptimizationMethods, Random, LinearAlgebra, NLPModels
     end
 
     ####################################
-    # Test Struct: PrecomputeGLS 
+    # Test Struct: PrecomputeLS 
     ####################################
 
     # test supertype
-    @test supertype(OptimizationMethods.PrecomputeGLS) == OptimizationMethods.AbstractPrecompute
+    @test supertype(OptimizationMethods.PrecomputeLS) == 
+        OptimizationMethods.AbstractPrecompute
 
     # test fields
-    @test :coef_t_coef in fieldnames(OptimizationMethods.PrecomputeGLS)
-    @test :coef_t_cons in fieldnames(OptimizationMethods.PrecomputeGLS)
+    @test :coef_t_coef in fieldnames(OptimizationMethods.PrecomputeLS)
+    @test :coef_t_cons in fieldnames(OptimizationMethods.PrecomputeLS)
 
     # test constructor -- default values
     nlp = OptimizationMethods.LeastSquares(Float16)
-    precomp = OptimizationMethods.PrecomputeGLS(nlp)
+    precomp = OptimizationMethods.PrecomputeLS(nlp)
 
     ## test field values -- correct definitions
     @test size(precomp.coef_t_coef) == (nlp.nls_meta.nvar, nlp.nls_meta.nvar)
@@ -157,7 +131,7 @@ using Test, OptimizationMethods, Random, LinearAlgebra, NLPModels
     nequ = rand(1:1000)[1]
     nvar = rand(1:1000)[1]
     nlp = OptimizationMethods.LeastSquares(Float64; nequ = nequ, nvar = nvar)
-    precomp = OptimizationMethods.PrecomputeGLS(nlp)
+    precomp = OptimizationMethods.PrecomputeLS(nlp)
 
     ## test field values -- correct definitions
     @test size(precomp.coef_t_coef) == (nvar, nvar)
@@ -170,21 +144,22 @@ using Test, OptimizationMethods, Random, LinearAlgebra, NLPModels
     @test typeof(precomp.coef_t_cons) == Vector{Float64} 
 
     ####################################
-    # Test Struct: AllocateGLS 
+    # Test Struct: AllocateLS 
     ####################################
 
     # test supertype
-    @test supertype(OptimizationMethods.AllocateGLS) == OptimizationMethods.AbstractProblemAllocate
+    @test supertype(OptimizationMethods.AllocateLS) == 
+        OptimizationMethods.AbstractProblemAllocate
 
     # test fields
-    @test :res in fieldnames(OptimizationMethods.AllocateGLS)
-    @test :jac in fieldnames(OptimizationMethods.AllocateGLS)
-    @test :grad in fieldnames(OptimizationMethods.AllocateGLS)
-    @test :hess in fieldnames(OptimizationMethods.AllocateGLS)
+    @test :res in fieldnames(OptimizationMethods.AllocateLS)
+    @test :jac in fieldnames(OptimizationMethods.AllocateLS)
+    @test :grad in fieldnames(OptimizationMethods.AllocateLS)
+    @test :hess in fieldnames(OptimizationMethods.AllocateLS)
 
     # test constructor -- no precomp -- default values
     nlp = OptimizationMethods.LeastSquares(Float16) 
-    store = OptimizationMethods.AllocateGLS(nlp)
+    store = OptimizationMethods.AllocateLS(nlp)
 
     ## test field
     @test store.res == zeros(Float16, nlp.nls_meta.nequ)
@@ -202,7 +177,7 @@ using Test, OptimizationMethods, Random, LinearAlgebra, NLPModels
     nequ = rand(1:1000)[1]
     nvar = rand(1:1000)[1] 
     nlp = OptimizationMethods.LeastSquares(Float32; nequ = nequ, nvar = nvar) 
-    store = OptimizationMethods.AllocateGLS(nlp)
+    store = OptimizationMethods.AllocateLS(nlp)
 
     ## test field
     @test store.res == zeros(Float32, nlp.nls_meta.nequ)
@@ -218,8 +193,8 @@ using Test, OptimizationMethods, Random, LinearAlgebra, NLPModels
 
     # test constructor -- precomp -- default value
     nlp = OptimizationMethods.LeastSquares(Float16) 
-    precomp = OptimizationMethods.PrecomputeGLS(nlp)
-    store = OptimizationMethods.AllocateGLS(nlp, precomp)
+    precomp = OptimizationMethods.PrecomputeLS(nlp)
+    store = OptimizationMethods.AllocateLS(nlp, precomp)
 
     ## test field
     @test store.res == zeros(Float16, nlp.nls_meta.nequ)
@@ -237,8 +212,8 @@ using Test, OptimizationMethods, Random, LinearAlgebra, NLPModels
     nequ = rand(1:1000)[1]
     nvar = rand(1:1000)[1] 
     nlp = OptimizationMethods.LeastSquares(Float64; nequ = nequ, nvar = nvar) 
-    precomp = OptimizationMethods.PrecomputeGLS(nlp)
-    store = OptimizationMethods.AllocateGLS(nlp)
+    precomp = OptimizationMethods.PrecomputeLS(nlp)
+    store = OptimizationMethods.AllocateLS(nlp)
 
     ## test field
     @test store.res == zeros(Float64, nlp.nls_meta.nequ)
@@ -258,8 +233,8 @@ using Test, OptimizationMethods, Random, LinearAlgebra, NLPModels
 
     # testing with default values
     nlp = OptimizationMethods.LeastSquares(Float16) 
-    precomp = OptimizationMethods.PrecomputeGLS(nlp)
-    store = OptimizationMethods.AllocateGLS(nlp) 
+    precomp = OptimizationMethods.PrecomputeLS(nlp)
+    store = OptimizationMethods.AllocateLS(nlp) 
 
     ## initialize storage and precomputed values
     init_precompute, init_store = OptimizationMethods.initialize(nlp)
