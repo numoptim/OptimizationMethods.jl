@@ -135,7 +135,45 @@ arxiv, https://arxiv.org/abs/2306.01264.
 
 # Method
 
-TODO: finish documentation
+The algorithm produces the iterates
+
+```math
+\\theta_{k+1} = \\theta_k - \\alpha_k \\nabla F(y_{k}),
+```
+where ``\\alpha_k = optData.step_size``, ``F`` is the objective function,
+and ``\\nabla F`` is the gradient of the objective. 
+
+The sequence ``y_{k}`` is updated with the use of a sequence of vectors ``z_k``,
+and of constants ``A_k`` and ``B_k``. 
+
+``B_k`` is updated according to
+
+```math
+B_{k+1} = B_k + .5(1+\\sqrt(4*B_k + 1)),
+```
+where ``B_0 = 0``.
+
+``A_k`` is updated according to
+
+```math
+A_{k+1} = B_{k+1} + 1/\\alpha_k,
+```
+where ``A_0 = 1/\\alpha_k``.
+
+``z_k`` is updated according to
+
+```math
+z_{k+1} = z_k - \\alpha_k (A_{k+1} - A_{k}) \\nabla F(y_k)
+```
+where ``z_0 = \\theta_0``.
+
+Finally, ``y_k`` is updated according to
+
+```math
+y_{k+1} = \\theta_{k+1} + (1 - A_{k+1}/A_{k+2})(z_{k+1} - \\theta_{k+1}).
+```
+
+See the reference above for more information about the method.
 
 # Arguments
 
