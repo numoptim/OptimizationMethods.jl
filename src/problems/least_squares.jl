@@ -97,7 +97,7 @@ function LeastSquares(
     equal to number of entires in `x0`"
 
     meta = NLPModelMeta(
-        nvar = nvar,
+        nvar,
         name = "Least Squares",
         x0 = x0, 
     )
