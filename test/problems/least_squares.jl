@@ -1,33 +1,33 @@
 # Date: 09/24/2024
 # Author: Christian Varner
-# Purpose: Test the implementation of GaussianLeastSquares in
+# Purpose: Test the implementation of LeastSquares in
 # src/problems/gaussian_least_squares.jl
 
-module TestGaussianLeastSquares
+module TestLeastSquares
 
 using Test, OptimizationMethods, Random, LinearAlgebra
 
-@testset "Problem: Gaussian Least Squares" begin
+@testset "Problem: Least Squares" begin
 
     # Set the seed for reproducibility
     Random.seed!(1010)
 
     ####################################
-    # Test Struct: GaussianLeastSquares
+    # Test Struct: LeastSquares
     ####################################
 
     # test supertype
-    @test supertype(OptimizationMethods.GaussianLeastSquares) == OptimizationMethods.AbstractNLSModel
+    @test supertype(OptimizationMethods.LeastSquares) == OptimizationMethods.AbstractNLSModel
 
     # test fields
-    @test :meta in fieldnames(OptimizationMethods.GaussianLeastSquares)
-    @test :nls_meta in fieldnames(OptimizationMethods.GaussianLeastSquares)
-    @test :counters in fieldnames(OptimizationMethods.GaussianLeastSquares)
-    @test :coef in fieldnames(OptimizationMethods.GaussianLeastSquares) 
-    @test :cons in fieldnames(OptimizationMethods.GaussianLeastSquares) 
+    @test :meta in fieldnames(OptimizationMethods.LeastSquares)
+    @test :nls_meta in fieldnames(OptimizationMethods.LeastSquares)
+    @test :counters in fieldnames(OptimizationMethods.LeastSquares)
+    @test :coef in fieldnames(OptimizationMethods.LeastSquares) 
+    @test :cons in fieldnames(OptimizationMethods.LeastSquares) 
 
     # test constructor -- default values
-    nlp = OptimizationMethods.GaussianLeastSquares(Float64)
+    nlp = OptimizationMethods.LeastSquares(Float64)
 
     ## test arguments
     @test nlp.nls_meta.nequ == 1000
@@ -46,7 +46,7 @@ using Test, OptimizationMethods, Random, LinearAlgebra
     @test size(nlp.cons)[1] == 1000
 
     # test constructor -- different type
-    nlp = OptimizationMethods.GaussianLeastSquares(Float16)
+    nlp = OptimizationMethods.LeastSquares(Float16)
 
     ## test arguments
     @test nlp.nls_meta.nequ == 1000
@@ -66,7 +66,7 @@ using Test, OptimizationMethods, Random, LinearAlgebra
     # test constructor -- non-default values
     nequ = rand(1:1000)[1]
     nvar = rand(1:1000)[1]
-    nlp = OptimizationMethods.GaussianLeastSquares(Float64; nequ = nequ, nvar = nvar)
+    nlp = OptimizationMethods.LeastSquares(Float64; nequ = nequ, nvar = nvar)
 
     ## test arguments
     @test nlp.nls_meta.nequ == nequ
@@ -95,7 +95,7 @@ using Test, OptimizationMethods, Random, LinearAlgebra
     @test :coef_t_cons in fieldnames(OptimizationMethods.PrecomputeGLS)
 
     # test constructor -- default values
-    nlp = OptimizationMethods.GaussianLeastSquares(Float16)
+    nlp = OptimizationMethods.LeastSquares(Float16)
     precomp = OptimizationMethods.PrecomputeGLS(nlp)
 
     ## test field values -- correct definitions
@@ -111,7 +111,7 @@ using Test, OptimizationMethods, Random, LinearAlgebra
     # test constructor -- non-default values
     nequ = rand(1:1000)[1]
     nvar = rand(1:1000)[1]
-    nlp = OptimizationMethods.GaussianLeastSquares(Float64; nequ = nequ, nvar = nvar)
+    nlp = OptimizationMethods.LeastSquares(Float64; nequ = nequ, nvar = nvar)
     precomp = OptimizationMethods.PrecomputeGLS(nlp)
 
     ## test field values -- correct definitions
@@ -138,7 +138,7 @@ using Test, OptimizationMethods, Random, LinearAlgebra
     @test :hess in fieldnames(OptimizationMethods.AllocateGLS)
 
     # test constructor -- no precomp -- default values
-    nlp = OptimizationMethods.GaussianLeastSquares(Float16) 
+    nlp = OptimizationMethods.LeastSquares(Float16) 
     store = OptimizationMethods.AllocateGLS(nlp)
 
     ## test field
@@ -156,7 +156,7 @@ using Test, OptimizationMethods, Random, LinearAlgebra
     # test constructor -- no precomp -- non-default values
     nequ = rand(1:1000)[1]
     nvar = rand(1:1000)[1] 
-    nlp = OptimizationMethods.GaussianLeastSquares(Float32; nequ = nequ, nvar = nvar) 
+    nlp = OptimizationMethods.LeastSquares(Float32; nequ = nequ, nvar = nvar) 
     store = OptimizationMethods.AllocateGLS(nlp)
 
     ## test field
@@ -172,7 +172,7 @@ using Test, OptimizationMethods, Random, LinearAlgebra
     @test typeof(store.hess) == Matrix{Float32}
 
     # test constructor -- precomp -- default value
-    nlp = OptimizationMethods.GaussianLeastSquares(Float16) 
+    nlp = OptimizationMethods.LeastSquares(Float16) 
     precomp = OptimizationMethods.PrecomputeGLS(nlp)
     store = OptimizationMethods.AllocateGLS(nlp, precomp)
 
@@ -191,7 +191,7 @@ using Test, OptimizationMethods, Random, LinearAlgebra
     # test constructor -- precomp -- non-default value
     nequ = rand(1:1000)[1]
     nvar = rand(1:1000)[1] 
-    nlp = OptimizationMethods.GaussianLeastSquares(Float64; nequ = nequ, nvar = nvar) 
+    nlp = OptimizationMethods.LeastSquares(Float64; nequ = nequ, nvar = nvar) 
     precomp = OptimizationMethods.PrecomputeGLS(nlp)
     store = OptimizationMethods.AllocateGLS(nlp)
 
@@ -212,7 +212,7 @@ using Test, OptimizationMethods, Random, LinearAlgebra
     ######################################
 
     # testing with default values
-    nlp = OptimizationMethods.GaussianLeastSquares(Float16) 
+    nlp = OptimizationMethods.LeastSquares(Float16) 
     precomp = OptimizationMethods.PrecomputeGLS(nlp)
     store = OptimizationMethods.AllocateGLS(nlp) 
 
@@ -243,7 +243,7 @@ using Test, OptimizationMethods, Random, LinearAlgebra
     # Test Functionality: Operations - not in-place and not using precomputed values
     ################################################################################
 
-    nlp = OptimizationMethods.GaussianLeastSquares(Float32) 
+    nlp = OptimizationMethods.LeastSquares(Float32) 
     x0 = randn(Float32, 50)
 
     # residual
@@ -293,7 +293,7 @@ using Test, OptimizationMethods, Random, LinearAlgebra
     # Test Functionality: Operations - not in-place and using precomputed values
     ################################################################################
 
-    nlp = OptimizationMethods.GaussianLeastSquares(Float16)
+    nlp = OptimizationMethods.LeastSquares(Float16)
     precomp, store = OptimizationMethods.initialize(nlp)
     x0 = randn(Float16, 50)
 
@@ -347,7 +347,7 @@ using Test, OptimizationMethods, Random, LinearAlgebra
     # Test Functionality: Operations - in-place and using precomputed values
     ################################################################################
 
-    nlp = OptimizationMethods.GaussianLeastSquares(Float32)
+    nlp = OptimizationMethods.LeastSquares(Float32)
     precomp, store = OptimizationMethods.initialize(nlp)
     x0 = randn(Float32, 50)
 

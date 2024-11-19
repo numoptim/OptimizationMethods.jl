@@ -1,20 +1,19 @@
-# Date: 10/04/2024
-# Author: Christian Varner
-# Purpose: Implement an example of running lipschitz_approximation_gd() on 
-# an instance of GaussianLeastSquares.
-
 using OptimizationMethods
 
-progData = OptimizationMethods.GaussianLeastSquares(Float64);
-optData = OptimizationMethods.LipschitzApproxGD(
-    Float64, 
-    x0=randn(50), 
-    init_stepsize=0.0005, 
-    threshold=1e-10, 
-    max_iterations=100
+progData = OptimizationMethods.LeastSquares(Float64)
+optData = BarzilaiBorweinGD(
+    Float64,
+    x0 = randn(50),
+    init_stepsize = 1e-5,
+    long_stepsize = true,
+    threshold = 1e-10,
+    max_iterations = 100
 )
 
-x = OptimizationMethods.lipschitz_approximation_gd(optData, progData);
+x = barzilai_borwein_gd(
+    optData,
+    progData
+)
 
 # Compute objective and residual evals during optimization 
 obj_evals = progData.counters.neval_obj
@@ -24,7 +23,6 @@ res_evals = progData.counters.neval_residual
 obj_init = OptimizationMethods.obj(progData, optData.iter_hist[1])
 obj_term = OptimizationMethods.obj(progData, 
     optData.iter_hist[optData.stop_iteration + 1])
-
 
 
 println(
