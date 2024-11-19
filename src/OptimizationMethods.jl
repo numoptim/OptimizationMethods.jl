@@ -44,10 +44,12 @@ abstract type AbstractOptimizerData{T} end
 export BarzilaiBorweinGD, barzilai_borwein_gd
 export FixedStepGD, fixed_step_gd
 export LipschitzApproxGD, lipschitz_approximation_gd
+export NesterovAcceleratedGD, nesterov_accelerated_gd
 
 ## Source Code 
 include("methods/gd_barzilai_borwein.jl")
 include("methods/gd_fixed.jl")
 include("methods/gd_lipschitz_approximation.jl")
+include("methods/gd_nesterov_accelerated.jl")
 
 end
