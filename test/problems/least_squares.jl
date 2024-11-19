@@ -1,7 +1,7 @@
 # Date: 09/24/2024
 # Author: Christian Varner
 # Purpose: Test the implementation of LeastSquares in
-# src/problems/gaussian_least_squares.jl
+# src/problems/least_squares.jl
 
 module TestLeastSquares
 

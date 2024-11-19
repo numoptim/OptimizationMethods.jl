@@ -3,8 +3,7 @@
 """
     LeastSquares{T,S} <: AbstractNLSModel{T,S}
 
-Implements a least squares problem where the coefficient matrix's and constant 
-    vector's entries are independent Gaussian random variables.
+Implements the data structure for defining a least squares problem.
 
 # Objective Function
 
@@ -152,7 +151,7 @@ Immutable structure for initializing and storing repeatedly used calculations
 
     PrecomputeGLS(prog::LeastSquares{T,S}) where {T,S}
 
-Computes `A'*A`, `A'*b`, `b'*b` given a Gaussian Least Squares program, `prog`. 
+Computes `A'*A`, `A'*b`, `b'*b` given a Least Squares program, `prog`. 
 """
 struct PrecomputeGLS{T} <: AbstractPrecompute{T}
     coef_t_coef::Matrix{T}
@@ -171,7 +170,7 @@ end
 """
     AllocateGLS{T} <: AbstractProblemAllocate{T}
 
-Immutable structure for preallocating important quantities for the Gaussian
+Immutable structure for preallocating important quantities for the
     Least Squares problem.
 
 # Fields 
@@ -189,7 +188,7 @@ Immutable structure for preallocating important quantities for the Gaussian
         preComp::precomputeGLS{T},
     ) where {T,S}
 
-Preallocates data structures for Gaussian Least Squares based on optimization
+Preallocates data structures for Least Squares based on optimization
     problem's data. The values of `r` and `grad` are set to zero of type `T`.
     `jac` and `hess` are set to `A` and `A'*A`. If `preComp` is supplied, then
     `hess` is set to `preComp.coef_t_coef`.
@@ -227,7 +226,7 @@ end
 """
     initialize(progData::LeastSquares{T,S}) where {T,S}
 
-Generates the precomputed and storage structs given a Gaussian Least Squares 
+Generates the precomputed and storage structs given a Least Squares 
     problem.
 """
 function initialize(progData::LeastSquares{T,S}) where {T,S}
