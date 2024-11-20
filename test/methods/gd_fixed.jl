@@ -122,7 +122,7 @@ using Test, OptimizationMethods, Random, LinearAlgebra
     # Test optimizer
     ##########################################
 
-    progData = OptimizationMethods.GaussianLeastSquares(Float64)
+    progData = OptimizationMethods.LeastSquares(Float64)
     x0 = randn(50)
     optData = OptimizationMethods.FixedStepGD(
         Float64, 

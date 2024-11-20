@@ -72,7 +72,7 @@ using Test, OptimizationMethods, LinearAlgebra, Random
     # Test optimizer
     ##########################################
 
-    progData = OptimizationMethods.GaussianLeastSquares(Float64)
+    progData = OptimizationMethods.LeastSquares(Float64)
     x0 = progData.meta.x0
     ss = 1e-2
 

@@ -1,10 +1,9 @@
 # OptimizationMethods.jl
 
 """
-    GaussianLeastSquares{T,S} <: AbstractNLSModel{T,S}
+    LeastSquares{T,S} <: AbstractNLSModel{T,S}
 
-Implements a least squares problem where the coefficient matrix's and constant 
-    vector's entries are independent Gaussian random variables.
+Implements the data structure for defining a least squares problem.
 
 # Objective Function
 
@@ -28,7 +27,7 @@ F(x) = A * x - b.
 
 # Constructors
 
-    GaussianLeastSquares(::Type{T}; nequ=1000, nvar=50) where {T}
+    LeastSquares(::Type{T}; nequ=1000, nvar=50) where {T}
 
 Constructs a least squares problems with `1000` equations and `50` unknowns,
     where the entries of the matrix and constant vector are independent
@@ -43,24 +42,47 @@ Constructs a least squares problems with `1000` equations and `50` unknowns,
 - `nequ::Int64=1000`, the number of equations in the system 
 - `nvar::Int64=50`, the number of parameters in the system 
 
+    LeastSquares(design::Matrix{T}, response::Vector{T}; 
+        x0 = ones(T, size(design, 2))) where {T}    
+
+Constructs a least squares problem using the `design` as the `coef` matrix
+and the `response` as the `cons` vector. 
+
+## Arguments
+
+- `design::Matrix{T}`, coefficient matrix for least squares.
+- `response::Vector{T}`, constant vector for least squares.
+
+## Optional Keyword Arguments
+
+- `x0::Vector{T}=ones(T, size(design, 2))`, default starting point for 
+    optimization algorithms.
 """
-mutable struct GaussianLeastSquares{T, S} <: AbstractNLSModel{T, S}
+mutable struct LeastSquares{T, S} <: AbstractNLSModel{T, S}
     meta::NLPModelMeta{T, S}
     nls_meta::NLSMeta{T, S}
     counters::NLSCounters
     coef::Matrix{T}
     cons::Vector{T}
-end
 
-function GaussianLeastSquares(
+    # inner constructor for to check invariant properties
+    LeastSquares{T, S}(meta, nls_meta, counters, coef, cons) where {T, S} =
+    begin
+        @assert size(coef, 1) == length(cons) "Number of responses is not 
+        equal to number of rows in `coef`"
+        return new(meta, nls_meta, counters, coef, cons)
+    end
+end
+function LeastSquares(
     ::Type{T};
     nequ::Int64 = 1000, 
     nvar::Int64 = 50
 ) where {T}
 
+    # Create structs from NLPModel
     meta = NLPModelMeta(
         nvar, 
-        name = "Gaussian Least Squares",
+        name = "Least Squares",
         x0 = ones(T, nvar),
     )
 
@@ -72,7 +94,8 @@ function GaussianLeastSquares(
         lin = collect(1:nequ),
     )
 
-    return GaussianLeastSquares(
+    # return struct
+    return LeastSquares{T, Vector{T}}(
         meta, 
         nls_meta, 
         NLSCounters(),
@@ -80,9 +103,40 @@ function GaussianLeastSquares(
         randn(T, nequ),
     )
 end
+function LeastSquares(
+    design::Matrix{T},
+    response::Vector{T};
+    x0 = ones(T, size(design, 2))
+) where {T}
+
+    nequ, nvar = size(design)
+
+    meta = NLPModelMeta(
+        nvar,
+        name = "Least Squares",
+        x0 = x0, 
+    )
+
+    nls_meta = NLSMeta{T, Vector{T}}(
+        nequ,
+        nvar,
+        nnzj = nequ * nvar,
+        nnzh = nvar * nvar,
+        lin = collect(1:nequ),
+    )
+
+    # return struct
+    return LeastSquares{T, Vector{T}}(
+        meta,
+        nls_meta,
+        NLSCounters(),
+        design,
+        response
+    )
+end
 
 """
-    PrecomputeGLS{T} <: AbstractPrecompute{T}
+    PrecomputeLS{T} <: AbstractPrecompute{T}
 
 Immutable structure for initializing and storing repeatedly used calculations
     related to coefficient matrix `A` and constant vector `b`.
@@ -95,28 +149,28 @@ Immutable structure for initializing and storing repeatedly used calculations
 
 # Constructors
 
-    PrecomputeGLS(prog::GaussianLeastSquares{T,S}) where {T,S}
+    PrecomputeLS(prog::LeastSquares{T,S}) where {T,S}
 
-Computes `A'*A`, `A'*b`, `b'*b` given a Gaussian Least Squares program, `prog`. 
+Computes `A'*A`, `A'*b`, `b'*b` given a Least Squares program, `prog`. 
 """
-struct PrecomputeGLS{T} <: AbstractPrecompute{T}
+struct PrecomputeLS{T} <: AbstractPrecompute{T}
     coef_t_coef::Matrix{T}
     coef_t_cons::Vector{T}
     cons_t_cons::T
 end
 
-function PrecomputeGLS(prog::GaussianLeastSquares{T,S}) where {T,S}
+function PrecomputeLS(prog::LeastSquares{T,S}) where {T,S}
     coef_t_coef = prog.coef'*prog.coef
     coef_t_cons = prog.coef'*prog.cons 
     cons_t_cons = prog.cons'*prog.cons
 
-    return PrecomputeGLS(coef_t_coef, coef_t_cons, cons_t_cons)
+    return PrecomputeLS(coef_t_coef, coef_t_cons, cons_t_cons)
 end
 
 """
-    AllocateGLS{T} <: AbstractProblemAllocate{T}
+    AllocateLS{T} <: AbstractProblemAllocate{T}
 
-Immutable structure for preallocating important quantities for the Gaussian
+Immutable structure for preallocating important quantities for the
     Least Squares problem.
 
 # Fields 
@@ -128,27 +182,27 @@ Immutable structure for preallocating important quantities for the Gaussian
 
 # Constructors
 
-    AllocateGLS(prog::GaussianLeastSquares{T,S}) where {T,S}
-    AllocateGLS(
-        prog::GaussianLeastSquares{T,S},
-        preComp::precomputeGLS{T},
+    AllocateLS(prog::LeastSquares{T,S}) where {T,S}
+    AllocateLS(
+        prog::LeastSquares{T,S},
+        preComp::precomputeLS{T},
     ) where {T,S}
 
-Preallocates data structures for Gaussian Least Squares based on optimization
+Preallocates data structures for Least Squares based on optimization
     problem's data. The values of `r` and `grad` are set to zero of type `T`.
     `jac` and `hess` are set to `A` and `A'*A`. If `preComp` is supplied, then
     `hess` is set to `preComp.coef_t_coef`.
 """
-struct AllocateGLS{T} <: AbstractProblemAllocate{T}
+struct AllocateLS{T} <: AbstractProblemAllocate{T}
     res::Vector{T}
     jac::Matrix{T}
     grad::Vector{T}
     hess::Matrix{T}
 end
 
-function AllocateGLS(prog::GaussianLeastSquares{T,S}) where {T,S}
+function AllocateLS(prog::LeastSquares{T,S}) where {T,S}
 
-    return AllocateGLS(
+    return AllocateLS(
         zeros(T, prog.nls_meta.nequ),
         prog.coef,
         zeros(T, prog.nls_meta.nvar),
@@ -156,12 +210,12 @@ function AllocateGLS(prog::GaussianLeastSquares{T,S}) where {T,S}
     )
 end
 
-function AllocateGLS(
-    prog::GaussianLeastSquares{T,S},
-    preComp::PrecomputeGLS{T}
+function AllocateLS(
+    prog::LeastSquares{T,S},
+    preComp::PrecomputeLS{T}
 ) where {T,S}
 
-    return AllocateGLS(
+    return AllocateLS(
         zeros(T, prog.nls_meta.nequ),
         prog.coef,
         zeros(T, prog.nls_meta.nvar),
@@ -170,15 +224,15 @@ function AllocateGLS(
 end
 
 """
-    initialize(progData::GaussianLeastSquares{T,S}) where {T,S}
+    initialize(progData::LeastSquares{T,S}) where {T,S}
 
-Generates the precomputed and storage structs given a Gaussian Least Squares 
+Generates the precomputed and storage structs given a Least Squares 
     problem.
 """
-function initialize(progData::GaussianLeastSquares{T,S}) where {T,S}
+function initialize(progData::LeastSquares{T,S}) where {T,S}
 
-    precompute = PrecomputeGLS(progData)
-    store = AllocateGLS(progData, precompute)
+    precompute = PrecomputeLS(progData)
+    store = AllocateLS(progData, precompute)
 
     return precompute, store
 end
@@ -189,7 +243,7 @@ end
 ###############################################################################
 
 args = [
-    :(progData::GaussianLeastSquares{T,S}),
+    :(progData::LeastSquares{T,S}),
     :(x::Vector{T})
 ]
 
@@ -281,8 +335,8 @@ end
 ###############################################################################
 
 args_pre = [
-    :(progData::GaussianLeastSquares{T,S}),
-    :(preComp::PrecomputeGLS{T}),
+    :(progData::LeastSquares{T,S}),
+    :(preComp::PrecomputeLS{T}),
     :(x::Vector{T})
 ]
 
@@ -368,9 +422,9 @@ end
 ###############################################################################
 
 args_store = [
-    :(progData::GaussianLeastSquares{T,S}),
-    :(preComp::PrecomputeGLS{T}),
-    :(store::AllocateGLS{T}),
+    :(progData::LeastSquares{T,S}),
+    :(preComp::PrecomputeLS{T}),
+    :(store::AllocateLS{T}),
     :(x::Vector{T})
 ]
 

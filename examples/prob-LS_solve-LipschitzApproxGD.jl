@@ -1,11 +1,11 @@
 # Date: 10/04/2024
 # Author: Christian Varner
 # Purpose: Implement an example of running lipschitz_approximation_gd() on 
-# an instance of GaussianLeastSquares.
+# an instance of LeastSquares.
 
 using OptimizationMethods
 
-progData = OptimizationMethods.GaussianLeastSquares(Float64);
+progData = OptimizationMethods.LeastSquares(Float64);
 optData = OptimizationMethods.LipschitzApproxGD(
     Float64, 
     x0=randn(50), 
