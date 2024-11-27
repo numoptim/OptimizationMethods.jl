@@ -26,3 +26,14 @@ directory to see how different problems are instantiated and how optimization
 methods can be applied to them.
 We also recommend looking at the docstring for specific problems and methods
 for additional details.
+
+# Manual
+
+The manual section includes descriptions of problems and methods that require
+a bit more explanation than what is appropriate for in a docstring.
+
+# API
+
+The API section contains explanations for all problems and methods available in 
+the library. This is a super set of what is contained in the manual. 
+
