@@ -15,3 +15,7 @@ makedocs(
         ]
     ]
 )
+
+deploydocs(
+    repo = "github.com/numoptim/OptimizationMethods.jl",
+)
