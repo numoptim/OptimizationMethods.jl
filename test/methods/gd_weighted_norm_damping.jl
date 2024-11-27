@@ -86,16 +86,58 @@ using Test, OptimizationMethods, LinearAlgebra, Random
 
     progData = OptimizationMethods.LeastSquares(Float64)
     x0 = progData.meta.x0
-    inital_weight = 1 / 1e-2
+    initial_weight = 1 / 1e-2
+    threshold = 1e-8
 
-    #TODO: One Step Update 
-    let 
+    # One Step Update 
+    let progData = progData, x0 = x0, initial_weight = initial_weight,
+        threshold = threshold
 
+        optData = WeightedNormDampingGD(
+            Float64, 
+            x0 = x0,
+            init_norm_damping_factor = initial_weight, 
+            threshold = threshold,
+            max_iterations = 1,
+        )
+
+        x1 = weighted_norm_damping_gd(optData, progData)
+
+        # Test updated values 
+        g0 = OptimizationMethods.grad(progData, x0)
+        @test optData.stop_iteration == 1
+        @test optData.grad_val_hist[1] ≈ norm(g0)
+        @test optData.grad_val_hist[2] ≈ norm(OptimizationMethods.grad(progData, 
+            x1))
+        @test optData.iter_hist[1] ≈ x0
+        @test optData.iter_hist[2] ≈ x1
+        @test 1e-2 ≈ -sum((x1 - x0) ./g0) / length(x1)
     end
 
-    #TODO: Iteration K Update 
-    let
+    let progData = progData, x0 = x0, initial_weight = initial_weight,
+        threshold = threshold 
 
+        optData = WeightedNormDampingGD(
+            Float64,
+            x0 = x0,
+            init_norm_damping_factor = initial_weight,
+            threshold = threshold,
+            max_iterations = 100
+        )
+
+        xk = weighted_norm_damping_gd(optData, progData)
+        
+        # (Induction) Extract values assumed to be correct
+        k = optData.stop_iteration + 1
+        xkm1 = optData.iter_hist[k-1]
+        xkm2 = optData.iter_hist[k-2]
+        gkm1 = OptimizationMethods.grad(progData, xkm1)
+        gkm2 = OptimizationMethods.grad(progData, xkm2)
+        sskm2 = -sum((xkm1 - xkm2) ./ gkm2)/length(xkm1)
+        
+        # Conclusion  
+        sskm1 = 1/((1/sskm2) + norm(gkm1)^2*sskm2)
+        @test sskm1 ≈ -sum((xk - xkm1) ./ gkm1)/length(xkm1)
     end
 end
 
