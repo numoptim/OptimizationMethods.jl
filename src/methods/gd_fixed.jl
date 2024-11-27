@@ -15,7 +15,7 @@ A structure for storing data about fixed step-size gradient descent, and the
 - `iter_hist::Vector{Vector{T}}`, a history of the iterates. The first entry
     corresponds to the initial iterate (i.e., at iteration `0`). The `k+1` entry
     corresponds to the iterate at iteration `k`.
-- `gra_val_hist::Vector{T}`, a vector for storing `max_iterations+1` gradient
+- `grad_val_hist::Vector{T}`, a vector for storing `max_iterations+1` gradient
     norm values. The first entry corresponds to iteration `0`. The `k+1` entry
     correpsonds to the gradient norm at iteration `k`
 - `stop_iteration`, iteration number that the algorithm stopped at. 
@@ -45,7 +45,7 @@ mutable struct FixedStepGD{T} <: AbstractOptimizerData{T}
     threshold::T
     max_iterations::Int64
     iter_hist::Vector{Vector{T}}
-    gra_val_hist::Vector{T}
+    grad_val_hist::Vector{T}
     stop_iteration::Int64
 end
 function FixedStepGD(
@@ -60,12 +60,12 @@ function FixedStepGD(
     iter_hist = Vector{T}[ Vector{T}(undef, d) for i = 1:max_iterations+1]
     iter_hist[1] = x0
 
-    gra_val_hist = Vector{T}(undef, max_iterations+1)
+    grad_val_hist = Vector{T}(undef, max_iterations+1)
     stop_iteration = -1 #Not stopped
 
     return FixedStepGD("Gradient Descent with Fixed Step Size",
         step_size, threshold, max_iterations, iter_hist,
-        gra_val_hist, stop_iteration)
+        grad_val_hist, stop_iteration)
 
 end
 
@@ -112,7 +112,7 @@ function fixed_step_gd(
     grad!(progData, precomp, store, x)
     gra_norm = norm(store.grad)
 
-    optData.gra_val_hist[iter+1] = gra_norm
+    optData.grad_val_hist[iter+1] = gra_norm
 
     # fixed step-size gradient descent
     while (gra_norm > optData.threshold) && (iter < optData.max_iterations)
@@ -122,7 +122,7 @@ function fixed_step_gd(
         gra_norm = norm(store.grad)
 
         optData.iter_hist[iter + 1] .= x
-        optData.gra_val_hist[iter + 1] = norm(store.grad)
+        optData.grad_val_hist[iter + 1] = norm(store.grad)
     end
 
     optData.stop_iteration = iter

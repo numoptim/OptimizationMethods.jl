@@ -28,7 +28,7 @@ using Test, OptimizationMethods, Random, LinearAlgebra
     @test :threshold in fieldnames(FixedStepGD)
     @test :max_iterations in fieldnames(FixedStepGD)
     @test :iter_hist in fieldnames(FixedStepGD)
-    @test :gra_val_hist in fieldnames(FixedStepGD)
+    @test :grad_val_hist in fieldnames(FixedStepGD)
     @test :stop_iteration in fieldnames(FixedStepGD)
    
     ##########################################
@@ -56,7 +56,7 @@ using Test, OptimizationMethods, Random, LinearAlgebra
     @test typeof(solver.threshold) == T
     @test typeof(solver.max_iterations) == Int64
     @test typeof(solver.iter_hist) == Vector{Vector{T}}
-    @test typeof(solver.gra_val_hist) == Vector{T}
+    @test typeof(solver.grad_val_hist) == Vector{T}
     @test typeof(solver.stop_iteration) == Int64
 
     # test values
@@ -73,7 +73,7 @@ using Test, OptimizationMethods, Random, LinearAlgebra
     @test flag
 
     @test solver.iter_hist[1] == x0
-    @test size(solver.gra_val_hist) == (max_iterations+1, )
+    @test size(solver.grad_val_hist) == (max_iterations+1, )
     @test solver.stop_iteration == -1
 
 
@@ -94,7 +94,7 @@ using Test, OptimizationMethods, Random, LinearAlgebra
     @test typeof(solver.threshold) == T
     @test typeof(solver.max_iterations) == Int64
     @test typeof(solver.iter_hist) == Vector{Vector{T}}
-    @test typeof(solver.gra_val_hist) == Vector{T}
+    @test typeof(solver.grad_val_hist) == Vector{T}
     @test typeof(solver.stop_iteration) == Int64
 
     # test values
@@ -111,7 +111,7 @@ using Test, OptimizationMethods, Random, LinearAlgebra
     @test flag
 
     @test solver.iter_hist[1] == x0
-    @test size(solver.gra_val_hist) == (max_iterations+1, )
+    @test size(solver.grad_val_hist) == (max_iterations+1, )
     @test solver.stop_iteration == -1
 
     ##########################################
@@ -122,7 +122,7 @@ using Test, OptimizationMethods, Random, LinearAlgebra
     # Test optimizer
     ##########################################
 
-    progData = OptimizationMethods.GaussianLeastSquares(Float64)
+    progData = OptimizationMethods.LeastSquares(Float64)
     x0 = randn(50)
     optData = OptimizationMethods.FixedStepGD(
         Float64, 
@@ -141,8 +141,8 @@ using Test, OptimizationMethods, Random, LinearAlgebra
     ## test the struct values
     @test optData.iter_hist[1] == x0
     @test optData.iter_hist[2] == x1
-    @test optData.gra_val_hist[1] ≈ norm(OptimizationMethods.grad(progData, x0))
-    @test optData.gra_val_hist[2] ≈ norm(OptimizationMethods.grad(progData, x1))
+    @test optData.grad_val_hist[1] ≈ norm(OptimizationMethods.grad(progData, x0))
+    @test optData.grad_val_hist[2] ≈ norm(OptimizationMethods.grad(progData, x1))
     @test optData.stop_iteration == 1
 
     ## test random iteration and random step size and random threshold
@@ -166,7 +166,7 @@ using Test, OptimizationMethods, Random, LinearAlgebra
         # this test can fail if iter_hist is not correctly saved OR
         # gra val hist is not saved correctly
         gi = OptimizationMethods.grad(progData, optData.iter_hist[iter + 1])
-        @test optData.gra_val_hist[iter + 1] ≈ norm(gi)
+        @test optData.grad_val_hist[iter + 1] ≈ norm(gi)
     end
 
     @test optData.stop_iteration == k
@@ -181,8 +181,8 @@ using Test, OptimizationMethods, Random, LinearAlgebra
     )
     xk = fixed_step_gd(optData, progData) 
 
-    @test optData.gra_val_hist[optData.stop_iteration + 1] <= 10.0
-    @test optData.gra_val_hist[optData.stop_iteration] > 10.0
+    @test optData.grad_val_hist[optData.stop_iteration + 1] <= 10.0
+    @test optData.grad_val_hist[optData.stop_iteration] > 10.0
 
     
     ##########################################

@@ -4,6 +4,7 @@ authors = ["Vivak Patel <vivak.patel@wisc.edu>", "Christian Varner <cvarner@wisc
 version = "0.0.0"
 
 [deps]
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 NLPModels = "a4795742-8479-5a88-8948-cc11e1c8c1a6"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
@@ -12,7 +13,8 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 julia = "1"
 
 [extras]
+ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Test"]
+test = ["Test", "ForwardDiff"]
