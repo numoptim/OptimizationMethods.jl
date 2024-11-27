@@ -4,7 +4,7 @@
 
 using OptimizationMethods
 
-progData = OptimizationMethods.GaussianLeastSquares(Float64);
+progData = OptimizationMethods.LeastSquares(Float64);
 optData = OptimizationMethods.WeightedNormDampingGD(
     Float64, 
     x0=randn(50), 
