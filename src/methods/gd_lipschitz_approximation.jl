@@ -107,11 +107,11 @@ Implements gradient descent with adaptive step sizes formed through a lipschitz
 
 # References(s)
 
-Malitsky, Y. and Mishchenko, K. (2020). "Adaptive Gradient Descent without 
+[Malitsky, Y. and Mishchenko, K. (2020). "Adaptive Gradient Descent without 
     Descent." 
     Proceedings of the 37th International Conference on Machine Learning, 
     in Proceedings of Machine Learning Research 119:6702-6712.
-    Available from https://proceedings.mlr.press/v119/malitsky20a.html.
+    ](@cite malitsky2020Adaptive)
 
 
 # Method
