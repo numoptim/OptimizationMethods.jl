@@ -1,12 +1,12 @@
 # Quasi-likelihood Estimation
 
 Quasi-likelihood estimation was first introduced by 
-[Wedderburn](https://doi.org/10.1093/biomet/61.3.439) as a way of estimating regression
+[wedderburn1974Quasilikelihood](@citet) as a way of estimating regression
 coefficients when the underlying probability model generating the data is hard to identify, 
 or when the data is not explained well by common approaches, such as [generalized linear models](https://en.wikipedia.org/wiki/Generalized_linear_model). 
 We now briefly provide background information on the method, followed by some examples that are implemented in our package.
  
-### Quasi-likelihood Setting and Estimation Methodology
+## Quasi-likelihood Setting and Estimation Methodology
 
 Quasi-likelihood estimation, following Wedderburn's description, assumes that the
 response variables, $y_i \in \mathbb{R}$, for $i = 1,...,n$, being either discrete or continuous, are independently collected
@@ -34,7 +34,7 @@ $$\min_{\theta} F(\theta) = \min_{\theta} -\sum_{i=1}^n \int_{c_i}^{g(x_i^\inter
 Having presented some background on quasi-likelihood estimation, we now present
 a use case of the framework for a special case in semi-parametric regression.
 
-### Example: Semi-parametric Regression with Heteroscedasticity Errors
+## Example: Semi-parametric Regression with Heteroscedasticity Errors
 
 Suppose that observations, $y_i \in \mathbb{R}$, $i = 1, ..., n$, are independent 
 and are associated with covariate vectors $x_i \in \mathbb{R}^p$, $i = 1,...,n$. 
@@ -60,7 +60,7 @@ to analytically integrate (if not impossible), some of which appear in literatur
 - Let $V : \mathbb{R} \to \mathbb{R}$ be defined as $V(\mu) = \exp(-(\mu - c)^{2p})$ for $c \in \mathbb{R}$ and $p \in \mathbb{R}_{> 0}$.
 - Let $V : \mathbb{R} \to \mathbb{R}$ be defined as $V(\mu) = \log((\mu - c)^{2p} + 1)$ for $c \in \mathbb{R}$ and $p \in \mathbb{R}_{> 0}$.
 
-#### Model Implementation (TODO)
+## Model Implementation (TODO)
 
 We implement the semi-parametric regression example above, using the quasi-likelihood
 framework for estimation (**See the documentation for the problems here**).
@@ -68,3 +68,9 @@ For the variance functions, we use the examples above, and for the mean function
 we use a variety of common link functions from [generalized linear models](https://en.wikipedia.org/wiki/Generalized_linear_model).
 Following our other problem implementations, we provide constructors that simulate the data or
 allow for problem data to be provided.
+
+## References 
+```@bibliography
+Pages=["quasilikelihood_estimation.md"]
+Canonical=false 
+```
