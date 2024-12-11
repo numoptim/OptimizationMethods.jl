@@ -6,7 +6,7 @@
     WeightedNormDampingGD{T} <: AbstractOptimizerData{T}
 
 A mutable struct that represents gradient descent using the weighted-norm 
-    damping  step size. It stores the specification for the method and records 
+    damping step size. It stores the specification for the method and records 
     values during iteration.
 
 # Fields
@@ -15,7 +15,7 @@ A mutable struct that represents gradient descent using the weighted-norm
 - `init_norm_damping_factor::T`, initial damping factor. This value's reciprocal 
     will be the initial step size.
 - `threshold::T`, norm gradient tolerance condition. Induces stopping when norm 
-    at most `threshold`.
+    is at most `threshold`.
 - `max_iterations::Int64`, max number of iterates that are produced, not 
     including the initial iterate.
 - `iter_hist::Vector{Vector{T}}`, store the iterate sequence as the algorithm 
@@ -60,10 +60,11 @@ mutable struct WeightedNormDampingGD{T} <: AbstractOptimizerData{T}
     WeightedNormDampingGD{T}(name, init_norm_damping_factor, threshold, 
         max_iterations, iter_hist, grad_val_hist, stop_iteration) where {T} = 
     begin
-        @assert init_norm_damping_factor > 0 "init_norm_damping_factor is 
-            non-zero or negative"
+        @assert init_norm_damping_factor > 0 
+        "init_norm_damping_factor is non-zero or negative"
         @assert threshold > 0 "threshold is zero or negative"
         @assert max_iterations > 0 "max_iterations is zero or negative"
+
         return new(name, init_norm_damping_factor, threshold, max_iterations, 
             iter_hist, grad_val_hist, stop_iteration)
     end
@@ -114,7 +115,7 @@ Let ``\\theta_k`` be the ``k^{th}`` iterate, and ``\\alpha_k`` be the ``k^{th}``
 where ``\\nabla f`` is the gradient of the objective function ``f``.
 
 The step size depends on the iteration number ``k``. For ``k = 0``, the step 
-    size is ``\\alpha_0`` is the reciprocal of `optData.init_norm_damping_factor`. 
+    size ``\\alpha_0`` is the reciprocal of `optData.init_norm_damping_factor`. 
     For ``k > 0``, the step size is iteratively updated as
 
 ```math
