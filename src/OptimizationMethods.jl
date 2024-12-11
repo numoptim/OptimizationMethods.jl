@@ -24,6 +24,9 @@ Parametric type for pre-allocating data structures for an optimization problem.
 """
 abstract type AbstractProblemAllocate{T} end
 
+## Helper functions
+include("problems/regression_helpers/link_functions.jl")
+
 ## Source Code
 include("problems/least_squares.jl")
 include("problems/logistic_regression.jl")
