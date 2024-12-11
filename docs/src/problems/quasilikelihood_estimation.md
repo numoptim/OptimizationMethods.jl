@@ -11,13 +11,13 @@ We now briefly provide background information on the method, followed by some ex
 Quasi-likelihood estimation, following Wedderburn's description, assumes that the
 response variables, $y_i \in \mathbb{R}$, for $i = 1,...,n$, being either discrete or continuous, are independently collected
 from a distribution that is only partially known.
-Specifically, for covariate vectors, $x_i \in \mathbb{R}^p$, $i = 1,...,n$, and a vector $\theta_0 \in \mathbb{R}^p$
-the model assumes the following relationship between $y_i, x_i$ and $\theta_0$.
+Specifically, for covariate vectors, $x_i \in \mathbb{R}^p$, $i = 1,...,n$, and a vector $\theta^{\star} \in \mathbb{R}^p$
+the model assumes the following relationship between $y_i, x_i$ and $\theta^{\star}$.
 
-- (Mean Relationship) The expected value of each observation, $\mathbb{E}[y_i | x_i, \theta_0] = \mu_i$, satisfies $\mu_i = g(x_i^\intercal \theta_0)$ for a known function $g : \mathbb{R} \to \mathbb{R}$. Typically, $g$ is selected to be invertible.
-- (Variance Relationship) The variance of each data point satisfies $\mathbb{V}[y_i | x_i, \theta_0] = V(g(x_i^\intercal \theta_0))$ for a known non-negative function $V : \mathbb{R} \to \mathbb{R}$.
+- (Mean Relationship) The expected value of each observation, $\mathbb{E}[y_i | x_i, \theta^{\star}] = \mu_i$, satisfies $\mu_i = g(x_i^\intercal \theta^{\star})$ for a known function $g : \mathbb{R} \to \mathbb{R}$. Typically, $g$ is selected to be invertible.
+- (Variance Relationship) The variance of each data point satisfies $\mathbb{V}[y_i | x_i, \theta^{\star}] = V(g(x_i^\intercal \theta^{\star}))$ for a known non-negative function $V : \mathbb{R} \to \mathbb{R}$.
 
-Estimation of $\theta_0$ proceeds by combining these two components to form the quasi-likelihood objective,
+Estimation of $\theta^{\star}$ proceeds by combining these two components to form the quasi-likelihood objective,
 
 $$\min_{\theta} F(\theta) = \min_{\theta} -\sum_{i=1}^n \int_{c_i}^{g(x_i^\intercal \theta)} \frac{y_i - \mu}{V(\mu)}d\mu.$$
 
@@ -40,10 +40,10 @@ Suppose that observations, $y_i \in \mathbb{R}$, $i = 1, ..., n$, are independen
 and are associated with covariate vectors $x_i \in \mathbb{R}^p$, $i = 1,...,n$. 
 Furthermore, suppose $(x_i, y_i)$ satisfy the following relationship
 
-$$y_i = g(x_i^\intercal \theta_0) + V( g(x_i^\intercal \theta_0) )^{1/2} \epsilon_i,$$
+$$y_i = g(x_i^\intercal \theta^{\star}) + V( g(x_i^\intercal \theta^{\star}) )^{1/2} \epsilon_i,$$
 
 for a function $g:\mathbb{R} \to \mathbb{R}$, a non-negative function 
-$V : \mathbb{R} \to \mathbb{R}$, and a vector $\theta_0 \in \mathbb{R}^p$.
+$V : \mathbb{R} \to \mathbb{R}$, and a vector $\theta^{\star} \in \mathbb{R}^p$.
 Here, $\epsilon_i$ are independent realization from a distribution with a
 mean and variance of $0$ and $1$, respectively, but whose exact form cannot be fully specified. 
 
@@ -56,9 +56,9 @@ Below, we provide a list of variance functions that lead to the quasi-likelihood
 to analytically integrate (if not impossible), some of which appear in literature.
 
 - Let $V : \mathbb{R} \to \mathbb{R}$ be defined as $V(\mu) = 1 + \mu + \sin(2\pi\mu)$. See Section 4 of [lanteri2023designing](@citet).
-- Let $V : \mathbb{R} \to \mathbb{R}$ be defined as $V(\mu) = \mu^{2p} + c$ for $c \in \mathbb{R}_{> 0}$ and $p \in \mathbb{R}_{>0}$. See for example [variance stabilization transformations](https://en.wikipedia.org/wiki/Variance-stabilizing_transformation).
-- Let $V : \mathbb{R} \to \mathbb{R}$ be defined as $V(\mu) = \exp(-(\mu - c)^{2p})$ for $c \in \mathbb{R}$ and $p \in \mathbb{R}_{> 0}$.
-- Let $V : \mathbb{R} \to \mathbb{R}$ be defined as $V(\mu) = \log((\mu - c)^{2p} + 1)$ for $c \in \mathbb{R}$ and $p \in \mathbb{R}_{> 0}$.
+- Let $V : \mathbb{R} \to \mathbb{R}$ be defined as $V(\mu) = (\mu^{2})^p + c$ for $c \in \mathbb{R}_{> 0}$ and $p \in \mathbb{R}_{>.5}$. See for example [variance stabilization transformations](https://en.wikipedia.org/wiki/Variance-stabilizing_transformation).
+- Let $V : \mathbb{R} \to \mathbb{R}$ be defined as $V(\mu) = \exp(-((\mu - c)^{2})^p)$ for $c \in \mathbb{R}$ and $p \in \mathbb{R}_{>.5}$.
+- Let $V : \mathbb{R} \to \mathbb{R}$ be defined as $V(\mu) = \log( ((\mu - c)^{2})^p + 1)$ for $c \in \mathbb{R}$ and $p \in \mathbb{R}_{>.5}$.
 
 ## Model Implementation (TODO)
 
