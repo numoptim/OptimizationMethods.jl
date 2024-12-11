@@ -126,7 +126,7 @@ where ``\\alpha_k`` is the step size and ``\\nabla f`` is the gradient function
     of the objective function ``f``.
 
 The step size is computed depending on ``k``. 
-    When ``k = 0``, ``\\alpha_k = optData.init_stepsize``. 
+    When ``k = 0``, the step size is set to `optData.init_stepsize`. 
     When ``k > 0``, 
 
 ```math
