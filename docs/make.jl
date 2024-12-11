@@ -1,4 +1,10 @@
-using Documenter, OptimizationMethods
+using Documenter, DocumenterCitations
+using OptimizationMethods
+
+bib = CitationBibliography(
+    joinpath(@__DIR__, "src", "optimizationmethodsjl.bib");
+    style=:authoryear
+)
 
 makedocs(
     sitename="OptimizationMethods.jl Documentation",
@@ -12,8 +18,10 @@ makedocs(
         "API" => [
             "Problems" => "api_problems.md",
             "Methods" => "api_methods.md"
-        ]
-    ]
+        ],
+        "References" => "references.md",
+    ];
+    plugins=[bib]
 )
 
 deploydocs(

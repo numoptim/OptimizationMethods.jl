@@ -33,7 +33,7 @@ where ``C(b)`` is a constant depending on the data. We implement the objective
 F(x) = \\sum_{i=1}^n \\mu_i(x) - b_i (A_i^\\intercal x).
 ```
 
-!!! Remark
+!!! warn
     Because the additive term ``C(b)`` is not included in the objective function,
     the objective function can take on negative values.
 
