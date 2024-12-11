@@ -62,6 +62,7 @@ mutable struct WeightedNormDampingGD{T} <: AbstractOptimizerData{T}
     begin
         @assert init_norm_damping_factor > 0 
         "init_norm_damping_factor is non-zero or negative"
+        
         @assert threshold > 0 "threshold is zero or negative"
         @assert max_iterations > 0 "max_iterations is zero or negative"
 
