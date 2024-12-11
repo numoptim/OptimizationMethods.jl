@@ -8,12 +8,11 @@
     logistic(η::T} where T
 
 Implements
-    ```math
- 
 
+```math
  \\mathrm{logistic}(\\eta) = \\frac{1}{1 + \\exp(-\\eta)},
-    ```
-    where `T` is a scalar value.
+```
+where `T` is a scalar value.
 """
 function logistic(η::T) where T
     return 1/(1 + exp(-η))

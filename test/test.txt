@@ -6,3 +6,4 @@ methods/gd_barzilai_borwein.jl
 methods/gd_lipschitz_approximation.jl
 methods/gd_weighted_norm_damping.jl
 problems/regression_helpers/link_functions.jl
+problems/regression_helpers/variance_functions.jl

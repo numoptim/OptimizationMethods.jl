@@ -26,6 +26,7 @@ abstract type AbstractProblemAllocate{T} end
 
 ## Helper functions
 include("problems/regression_helpers/link_functions.jl")
+include("problems/regression_helpers/variance_functions.jl")
 
 ## Source Code
 include("problems/least_squares.jl")

@@ -14,6 +14,18 @@ OptimizationMethods.LogisticRegression
 OptimizationMethods.PoissonRegression
 ```
 
+## Regression Helpers
+
+### Link Functions
+```@docs
+OptimizationMethods.logistic
+```
+
+### Variance Functions
+```@docs
+OptimizationMethods.monomial_plus_constant
+```
+
 # Index
 
 ```@index
