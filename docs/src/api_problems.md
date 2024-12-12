@@ -24,6 +24,12 @@ OptimizationMethods.logistic
 ### Variance Functions
 ```@docs
 OptimizationMethods.monomial_plus_constant
+
+OptimizationMethods.linear_plus_sin
+
+OptimizationMethods.centered_exp
+
+OptimizationMethods.centered_shifted_log
 ```
 
 # Index
