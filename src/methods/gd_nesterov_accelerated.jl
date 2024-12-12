@@ -102,7 +102,7 @@ function NesterovAcceleratedGD(
 
     # initialization of buffers for the algorithm
     z = Vector{T}(undef, d)
-    y = Vector{T}(under, d)
+    y = Vector{T}(undef, d)
 
     # initialize buffer for history keeping
     d = length(x0)
