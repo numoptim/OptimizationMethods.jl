@@ -1,15 +1,19 @@
 using OptimizationMethods
 
-progData = OptimizationMethods.GaussianLeastSquares(Float64);
-optData = OptimizationMethods.FixedStepGD(
-    Float64, 
-    x0=randn(50), 
-    step_size=0.0005, 
-    threshold=1e-10, 
-    max_iterations=100
+progData = OptimizationMethods.LeastSquares(Float64)
+optData = BarzilaiBorweinGD(
+    Float64,
+    x0 = randn(50),
+    init_stepsize = 1e-5,
+    long_stepsize = true,
+    threshold = 1e-10,
+    max_iterations = 100
 )
 
-x = OptimizationMethods.fixed_step_gd(optData, progData);
+x = barzilai_borwein_gd(
+    optData,
+    progData
+)
 
 # Compute objective and residual evals during optimization 
 obj_evals = progData.counters.neval_obj
@@ -18,8 +22,7 @@ res_evals = progData.counters.neval_residual
 # Compute objective values of different iterates for reporting purposes
 obj_init = OptimizationMethods.obj(progData, optData.iter_hist[1])
 obj_term = OptimizationMethods.obj(progData, 
-    optData.iter_hist[optData.stop_iteration])
-
+    optData.iter_hist[optData.stop_iteration + 1])
 
 
 println(
@@ -36,7 +39,7 @@ println(
 
     Terminal Iteration: $(optData.stop_iteration)
     Terminal Objective: $obj_term
-    Terminal Grad Norm: $(optData.grad_val_hist[optData.stop_iteration])
+    Terminal Grad Norm: $(optData.grad_val_hist[optData.stop_iteration + 1])
 
     Objective Evaluations: $obj_evals
     Gradient Evaluations: $(progData.counters.neval_grad)

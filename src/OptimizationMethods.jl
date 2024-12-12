@@ -3,6 +3,7 @@ module OptimizationMethods
 # Dependencies
 using LinearAlgebra
 using NLPModels
+using Distributions
 
 ################################################################################
 # Optimization Problems 
@@ -24,8 +25,9 @@ Parametric type for pre-allocating data structures for an optimization problem.
 abstract type AbstractProblemAllocate{T} end
 
 ## Source Code
-include("problems/gaussian_least_squares.jl")
+include("problems/least_squares.jl")
 include("problems/logistic_regression.jl")
+include("problems/poisson_regression.jl")
 
 
 ################################################################################
@@ -45,11 +47,13 @@ export BarzilaiBorweinGD, barzilai_borwein_gd
 export FixedStepGD, fixed_step_gd
 export LipschitzApproxGD, lipschitz_approximation_gd
 export NesterovAcceleratedGD, nesterov_accelerated_gd
+export WeightedNormDampingGD, weighted_norm_damping_gd
 
 ## Source Code 
 include("methods/gd_barzilai_borwein.jl")
 include("methods/gd_fixed.jl")
 include("methods/gd_lipschitz_approximation.jl")
 include("methods/gd_nesterov_accelerated.jl")
+include("methods/gd_weighted_norm_damping.jl")
 
 end
