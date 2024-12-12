@@ -50,5 +50,5 @@ Implements the link function
 - `η::T`, scalar. In the regression context this is the linear effect.
 """
 function inverse_probit(η::T) where {T}
-    return (1/sqrt(2 * pi)) * exp(-((η)^2)/2)
+    return T((1/sqrt(2 * pi)) * exp(-.5*(η^2)))
 end

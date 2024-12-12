@@ -40,7 +40,7 @@ See [Quasi-likelihood Estimation](@ref) for details.
 - `μ::T`, scalar. In regression context, this is the linear effect.
 """
 function linear_plus_sin(μ::T) where {T}
-    return 1 + μ + sin(2*pi*μ)
+    return 1 + μ + T(sin(2*pi*μ))
 end
 
 """
