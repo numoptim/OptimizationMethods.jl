@@ -76,10 +76,10 @@ mutable struct NesterovAcceleratedGD{T} <: AbstractOptimizerData{T}
         @assert step_size > 0 "step size is non-positive."
         @assert threshold > 0 "`threshold` is non-positive."
         @assert max_iterations >= 0 "`max_iterations` is negative"
-        @assert length(grad_val_hist) == max_iterations + 1 "`grad_val_hist` 
-        should be of $(max_iterations+1) not $(length(grad_val_hist))"
-        @assert length(iter_hist) == max_iterations + 1 "`iter_hist` should
-        be of length $(max_iterations+1) not $(length(iter_hist))"
+        @assert length(grad_val_hist) == max_iterations + 1 "`grad_val_hist`"*
+        "should be of $(max_iterations+1) not $(length(grad_val_hist))"
+        @assert length(iter_hist) == max_iterations + 1 "`iter_hist` should"*
+        "be of length $(max_iterations+1) not $(length(iter_hist))"
         @assert length(z) == length(y) "Length of z and y need to be equal"
 
         # return new object
@@ -126,12 +126,21 @@ end
 Implements Nesterov's Accelerated Gradient Descent as specified by `optData` on
 the problem specified by `progData`.
 
+!!! warning
+    This algorithm is designed for convex problems.
+
 # Reference(s)
 
 The specific algorithm implementation follows the psuedo-code in
 
 Li et. al. "Convex and Non-convex Optimization Under Generalized Smoothness".
 arxiv, https://arxiv.org/abs/2306.01264.
+
+See below for other references.
+
+Nesterov, Yurii. 1983. “A Method for Solving the Convex Programming Problem 
+with Convergence Rate O(1/K^2).” Proceedings of the USSR Academy of Sciences 
+269:543–47.
 
 # Method
 
@@ -140,11 +149,11 @@ The algorithm produces the iterates
 ```math
 \\theta_{k+1} = \\theta_k - \\alpha_k \\nabla F(y_{k}),
 ```
-where ``\\alpha_k = optData.step_size``, ``F`` is the objective function,
+where ``\\alpha_k`` is set `optData.step_size`, ``F`` is the objective function,
 and ``\\nabla F`` is the gradient of the objective. 
 
 The sequence ``y_{k}`` is updated with the use of a sequence of vectors ``z_k``,
-and of constants ``A_k`` and ``B_k``. 
+and constants ``A_k`` and ``B_k``. 
 
 ``B_k`` is updated according to
 
@@ -161,7 +170,6 @@ A_{k+1} = B_{k+1} + 1/\\alpha_k,
 where ``A_0 = 1/\\alpha_k``.
 
 ``z_k`` is updated according to
-
 ```math
 z_{k+1} = z_k - \\alpha_k (A_{k+1} - A_{k}) \\nabla F(y_k)
 ```
