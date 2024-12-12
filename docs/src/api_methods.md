@@ -32,6 +32,13 @@ weighted_norm_damping_gd
 WeightedNormDampingGD
 ```
 
+# Nesterov's Accelerated Gradient Descent
+
+```@docs
+nesterov_accelerated_gd
+NesterovAcceleratedGD
+```
+
 # Index 
 ```@index
 ```
