@@ -1,6 +1,6 @@
 using OptimizationMethods
 
-progData = OptimizationMethods.LeastSquares(Float64)
+progData = OptimizationMethods.PoissonRegression(Float64)
 optData = NesterovAcceleratedGD(
     Float64;
     x0 = randn(50),
@@ -13,7 +13,6 @@ x = nesterov_accelerated_gd(optData, progData)
 
 # Compute objective and residual evals during optimization 
 obj_evals = progData.counters.neval_obj
-res_evals = progData.counters.neval_residual 
 
 # Compute objective values of different iterates for reporting purposes
 obj_init = OptimizationMethods.obj(progData, optData.iter_hist[1])
@@ -39,7 +38,6 @@ println(
 
     Objective Evaluations: $obj_evals
     Gradient Evaluations: $(progData.counters.neval_grad)
-    Residual Evaluations: $res_evals
-    Jacobian Evaluations: $(progData.counters.neval_jac_residual)
+    Hessian Evaluations: $(progData.counters.neval_hess)
 """
 )
