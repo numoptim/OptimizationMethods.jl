@@ -19,6 +19,10 @@ OptimizationMethods.PoissonRegression
 ### Link Functions
 ```@docs
 OptimizationMethods.logistic
+
+OptimizationMethods.inverse_complimentary_log_log
+
+OptimizationMethods.inverse_probit
 ```
 
 ### Variance Functions

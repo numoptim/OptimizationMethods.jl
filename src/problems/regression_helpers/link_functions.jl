@@ -38,7 +38,7 @@ function inverse_complimentary_log_log(η::T) where {T}
 end
 
 """
-    inverse_probit(\\eta::T) where {T}
+    inverse_probit(η::T) where {T}
 
 Implements the link function
 ```math
