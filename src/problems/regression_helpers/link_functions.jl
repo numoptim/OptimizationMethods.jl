@@ -11,7 +11,7 @@ Implements
 ```math
  \\mathrm{logistic}(\\eta) = \\frac{1}{1 + \\exp(-\\eta)},
 ```
-where `T` is a scalar value.
+where `T` is a scalar type.
 
 # Arguments
 
@@ -26,7 +26,7 @@ end
 
 Implements the link function
 ```math
-    g(\\eta) = 1 - \\exp(-\\exp(\\eta)).
+    \\mathrm{CLogLog}^{-1}(\\eta) = 1 - \\exp(-\\exp(\\eta)).
 ```
 
 # Arguments
@@ -42,7 +42,7 @@ end
 
 Implements the link function
 ```math
-    g(\\eta) = \\frac{1}{2\\pi} \\exp(-.5\\eta^2).
+    \\Phi(\\eta) = \\frac{1}{2\\pi} \\exp(-.5\\eta^2).
 ```
 
 # Arguments
