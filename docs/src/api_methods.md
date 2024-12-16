@@ -28,6 +28,20 @@ LipschitzApproxGD
 lipschitz_approximation_gd
 ```
 
+# Gradient Descent with Diminishing Step Size
+```@docs
+DiminishingStepGD
+
+diminishing_step_gd
+```
+
+## Diminishing Step Size Helpers
+```@docs
+OptimizationMethods.inverse_k_step_size
+
+OptimizationMethods.inverse_log2k_step_size
+```
+
 # Index 
 ```@index
 ```
