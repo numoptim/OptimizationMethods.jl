@@ -81,8 +81,8 @@ function DiminishingStepGD(
     
     # initialization histories
     d = length(x0)
-    iter_hist = Vector{T}([Vector(undef, d) for i in 1:(max_iterations + 1)])
-    iter_hist[1] = x0
+    iter_hist = Vector{T}[Vector{T}(undef, d) for i in 1:(max_iterations + 1)]
+    iter_hist[1] .= x0
 
     grad_val_hist = Vector{T}(undef, max_iterations + 1)
     stop_iteration = -1
