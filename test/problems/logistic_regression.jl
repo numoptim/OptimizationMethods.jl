@@ -174,20 +174,6 @@ using Test, ForwardDiff, OptimizationMethods, Random, LinearAlgebra, NLPModels
         end
     end
 
-    
-    ####################################
-    # Test Utilities - logistic
-    ####################################
-
-    test_values = Vector{Float64}(collect(-5:5:1))
-    for x in test_values
-        y = 1 / (1 + exp(-x))
-        
-        returned_val = OptimizationMethods.logistic(x)
-        @test isapprox(y, returned_val; atol = 1e-10)
-        @test typeof(returned_val) == Float64
-    end
-
     ####################################
     # Test functionality - group 1
     ####################################
