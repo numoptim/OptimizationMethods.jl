@@ -14,9 +14,7 @@ OptimizationMethods.LogisticRegression
 OptimizationMethods.PoissonRegression
 ```
 
-## Regression Helpers
-
-### Link Functions
+## Regression Link Functions
 ```@docs
 OptimizationMethods.logistic
 
@@ -25,7 +23,7 @@ OptimizationMethods.inverse_complimentary_log_log
 OptimizationMethods.inverse_probit
 ```
 
-### Variance Functions
+## Regression Variance Functions
 ```@docs
 OptimizationMethods.monomial_plus_constant
 
