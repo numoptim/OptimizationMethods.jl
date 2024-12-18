@@ -123,8 +123,8 @@ Implements gradient descent with Barzilai-Borwein step size and applies the
 
 # Reference(s)
 
-Barzilai and Borwein. "Two-Point Step Size Gradient Methods". IMA Journal of 
-    Numerical Analysis.
+[Barzilai and Borwein. "Two-Point Step Size Gradient Methods". IMA Journal of 
+    Numerical Analysis.](@cite barzilai1988Twopoint)
 
 # Method
 
@@ -137,8 +137,8 @@ Given iterates ``\\lbrace x_0,\\ldots,x_k\\rbrace``, the iterate ``x_{k+1}``
 If ``k=0``, then ``\\alpha_0`` is set to `optData.init_stepsize`. For ``k>0``,
 
 ```math 
-\\alpha_k = \\frac{ \\Vert x_k - x_{k-1} \\Vert_2^2}{(x_k - x_{k-1}^\\intercal 
-    (\\nabla f(x_k) - \\nabla f(x_{k-1})))}.
+\\alpha_k = \\frac{ \\Vert x_k - x_{k-1} \\Vert_2^2}{(x_k - x_{k-1})^\\intercal 
+    (\\nabla f(x_k) - \\nabla f(x_{k-1}))}.
 ```
 
 ## Short Step Size Version (if `optData.long_stepsize==false`)
@@ -146,8 +146,8 @@ If ``k=0``, then ``\\alpha_0`` is set to `optData.init_stepsize`. For ``k>0``,
 If ``k=0``, then ``\\alpha_0`` is set to `optData.init_stepsize`. For ``k>0``,
 
 ```math
-\\alpha_k = \\frac{(x_k - x_{k-1}^\\intercal (\\nabla f(x_k) - 
-    \\nabla f(x_{k-1})))}{\\Vert \\nabla f(x_k) - \\nabla f(x_{k-1})\\Vert_2^2}.
+\\alpha_k = \\frac{(x_k - x_{k-1})^\\intercal (\\nabla f(x_k) - 
+    \\nabla f(x_{k-1}))}{\\Vert \\nabla f(x_k) - \\nabla f(x_{k-1})\\Vert_2^2}.
 ```
 
 # Arguments
