@@ -123,8 +123,8 @@ Implements gradient descent with Barzilai-Borwein step size and applies the
 
 # Reference(s)
 
-Barzilai and Borwein. "Two-Point Step Size Gradient Methods". IMA Journal of 
-    Numerical Analysis.
+[Barzilai and Borwein. "Two-Point Step Size Gradient Methods". IMA Journal of 
+    Numerical Analysis.](@cite barzilai1988Twopoint)
 
 # Method
 
