@@ -4,6 +4,7 @@ module OptimizationMethods
 using LinearAlgebra
 using NLPModels
 using Distributions
+using Integrals
 
 ################################################################################
 # Optimization Problems 
@@ -26,13 +27,14 @@ abstract type AbstractProblemAllocate{T} end
 
 ## Helper functions
 include("problems/regression_helpers/link_functions.jl")
+include("problems/regression_helpers/link_function_derivatives.jl")
 include("problems/regression_helpers/variance_functions.jl")
 
 ## Source Code
 include("problems/least_squares.jl")
 include("problems/logistic_regression.jl")
 include("problems/poisson_regression.jl")
-include("problems/ql_linear_mean_sin_variance.jl")
+include("problems/ql_logistic_sin.jl")
 
 
 ################################################################################
