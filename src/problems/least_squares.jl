@@ -42,6 +42,7 @@ Constructs a least squares problems with `1000` equations and `50` unknowns,
 - `nequ::Int64=1000`, the number of equations in the system 
 - `nvar::Int64=50`, the number of parameters in the system 
 
+
     LeastSquares(design::Matrix{T}, response::Vector{T}; 
         x0 = ones(T, size(design, 2))) where {T}    
 
