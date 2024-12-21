@@ -16,9 +16,8 @@ progresses.
 - `z::Vector{T}`, buffer array for auxiliary iterate sequence
 - `y::Vector{T}`, buffer array for convex combination of iterate and auxiliary
     sequence 
-- `A::T`, current acceleration weight 
-- `A_prev::T`, previous acceleration weight 
-- `B::T`, auxiliary quadratic scaling term for computing acceleration weights
+- `B::T`, auxiliary quadratic scaling term for computing acceleration weights 
+    and step size.
 - `threshold::T`, gradient threshold. If the norm gradient is below this, then 
     iteration stops.
 - `max_iterations::Int64`, max number of iterations (gradient steps) taken by 
@@ -55,8 +54,6 @@ mutable struct NesterovAcceleratedGD{T} <: AbstractOptimizerData{T}
     step_size::T
     z::Vector{T}
     y::Vector{T}
-    A::T
-    A_prev::T
     B::T
     threshold::T
     max_iterations::Int64
@@ -65,7 +62,7 @@ mutable struct NesterovAcceleratedGD{T} <: AbstractOptimizerData{T}
     stop_iteration::Int64
 
     # inner constructor
-    NesterovAcceleratedGD{T}(name, step_size, z, y, A, A_prev, B, threshold, 
+    NesterovAcceleratedGD{T}(name, step_size, z, y, B, threshold, 
     max_iterations, iter_hist, grad_val_hist, stop_iteration) where {T} = 
     begin
 
@@ -80,7 +77,7 @@ mutable struct NesterovAcceleratedGD{T} <: AbstractOptimizerData{T}
         @assert length(z) == length(y) "Length of z and y need to be equal"
 
         # return new object
-        return new(name, step_size, z, y, A, A_prev, B, threshold, 
+        return new(name, step_size, z, y, B, threshold, 
         max_iterations, iter_hist, grad_val_hist, stop_iteration)
     end
 end
@@ -112,7 +109,7 @@ function NesterovAcceleratedGD(
     stop_iteration::Int64 = -1 # dummy value
 
     # initialize the structure
-    return NesterovAcceleratedGD{T}(name, step_size, z, y, T(0), T(0), T(0), 
+    return NesterovAcceleratedGD{T}(name, step_size, z, y, T(0), 
     threshold, max_iterations, iter_hist, grad_val_hist, stop_iteration)
 end
 
@@ -128,57 +125,42 @@ the problem specified by `progData`.
 
 # Reference(s)
 
-The specific algorithm implementation follows the psuedo-code in
-
-Li et. al. "Convex and Non-convex Optimization Under Generalized Smoothness".
-arxiv, https://arxiv.org/abs/2306.01264.
-
-See below for other references.
-
-Nesterov, Yurii. 1983. “A Method for Solving the Convex Programming Problem 
-with Convergence Rate O(1/K^2).” Proceedings of the USSR Academy of Sciences 
-269:543–47.
+- See Algorithm 1 of [Li et. al. "Convex and Non-convex Optimization Under 
+    Generalized Smoothness". arxiv, https://arxiv.org/abs/2306.01264.](@cite 
+    li2023Convex)
+- See line-search based approach in [Nesterov, Yurii. 1983. “A Method for 
+    Solving the Convex Programming Problem 
+    with Convergence Rate O(1/K^2).” Proceedings of the USSR Academy of Sciences 
+    269:543–47.](@cite nesterov1983Method)
 
 # Method
 
-The algorithm produces the iterates
+Let the objective function be denoted by ``F(\\theta)`` and ``\\nabla F(
+    \\theta)`` denote its gradient function. Given ``\\theta_0`` and  a step 
+    size ``\\alpha`` (equal to `optData.step_size`), the method produces five 
+    sequences. At ``k=0``,
 
-```math
-\\theta_{k+1} = \\theta_k - \\alpha_k \\nabla F(y_{k}),
+```math 
+\\begin{cases}
+    B_0 &= 0 \\\\
+    z_0 &= \\theta_0 \\\\
+    \\Delta_0 & = 1 \\\\
+    y_0 &= \\theta_0;
+\\end{cases}
 ```
-where ``\\alpha_k`` is set `optData.step_size`, ``F`` is the objective function,
-and ``\\nabla F`` is the gradient of the objective. 
-
-The sequence ``y_{k}`` is updated with the use of a sequence of vectors ``z_k``,
-and constants ``A_k`` and ``B_k``. 
-
-``B_{k+1}`` is updated according to
-
-```math
-B_{k+1} = B_k + .5(1+\\sqrt(4*B_k + 1)),
-```
-where ``B_0 = 0``.
-
-``A_{k+1}`` is updated according to
-
-```math
-A_{k+1} = B_{k+1} + 1/\\alpha_k,
-```
-where ``A_0 = 1/\\alpha_k``.
-
-``z_{k+1}`` is updated according to
-```math
-z_{k+1} = z_k - \\alpha_k (A_{k+1} - A_{k}) \\nabla F(y_k)
-```
-where ``z_0 = \\theta_0``.
-
-Finally, ``y_{k+1}`` is updated according to
-
-```math
-y_{k+1} = \\theta_{k+1} + (1 - A_{k+1}/A_{k+2})(z_{k+1} - \\theta_{k+1}).
+and, for ``k\\in\\mathbb{N}``,
+```math 
+\\begin{cases}
+    B_{k} &= B_{k-1} + \\Delta_{k-1} \\\\
+    \\theta_k &= y_{k-1} - \\alpha \\nabla F(y_{k-1}) \\\\
+    z_k &= z_{k-1} - \\alpha\\Delta_{k-1}\\nabla F(y_{k-1}) \\\\
+    \\Delta_k &= \\frac{1}{2}\\left( 1 + \\sqrt{4 B_{k} + 1}  \\right) \\\\
+    y_k &= \\theta_k + \\frac{\\Delta_{k}}{B_k + \\Delta_k + \\alpha^{-1}} 
+    (z_k - \\theta_k).
+\\end{cases}
 ```
 
-See the reference above for more information about the method.
+The iterate sequence of interest is ``\\lbrace \\theta_k \\rbrace``.
 
 # Arguments
 
@@ -207,26 +189,24 @@ function nesterov_accelerated_gd(
     grad_norm = norm(store.grad)
     optData.grad_val_hist[1] = grad_norm
 
-    # precompute terms for the method
+    # Terms at Iteration 0
     step_size = optData.step_size        
-    optData.B = 1                        # B_{iter+1}
-    optData.A = optData.B + 1/step_size  # A_{iter+1}
-    optData.A_prev = 1/step_size         # A_{iter}
-    optData.y .= copy(x)                 # y_{iter}
-    optData.z .= copy(x)                 # z_{iter}
+    optData.B = T(0)
+    optData.z = copy(x)
+    Δ::T = 1            #1/2 × (1 + √(4 B₀ + 1  )) = 1/2 × (1 + 1) = 1
+    optData.y = copy(x)
+
 
     while (iter < optData.max_iterations) && (grad_norm > optData.threshold)
         iter += 1
 
-        # take step with y
-        x .= optData.y - step_size * store.grad
-
-        # update variables used in nesterov accelerated method
-        optData.z .-= step_size * (optData.A - optData.A_prev) * store.grad
-        optData.B += .5 * (1 + sqrt(4 * optData.B + 1))
-        optData.A_prev = optData.A
-        optData.A = optData.B + 1 / step_size
-        optData.y .= x + (1 - (optData.A_prev / optData.A)) .* (optData.z - x)
+        # Update Sequences 
+        optData.B += Δ
+        x .= optData.y - step_size * store.grad 
+        optData.z .-= step_size * Δ * store.grad 
+        Δ = T(0.5 * (1 + sqrt(4*optData.B + 1)))
+        optData.y .= x + Δ / (optData.B + Δ + 1/step_size) * 
+            (optData.z - x)
 
         # update histories
         OptimizationMethods.grad!(progData, precomp, store, x)
@@ -238,7 +218,7 @@ function nesterov_accelerated_gd(
         # compute the gradient at y
         OptimizationMethods.grad!(progData, precomp, store, optData.y)
     end
-
+    
     optData.stop_iteration = iter
 
     return x
