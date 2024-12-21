@@ -141,11 +141,36 @@ using Test, OptimizationMethods, LinearAlgebra, Random
     ##########################################
     # Test optimizer
     ##########################################
+    progData = OptimizationMethods.LeastSquares(Float64)
+    x0 = progData.meta.x0 
+    step_size = 1.0
+    threshold = 1e-8
 
     # Base Case(s)
+    let progData=progData, x0=x0, step_size=step_size, threshold=threshold
 
+        optData = NesterovAcceleratedGD(
+            Float64,
+            x0 = x0,
+            step_size = step_size, 
+            threshold = threshold, 
+            max_iterations = 1
+        )
+
+        x1 = nesterov_accelerated_gd(optData, progData)
+
+        # Test updated value
+        @test optData.stop_iteration == 1
+        @test optData.B == 1.0 
+        @test x1 ≈ x0 - step_size * OptimizationMethods.grad(progData, x0) atol=
+            1e-9
+        @test optData.z ≈ x0 - step_size * (1.0) * 
+            OptimizationMethods.grad(progData, x0) atol=1e-9
+        # TODO: Verify calculations of y
+    end
 
     # Conclusion Step 
+    # TODO: Conclusion Step 
 end
 
 end
