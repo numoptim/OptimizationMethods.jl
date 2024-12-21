@@ -13,19 +13,16 @@ progresses.
 
 - `name:String`, name of the solver for reference.
 - `step_size::T`, step size used in the method. 
-- `z::Vector{T}`, buffer array used for acceleration
-- `y::Vector{T}`, buffer array used for acceleration
-- `A::T`, term used for acceleration
-- `A_prev::T`, term used for acceleration
-- `B::T`, term used for acceleration
+- `z::Vector{T}`, buffer array for auxiliary iterate sequence
+- `y::Vector{T}`, buffer array for convex combination of iterate and auxiliary
+    sequence 
+- `A::T`, current acceleration weight 
+- `A_prev::T`, previous acceleration weight 
+- `B::T`, auxiliary quadratic scaling term for computing acceleration weights
 - `threshold::T`, gradient threshold. If the norm gradient is below this, then 
     iteration stops.
 - `max_iterations::Int64`, max number of iterations (gradient steps) taken by 
     the solver.
-- `iter_diff::Vector{T}`, a buffer for storing differences between subsequent
-    iterate values that are used for computing the step size
-- `grad_diff::Vector{T}`, a buffer for storing differences between gradient 
-    values at adjacent iterates, which is used to compute the step size
 - `iter_hist::Vector{Vector{T}}`, a history of the iterates. The first entry
     corresponds to the initial iterate (i.e., at iteration `0`). The `k+1` entry
     corresponds to the iterate at iteration `k`.
