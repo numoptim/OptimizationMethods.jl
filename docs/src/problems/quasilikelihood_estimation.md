@@ -14,12 +14,12 @@ from a distribution that is only partially known.
 Specifically, for covariate vectors, $x_i \in \mathbb{R}^p$, $i = 1,...,n$, and a vector $\theta^{\star} \in \mathbb{R}^p$
 the model assumes the following relationship between $y_i, x_i$ and $\theta^{\star}$.
 
-- (Mean Relationship) The expected value of each observation, $\mathbb{E}[y_i | x_i, \theta^{\star}] = \mu_i$, satisfies $\mu_i = g(x_i^\intercal \theta^{\star})$ for a known function $g : \mathbb{R} \to \mathbb{R}$. Typically, $g$ is selected to be invertible.
-- (Variance Relationship) The variance of each data point satisfies $\mathbb{V}[y_i | x_i, \theta^{\star}] = V(g(x_i^\intercal \theta^{\star}))$ for a known non-negative function $V : \mathbb{R} \to \mathbb{R}$.
+- (Mean Relationship) The expected value of each observation, $\mathbb{E}[y_i | x_i, \theta^{\star}] = \mu_i$, satisfies $\mu_i = \mu(x_i^\intercal \theta^{\star})$ for a known function $\mu : \mathbb{R} \to \mathbb{R}$. Typically, $g$ is selected to be invertible.
+- (Variance Relationship) The variance of each data point satisfies $\mathbb{V}[y_i | x_i, \theta^{\star}] = V(\mu(x_i^\intercal \theta^{\star}))$ for a known non-negative function $V : \mathbb{R} \to \mathbb{R}$.
 
 Estimation of $\theta^{\star}$ proceeds by combining these two components to form the quasi-likelihood objective,
 
-$$\min_{\theta} F(\theta) = \min_{\theta} -\sum_{i=1}^n \int_{c_i}^{g(x_i^\intercal \theta)} \frac{y_i - \mu}{V(\mu)}d\mu.$$
+$$\min_{\theta} F(\theta) = \min_{\theta} -\sum_{i=1}^n \int_{c_i}^{\mu(x_i^\intercal \theta)} \frac{y_i - m}{V(m)}dm.$$
 
 !!! note
     Since the mean and variance function can be arbitrarily selected, $F(\theta)$ might
@@ -40,9 +40,9 @@ Suppose that observations, $y_i \in \mathbb{R}$, $i = 1, ..., n$, are independen
 and are associated with covariate vectors $x_i \in \mathbb{R}^p$, $i = 1,...,n$. 
 Furthermore, suppose $(x_i, y_i)$ satisfy the following relationship
 
-$$y_i = g(x_i^\intercal \theta^{\star}) + V( g(x_i^\intercal \theta^{\star}) )^{1/2} \epsilon_i,$$
+$$y_i = \mu(x_i^\intercal \theta^{\star}) + V( \mu(x_i^\intercal \theta^{\star}) )^{1/2} \epsilon_i,$$
 
-for a function $g:\mathbb{R} \to \mathbb{R}$, a non-negative function 
+for a function $\mu:\mathbb{R} \to \mathbb{R}$, a non-negative function 
 $V : \mathbb{R} \to \mathbb{R}$, and a vector $\theta^{\star} \in \mathbb{R}^p$.
 Here, $\epsilon_i$ are independent realization from a distribution with a
 mean and variance of $0$ and $1$, respectively, but whose exact form cannot be fully specified. 
@@ -60,14 +60,9 @@ to analytically integrate (if not impossible), some of which appear in literatur
 - Let $V : \mathbb{R} \to \mathbb{R}$ be defined as $V(\mu) = \exp(-((\mu - c)^{2})^p)$ for $c \in \mathbb{R}$ and $p \in \mathbb{R}_{>.5}$.
 - Let $V : \mathbb{R} \to \mathbb{R}$ be defined as $V(\mu) = \log( ((\mu - c)^{2})^p + 1)$ for $c \in \mathbb{R}$ and $p \in \mathbb{R}_{>.5}$.
 
-## Model Implementation (TODO)
+## Model Implementation
 
-We implement the semi-parametric regression example above, using the quasi-likelihood
-framework for estimation (**See the documentation for the problems here**).
-For the variance functions, we use the examples above, and for the mean functions, $g$,
-we use a variety of common link functions from [generalized linear models](https://en.wikipedia.org/wiki/Generalized_linear_model).
-Following our other problem implementations, we provide constructors that simulate the data or
-allow for problem data to be provided.
+
 
 ## References 
 ```@bibliography

@@ -7,25 +7,29 @@ Pages=["api_methods.md"]
 # Barzilai Borwein Method
 
 ```@docs
-BarzilaiBorweinGD
-
 barzilai_borwein_gd
+BarzilaiBorweinGD
 ```
 
 # Gradient Descent with Fixed Step Size
 
 ```@docs
-FixedStepGD
-
 fixed_step_gd
+FixedStepGD
 ```
 
 # Lipschitz Approximation (Malitsky & Mishchenko)
 
 ```@docs
-LipschitzApproxGD
-
 lipschitz_approximation_gd
+LipschitzApproxGD
+```
+
+# Weighted Norm Damping Gradient Method (WNGrad)
+
+```@docs
+weighted_norm_damping_gd
+WeightedNormDampingGD
 ```
 
 # Gradient Descent with Diminishing Step Size

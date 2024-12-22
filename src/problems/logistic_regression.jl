@@ -196,24 +196,6 @@ function initialize(progData::LogisticRegression{T,S}) where {T,S}
     return precompute, store
 end
 
-################################################################################
-# Utilities
-################################################################################
-"""
-    logistic(η::T} where T
-
-Implements
-    ```math
- 
-
- \\mathrm{logistic}(\\eta) = \\frac{1}{1 + \\exp(-\\eta)},
-    ```
-    where `T` is a scalar value.
-"""
-function logistic(η::T) where T
-    return 1/(1 + exp(-η))
-end
-
 ###############################################################################
 # Operations that are not in-place. Does not make use of precomputed values.
 ###############################################################################
