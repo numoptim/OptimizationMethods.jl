@@ -143,7 +143,7 @@ using Test, OptimizationMethods, LinearAlgebra, Random
     ##########################################
     progData = OptimizationMethods.LeastSquares(Float64)
     x0 = progData.meta.x0 
-    step_size = 1.0
+    step_size = 1e-3
     threshold = 1e-8
 
     # Base Case(s)
@@ -161,16 +161,60 @@ using Test, OptimizationMethods, LinearAlgebra, Random
 
         # Test updated value
         @test optData.stop_iteration == 1
+        @test optData.iter_hist[2] == x1 
         @test optData.B == 1.0 
+        @test optData.grad_val_hist[1] ≈ norm(
+            OptimizationMethods.grad(progData, x0) 
+        ) atol=1e-9
+        @test optData.grad_val_hist[2] ≈ norm(
+            OptimizationMethods.grad(progData, x1)
+        ) atol=1e-9
         @test x1 ≈ x0 - step_size * OptimizationMethods.grad(progData, x0) atol=
             1e-9
         @test optData.z ≈ x0 - step_size * (1.0) * 
             OptimizationMethods.grad(progData, x0) atol=1e-9
-        # TODO: Verify calculations of y
+        @test optData.y ≈ optData.z atol=1e-9 #x and z are identical here 
     end
 
     # Conclusion Step 
-    # TODO: Conclusion Step 
+    let progData=progData, x0=x0, step_size=step_size, threshold=threshold,
+            max_iterations=20
+
+        optData = NesterovAcceleratedGD(
+            Float64,
+            x0 = x0,
+            step_size = step_size,
+            threshold = threshold,
+            max_iterations = max_iterations-1
+        )
+
+        xkm1 = nesterov_accelerated_gd(optData, progData)
+        Bkm1 = optData.B
+        zkm1 = optData.z
+        Δkm1 = 0.5 * (1 + sqrt(4*Bkm1 + 1)) 
+        gkm1 = OptimizationMethods.grad(progData, optData.y)
+
+        optData = NesterovAcceleratedGD(
+            Float64,
+            x0 = x0,
+            step_size = step_size,
+            threshold = threshold,
+            max_iterations = max_iterations
+        )
+
+        xk = nesterov_accelerated_gd(optData, progData)
+        gk = OptimizationMethods.grad(progData, xk)
+
+        @test optData.stop_iteration == max_iterations
+        @test optData.iter_hist[max_iterations+1] == xk
+        @test optData.grad_val_hist[max_iterations+1] ≈ norm(gk) atol=1e-9
+        @test optData.B ≈ Bkm1 + Δkm1 atol=1e-9
+        @test optData.z ≈ zkm1 - step_size*Δkm1*gkm1 atol=1e-9
+        Δk = 0.5 * (1 + sqrt(4*optData.B + 1))
+        @test optData.y ≈ xk + (1 - 
+            (optData.B + 1/step_size)/(optData.B + Δk + 1/step_size))*(
+                optData.z - xk) atol=1e-9
+    end
 end
 
 end
