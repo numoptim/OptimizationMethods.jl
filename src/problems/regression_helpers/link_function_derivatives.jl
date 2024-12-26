@@ -1,3 +1,8 @@
+# Date: 12/26/2024
+# Author: Christian Varner
+# Purpose: Functions that compute the first and second derivatives
+# of the link functions found in link_functions.jl
+
 """
     dlogistic(η::T) where {T}
 
