@@ -34,5 +34,5 @@ where `T` is a scalar type.
 - `η::T`, scalar. In the regression context this is the linear effect.
 """
 function ddlogistic(η::T) where {T}
-    # TODO
+    return -exp(-η)/((1+exp(-η))^2) + 2*exp(-2*η)/((1+exp(-η))^3)
 end
