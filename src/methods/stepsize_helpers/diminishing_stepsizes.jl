@@ -74,6 +74,6 @@ for ``k \\in [ (2^i-1)100, (2^{i+1}-1)100)``.
 Returns a number of type `T`.
 """
 function stepdown_100_step_size(::Type{T}, k::Int64) where {T}
-    pow = floor(T, log2(k/100 + 1))
-    return 1/(2^pow)
+    pow = floor(log2(k/100 + 1))
+    return T(1/(2^pow))
 end
