@@ -54,7 +54,7 @@ export DiminishingStepGD, diminishing_step_gd
 export WeightedNormDampingGD, weighted_norm_damping_gd
 
 ## Helper functions for optimization methods
-include("methods/step_size_helpers/diminishing_step_sizes.jl")
+include("methods/stepsize_helpers/diminishing_stepsizes.jl")
 
 ## Source Code 
 include("methods/gd_barzilai_borwein.jl")
