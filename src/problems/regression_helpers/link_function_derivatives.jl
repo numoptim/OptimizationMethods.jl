@@ -23,7 +23,6 @@ end
 """
     ddlogistic(η::T) where {T}
 
-
 Double derivative of the `logistic` function. Implements
 ```math
 ```
