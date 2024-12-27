@@ -8,10 +8,10 @@
 
 Compute the following function
 ```math
-    \\frac{d}{dx} 1 + x + \\sin(2 \\pi x) = 1 + 2 \\pi \\cos(2\\pi x).
+    \\frac{d}{d\\mu} (1 + \\mu + \\sin(2 \\pi \\mu)) = 1 + 2 \\pi \\cos(2\\pi \\mu).
 ```
 
-# Fields
+# Arguments
 
 - `μ::T`, point at which to compute the derivative. In the context of 
     regression, this is the mean.

@@ -8,7 +8,7 @@
 
 First derivative of the `logistic` function. Implements
 ```math
-    \\nabla \\mathrm{logistic}(\\eta) = \\frac{\\exp(-\\eta)}{(1+\\exp(-\\eta))^2}
+    \\frac{d}{d\\eta}  \\mathrm{logistic}(\\eta) = \\frac{\\exp(-\\eta)}{(1+\\exp(-\\eta))^2}
 ```
 where `T` is a scalar type.
 
@@ -25,6 +25,9 @@ end
 
 Double derivative of the `logistic` function. Implements
 ```math
+    \\frac{d}{d^2\\eta} \\mathrm{logistic}(\\eta) = 
+    \\frac{2\\exp(-2\\eta)}{(1+\\exp(-\\eta))^3} -
+    \\frac{\\exp(-\\eta)}{(1+\\exp(-\\eta))^2}
 ```
 where `T` is a scalar type.
 

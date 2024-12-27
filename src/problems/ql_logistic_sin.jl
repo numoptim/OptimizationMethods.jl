@@ -3,7 +3,7 @@
 # Purpose: Implement a quasi-likelihood examples
 # with a linear mean and variance function that is 1 + mean + sin(2pi*mean)
 
-"""
+@doc"""
     QLLogisticSin{T, S} <: AbstractNLPModel{T, S}
 
 Implements a Quasi-likelihood objective with a logistic link function and
@@ -31,7 +31,7 @@ Let ``n`` be the number of rows in ``A``, then the quasi-likelihood objective is
     F(x) = -\\sum_{i=1}^n \\int_0^{\\mu_i(x)} (b_i - \\mu)/v_i(\\mu) d\\mu.
 ```
 
-!!! note
+!!! warn
     ``F(x)`` does not have an easily expressible closed form, so a numerical
     integration scheme is used to evaluate the objective. The gradient
     and hessian have closed form solutions however.
