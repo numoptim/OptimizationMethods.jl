@@ -93,7 +93,7 @@ mutable struct QLLogisticSin{T, S} <: AbstractNLPModel{T, S}
     mean_second_derivative::Function
     variance::Function
     variance_first_derivative::Function
-    residual::Function
+    weighted_residual::Function
 
     QLLogisticSin{T, S}(meta::NLPModelMeta{T, S}, counters::Counters, 
         design::Matrix{T}, response::Vector{T}) where {T, S} = 
@@ -237,7 +237,7 @@ Mutable struct that contains buffer arrays for various computations used for
     each point `μ`
 - `∇variance::Vector{T}`, buffer array for the first derivatives for the 
     variance function evaluated at each point in `μ`
-- `residual::Vector{T}`, buffer array for the weighted residuals.
+- `weighted_residual::Vector{T}`, buffer array for the weighted residuals.
 - `grad::Vector{T}`, buffer array for the gradient vector.
 - `hess::Matrix{T}`, buffer matrix for the hessian.
 
@@ -254,7 +254,7 @@ struct AllocateQLLogisticSin{T} <: AbstractProblemAllocate{T}
     ∇∇μ_η::Vector{T}
     variance::Vector{T}
     ∇variance::Vector{T}
-    residual::Vector{T}
+    weighted_residual::Vector{T}
     grad::Vector{T}
     hess::Matrix{T}
 end
@@ -321,7 +321,7 @@ args = [:(progData::QLLogisticSin{T, S}),
         for i in 1:length(progData.response)
             ## create numerical integration problem
             prob = IntegralProblem(
-                progData.residual, 
+                progData.weighted_residual, 
                 (0, μ_hat[i]), 
                 progData.response[i]
                 )
@@ -349,11 +349,12 @@ args = [:(progData::QLLogisticSin{T, S}),
         η = progData.design * x
         μ_hat = progData.mean.(η)
         var = progData.variance.(μ_hat)
-        d = progData.dlogistic.(η)
-        residual = progData.residual.(μ_hat, progData.response) 
+        d = progData.mean_first_derivative.(η)
+        residual = progData.weighted_residual.(μ_hat, progData.response) 
 
         # compute and return gradient
-        g = zeros(T, length(x))
+        g = copy(x)
+        fill!(g, 0)
         for i in 1:length(progData.response)
             g .-= residual[i] * d[i] .* view(progData.design, i, :)
         end
@@ -392,18 +393,18 @@ args = [:(progData::QLLogisticSin{T, S}),
         ∇∇μ_η = progData.mean_second_derivative.(η)
         var = progData.variance.(μ_hat)
         ∇var = progData.variance_first_derivative.(μ_hat)
-        r = progData.residual.(μ_hat, progData.response)
+        r = progData.weighted_residual.(μ_hat, progData.response)
 
         # compute hessian
         nobs, nvar = size(progData.design)
         H = zeros(T, nvar, nvar)
         for i in 1:nobs
-            t1 = var[i]^(-2) * ∇var[i] * (∇μ_η[i]^2) * r[i]
+            t1 = var[i]^(-1) * ∇var[i] * (∇μ_η[i]^2) * r[i]
             t2 = var[i]^(-1) * (∇μ_η[i]^2)
-            t3 = var[i]^(-1) * r[i] * ∇∇μ_η[i] 
-            oi = view(progData.design, i, :) * view(progData.design, i, :)
+            t3 = r[i] * ∇∇μ_η[i] 
+            oi = view(progData.design, i, :) * view(progData.design, i, :)'
 
-            H -= (t3 - t1 - t2) * oi 
+            H .-= (t3 - t1 - t2) .* oi 
         end
 
         return H
@@ -476,17 +477,17 @@ args_pre = [
         ∇∇μ_η = progData.mean_second_derivative.(η)
         var = progData.variance.(μ_hat)
         ∇var = progData.variance_first_derivative.(μ_hat)
-        r = progData.residual.(μ_hat, progData.response)
+        r = progData.weighted_residual.(μ_hat, progData.response)
 
         # compute hessian
         nobs, nvar = size(progData.design)
         H = zeros(T, nvar, nvar)
         for i in 1:nobs
-            t1 = var[i]^(-2) * ∇var[i] * (∇μ_η[i]^2) * r[i]
+            t1 = var[i]^(-1) * ∇var[i] * (∇μ_η[i]^2) * r[i]
             t2 = var[i]^(-1) * (∇μ_η[i]^2)
-            t3 = var[i]^(-1) * r[i] * ∇∇μ_η[i] 
+            t3 = r[i] * ∇∇μ_η[i] 
 
-            H -= (t3 - t1 - t2) * view(precomp.obs_obs_t, i, :, :)
+            H .-= (t3 - t1 - t2) .* view(precomp.obs_obs_t, i, :, :)
         end
 
         return H
@@ -530,7 +531,7 @@ args_store = [
         for i in 1:length(progData.response)
             ## create numerical integration problem
             prob = IntegralProblem(
-                progData.residual, 
+                progData.weighted_residual, 
                 (0, store.μ[i]), 
                 progData.response[i]
                 )
@@ -561,12 +562,12 @@ args_store = [
             store.μ .= progData.mean.(store.linear_effect)
             store.∇μ_η .= progData.mean_first_derivative.(store.linear_effect)
             store.variance .= progData.variance.(store.μ)
-            store.residual .= progData.residual.(store.μ, progData.response)
+            store.weighted_residual .= progData.weighted_residual.(store.μ, progData.response)
         end
 
         fill!(store.grad, 0)
         for i in 1:length(progData.response)
-            store.grad .-= store.residual[i] * store.∇μ_∇η[i] .* 
+            store.grad .-= store.weighted_residual[i] * store.∇μ_∇η[i] .* 
                 view(progData.design, i, :)
         end
     end
@@ -610,19 +611,20 @@ args_store = [
             store.∇∇μ_η .= progData.mean_second_derivative.(store.linear_effect)
             store.variance .= progData.variance.(store.μ)
             store.∇variance .= progData.variance_first_derivative.(store.μ)
-            store.residual .= progData.residual.(store.μ, progData.response)
+            store.weighted_residual .= 
+                progData.weighted_residual.(store.μ, progData.response)
         end
 
         # compute hessian
         nobs = size(progData.design, 1)
         fill!(store.hess, 0)
         for i in 1:nobs
-            t1 = store.variance[i]^(-2) * store.∇variance[i] * 
-                (store.∇μ_η[i]^2) * store.residual[i]
+            t1 = store.variance[i]^(-1) * store.∇variance[i] * 
+                (store.∇μ_η[i]^2) * store.weighted_residual[i]
             t2 = store.variance[i]^(-1) * (store.∇μ_η[i]^2)
-            t3 = store.variance[i]^(-1) * store.residual[i] * store.∇∇μ_η[i] 
+            t3 = store.residual[i] * store.∇∇μ_η[i] 
 
-            store.hess -= (t3 - t1 - t2) * view(precomp.obs_obs_t, i, :, :)
+            store.hess .-= (t3 - t1 - t2) .* view(precomp.obs_obs_t, i, :, :)
         end
     end
 
