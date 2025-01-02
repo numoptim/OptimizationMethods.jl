@@ -125,7 +125,7 @@ Given iterates ``\\lbrace x_0,\\ldots,x_k\\rbrace``, the iterate ``x_{k + 1}``
 
 # Arguments
 
-- `optData::BarzilaiBorweinGD{T}`, the specification for the optimization method.
+- `optData::DiminishingStepGD{T}`, the specification for the optimization method.
 - `progData<:AbstractNLPModel{T,S}`, the specification for the optimization
     problem. 
 
