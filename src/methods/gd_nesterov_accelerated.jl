@@ -27,7 +27,7 @@ progresses.
     corresponds to the iterate at iteration `k`.
 - `grad_val_hist::Vector{T}`, a vector for storing `max_iterations+1` gradient
     norm values. The first entry corresponds to iteration `0`. The `k+1` entry
-    correpsonds to the gradient norm at iteration `k`.
+    corresponds to the gradient norm at iteration `k`.
 - `stop_iteration::Int64`, the iteration number that the solver stopped on.
     The terminal iterate is saved at `iter_hist[stop_iteration+1]`.
 
