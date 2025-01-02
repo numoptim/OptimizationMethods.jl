@@ -161,6 +161,7 @@ using Test, OptimizationMethods, LinearAlgebra, Random
 
         # Test updated value
         @test optData.stop_iteration == 1
+        @test optData.iter_hist[1] == x0
         @test optData.iter_hist[2] == x1 
         @test optData.B == 1.0 
         @test optData.grad_val_hist[1] ≈ norm(
