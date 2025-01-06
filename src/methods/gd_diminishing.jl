@@ -121,7 +121,7 @@ Given iterates ``\\lbrace x_0,\\ldots,x_k\\rbrace``, the iterate ``x_{k + 1}``
     First, ``\\alpha_k > 0`` for all ``k``.
     Second, ``\\lim_{k \\to \\infty} \\alpha_k = 0.``
     Finally, ``\\sum_{k=0}^{\\infty} \\alpha_k = \\infty.``
-    See [Patel and Berahas (2024)](@cite patel2024gradient) for details.
+    See [Patel and Berahas (2024)](@cite patel2024Gradient) for details.
 
 # Arguments
 
