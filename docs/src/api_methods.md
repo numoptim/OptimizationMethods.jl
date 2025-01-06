@@ -32,6 +32,14 @@ weighted_norm_damping_gd
 WeightedNormDampingGD
 ```
 
+# Nesterov's Accelerated Gradient Descent
+
+```@docs
+nesterov_accelerated_gd
+
+NesterovAcceleratedGD
+```
+
 # Gradient Descent with Diminishing Step Size
 ```@docs
 DiminishingStepGD

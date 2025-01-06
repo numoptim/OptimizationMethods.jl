@@ -105,10 +105,10 @@ Implements gradient descent with diminishing step sizes and applies the method
 
 [Patel, Vivak, and Albert Berahas. “Gradient Descent in the Absence of Global 
     Lipschitz Continuity of the Gradients.” SIAM 6 (3): 579–846. 
-    https://doi.org/10.1137/22M1527210.](@cite patel2024gradient)
+    https://doi.org/10.1137/22M1527210.](@cite patel2024Gradient)
 
 [Bertsekas, Dimitri. "Nonlinear Programming". 3rd Edition, Athena Scientific, 
-    Chapter 1.](@cite bertsekas2016nonlinear)
+    Chapter 1.](@cite bertsekas2016Nonlinear)
 
 # Method
 
@@ -121,7 +121,7 @@ Given iterates ``\\lbrace x_0,\\ldots,x_k\\rbrace``, the iterate ``x_{k + 1}``
     First, ``\\alpha_k > 0`` for all ``k``.
     Second, ``\\lim_{k \\to \\infty} \\alpha_k = 0.``
     Finally, ``\\sum_{k=0}^{\\infty} \\alpha_k = \\infty.``
-    See [Patel and Berahas (2024)](@cite patel2024gradient) for details.
+    See [Patel and Berahas (2024)](@cite patel2024Gradient) for details.
 
 # Arguments
 
