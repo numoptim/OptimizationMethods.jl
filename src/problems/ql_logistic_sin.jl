@@ -3,8 +3,8 @@
 # Purpose: Implement a quasi-likelihood examples
 # with a linear mean and variance function that is 1 + mean + sin(2pi*mean)
 
-@doc"""
-    QLLogisticSin{T, S} <: AbstractNLPModel{T, S}
+"""
+    QLLogisticSin{T, S} <: AbstractDefaultQL{T, S}
 
 Implements a Quasi-likelihood objective with a logistic link function and
     `linear_plus_sin` variance funtion. If the design matrix and the
@@ -83,7 +83,7 @@ vector generated from the Arcsine distribution with default parameters.
 
 Constructs the `struct` using the data the is provided by the user.
 """
-mutable struct QLLogisticSin{T, S} <: AbstractNLPModel{T, S}
+mutable struct QLLogisticSin{T, S} <: AbstractDefaultQL{T, S}
     meta::NLPModelMeta{T, S}
     counters::Counters
     design::Matrix{T}
@@ -98,14 +98,14 @@ mutable struct QLLogisticSin{T, S} <: AbstractNLPModel{T, S}
     QLLogisticSin{T, S}(meta::NLPModelMeta{T, S}, counters::Counters, 
         design::Matrix{T}, response::Vector{T}) where {T, S} = 
     begin
-        residual(μ, y) = (y - μ)/OptimizationMethods.linear_plus_sin(μ) 
+        weighted_residual(μ, y) = (y - μ)/OptimizationMethods.linear_plus_sin(μ) 
         new(meta, counters, design, response, 
             OptimizationMethods.logistic,           # force the correct mean function
             OptimizationMethods.dlogistic,          # force the correct derivative function
             OptimizationMethods.ddlogistic,         # force the correct derivative function
             OptimizationMethods.linear_plus_sin,    # force the correct variance function
             OptimizationMethods.dlinear_plus_sin,   # force the correct derivative function
-            residual                                # residual function
+            weighted_residual                       # residual function
         )
     end
 end
@@ -136,7 +136,7 @@ function QLLogisticSin(
     β_true = randn(T, nvar)
     η = design * β_true
     μ_obs = OptimizationMethods.logistic.(η)
-    ϵ = T.((rand(Distributions.Arcsine()) .- .5)./(1/8))
+    ϵ = T.((rand(Distributions.Arcsine()) .- .5)./(1/8)) # standardize
 
     # generate responses
     response = μ_obs + OptimizationMethods.linear_plus_sin.(μ_obs) * ϵ
@@ -181,7 +181,7 @@ end
 
 # precompute struct
 """
-    PrecomputeQLLogisticSin{T} <: AbstractPrecompute{T}
+    PrecomputeQLLogisticSin{T} <: AbstractDefaultQLPrecompute{T}
 
 Structure that holds precomputed values for the quasi-likelihood problem.
     These values are precomputed to save on time, and they remain unchanged
@@ -199,7 +199,7 @@ Structure that holds precomputed values for the quasi-likelihood problem.
 Initializes the field values for the precompute data structure and returns 
     a `struct`.
 """
-struct PrecomputeQLLogisticSin{T} <: AbstractPrecompute{T}
+struct PrecomputeQLLogisticSin{T} <: AbstractDefaultQLPrecompute{T}
     obs_obs_t::Array{T, 3}
 end
 function PrecomputeQLLogisticSin(progData::QLLogisticSin{T, S}) where {T, S}
@@ -247,7 +247,7 @@ Mutable struct that contains buffer arrays for various computations used for
 
 Allocates memory for each of the field values and returns the struct.
 """
-struct AllocateQLLogisticSin{T} <: AbstractProblemAllocate{T}
+struct AllocateQLLogisticSin{T} <: AbstractDefaultQLAllocate{T}
     linear_effect::Vector{T}   
     μ::Vector{T}
     ∇μ_η::Vector{T}
@@ -294,338 +294,4 @@ function initialize(progData::QLLogisticSin{T, S}) where {T, S}
     store = AllocateQLLogisticSin(progData)
 
     return precomp, store
-end
-
-###############################################################################
-# Operations that are not in-place. Does not make use of precomputed values.
-###############################################################################
-
-args = [:(progData::QLLogisticSin{T, S}), 
-        :(x::Vector{T})
-       ]
-
-@eval begin
-
-    @doc """
-        obj(
-            $(join(string.(args),",\n\t    "))
-        ) where {T,S}
-    
-    Computes the objective function at the value `x`.
-    """
-    function NLPModels.obj($(args...)) where {T, S}
-        increment!(progData, :neval_obj)
-        η = progData.design * x
-        μ_hat = progData.mean.(η)
-        obj = 0
-        for i in 1:length(progData.response)
-            ## create numerical integration problem
-            prob = IntegralProblem(
-                progData.weighted_residual, 
-                (0, μ_hat[i]), 
-                progData.response[i]
-                )
-
-            ## solve the numerical integration problem
-            ## TODO: this is just with some default parameters
-            ## TODO: what happens when the code is false
-            obj -= solve(prob, HCubatureJL(); reltol = 1e-3, abstol = 1e-3).u
-        end
-
-        return T(obj)
-    end
-
-    @doc """
-        grad(
-            $(join(string.(args),",\n\t    "))
-        ) where {T,S}
-
-    Computes the gradient function value at `x`.
-    """
-    function NLPModels.grad($(args...)) where {T, S}
-        increment!(progData, :neval_grad)
-
-        # compute values required for gradient
-        η = progData.design * x
-        μ_hat = progData.mean.(η)
-        var = progData.variance.(μ_hat)
-        d = progData.mean_first_derivative.(η)
-        residual = progData.weighted_residual.(μ_hat, progData.response) 
-
-        # compute and return gradient
-        g = copy(x)
-        fill!(g, 0)
-        for i in 1:length(progData.response)
-            g .-= residual[i] * d[i] .* view(progData.design, i, :)
-        end
-        return g
-    end
-
-    @doc """
-         objgrad(
-            $(join(string.(args),",\n\t    "))
-        ) where {T,S}
-
-    Computes the objective function and gradient function value at `x`. The
-        values returned are the objective function value followed by the 
-        gradient function value. 
-    """
-    function NLPModels.objgrad($(args...)) where {T, S}
-        o = obj(progData, x)
-        g = grad(progData, x)
-        return o, g 
-    end
-    
-    @doc """
-        hess(
-            $(join(string.(args),",\n\t    "))
-        ) where {T,S}
-    
-    Computes the Hessian function value at `x`.
-    """
-    function hess($(args...)) where {T, S}
-        increment!(progData, :neval_hess)
-
-        # compoute required quantities
-        η = progData.design * x
-        μ_hat = progData.mean.(η)
-        ∇μ_η = progData.mean_first_derivative.(η)
-        ∇∇μ_η = progData.mean_second_derivative.(η)
-        var = progData.variance.(μ_hat)
-        ∇var = progData.variance_first_derivative.(μ_hat)
-        r = progData.weighted_residual.(μ_hat, progData.response)
-
-        # compute hessian
-        nobs, nvar = size(progData.design)
-        H = zeros(T, nvar, nvar)
-        for i in 1:nobs
-            t1 = var[i]^(-1) * ∇var[i] * (∇μ_η[i]^2) * r[i]
-            t2 = var[i]^(-1) * (∇μ_η[i]^2)
-            t3 = r[i] * ∇∇μ_η[i] 
-            oi = view(progData.design, i, :) * view(progData.design, i, :)'
-
-            H .-= (t3 - t1 - t2) .* oi 
-        end
-
-        return H
-    end
-
-end
-
-###############################################################################
-# Operations that are not in-place. Makes use of precomputed values. 
-###############################################################################
-
-args_pre = [
-    :(progData::QLLogisticSin{T, S}),
-    :(precomp::PrecomputeQLLogisticSin{T}),
-    :(x::Vector{T})
-]
-
-@eval begin
-
-    @doc """
-        obj(
-            $(join(string.(args),",\n\t    "))
-        ) where {T,S}
-    
-    Computes the objective function at the value `x`.
-    """
-    function NLPModels.obj($(args_pre...)) where {T, S}
-        return NLPModels.obj(progData, x)
-    end
-
-    @doc """
-        grad(
-            $(join(string.(args),",\n\t    "))
-        ) where {T,S}
-
-    Computes the gradient function value at `x`.
-    """
-    function NLPModels.grad($(args_pre...)) where {T, S}
-        return NLPModels.grad(progData, x)
-    end
-
-    @doc """
-         objgrad(
-            $(join(string.(args),",\n\t    "))
-        ) where {T,S}
-
-    Computes the objective function and gradient function value at `x`. The
-        values returned are the objective function value followed by the 
-        gradient function value. 
-    """
-    function NLPModels.objgrad($(args_pre...)) where {T, S}
-        return NLPModels.objgrad(progData, x)
-    end
-
-    @doc """
-        hess(
-            $(join(string.(args),",\n\t    "))
-        ) where {T,S}
-    
-    Computes the Hessian function value at `x`.
-        Utilizes the precomputed values in `precomp`.
-    """
-    function NLPModels.hess($(args_pre...)) where {T, S}
-        increment!(progData, :neval_hess)
-
-        # compoute required quantities
-        η = progData.design * x
-        μ_hat = progData.mean.(η)
-        ∇μ_η = progData.mean_first_derivative.(η)
-        ∇∇μ_η = progData.mean_second_derivative.(η)
-        var = progData.variance.(μ_hat)
-        ∇var = progData.variance_first_derivative.(μ_hat)
-        r = progData.weighted_residual.(μ_hat, progData.response)
-
-        # compute hessian
-        nobs, nvar = size(progData.design)
-        H = zeros(T, nvar, nvar)
-        for i in 1:nobs
-            t1 = var[i]^(-1) * ∇var[i] * (∇μ_η[i]^2) * r[i]
-            t2 = var[i]^(-1) * (∇μ_η[i]^2)
-            t3 = r[i] * ∇∇μ_η[i] 
-
-            H .-= (t3 - t1 - t2) .* view(precomp.obs_obs_t, i, :, :)
-        end
-
-        return H
-    end
-end
-
-###############################################################################
-# Operations that are in-place. Makes use of precomputed values. 
-###############################################################################
-
-args_store = [
-    :(progData::QLLogisticSin{T, S}),
-    :(precomp::PrecomputeQLLogisticSin{T}),
-    :(store::AllocateQLLogisticSin{T}),
-    :(x::Vector{T})
-]
-
-@eval begin
-
-    @doc """
-        obj(
-            $(join(string.(args),",\n\t    "))
-        ) where {T,S}
-    
-    Computes the objective function at the value `x`.
-        If `recompute = false`, then values already stored in `store` are 
-        used in the computation, otherwise the necessary values are recomputed
-        and used. 
-    """
-    function NLPModels.obj($(args_store...); recompute = true) where {T, S}
-        increment!(progData, :neval_obj)
-        
-        # recompute possible values
-        if recompute
-            store.linear_effect .= progData.design * x
-            store.μ .= progData.mean.(store.linear_effect)
-        end
-        
-        # recompute possible objective functions
-        obj = 0
-        for i in 1:length(progData.response)
-            ## create numerical integration problem
-            prob = IntegralProblem(
-                progData.weighted_residual, 
-                (0, store.μ[i]), 
-                progData.response[i]
-                )
-
-            ## solve the numerical integration problem
-            ## TODO: this is just with some default parameters
-            ## TODO: what happens when the code is false
-            obj -= solve(prob, HCubatureJL(); reltol = 1e-3, abstol = 1e-3).u
-        end
-
-        return obj
-    end
-
-    @doc """
-        grad(
-            $(join(string.(args),",\n\t    "))
-        ) where {T,S}
-
-    Computes the gradient function value at `x`.
-        Stores the computed gradient vector into `store.grad`. If 
-        `recompute = false` then values that are already in `store`` are used
-        for computation. Otherwise, values are recomputed and used.
-    """
-    function NLPModels.grad!($(args_store...); recompute = true) where {T, S}
-        increment!(progData, :neval_grad)
-        if recompute
-            store.linear_effect .= progData.design * x
-            store.μ .= progData.mean.(store.linear_effect)
-            store.∇μ_η .= progData.mean_first_derivative.(store.linear_effect)
-            store.variance .= progData.variance.(store.μ)
-            store.weighted_residual .= progData.weighted_residual.(store.μ, progData.response)
-        end
-
-        fill!(store.grad, 0)
-        for i in 1:length(progData.response)
-            store.grad .-= store.weighted_residual[i] * store.∇μ_∇η[i] .* 
-                view(progData.design, i, :)
-        end
-    end
-
-    @doc """
-         objgrad(
-            $(join(string.(args),",\n\t    "))
-        ) where {T,S}
-
-    Computes the objective function and gradient function value at `x`. The
-        values returned are the objective function and the gradient is
-        stored in `store.grad`. If `recompute = false`, then values already 
-        in `store` are used for computation, otherwise values required in the
-        computation are computed and used.
-    """
-    function NLPModels.objgrad($(args_store...); recompute = true) where {T, S}
-        NLPModels.grad!(progData, precomp, store, x; recompute = recompute)
-        o = NLPModels.obj(progData, precomp, store, x; recompute = false)
-        return o
-    end
-
-    @doc """
-        hess(
-            $(join(string.(args),",\n\t    "))
-        ) where {T,S}
-    
-    Computes the Hessian function value at `x`.
-        Utilizes the precomputed values in `precomp` and stores the result in
-        `store.hess`. If `recompute = false`, tries to compute the hessian
-        with values already stored in `store`, otherwise recomputes the 
-        necessary quantities and computes the hessian.
-    """
-    function hess!($(args_store...); recompute = true) where {T, S}
-        increment!(progData, :neval_hess)
-
-        # compoute required quantities
-        if recompute
-            store.linear_effect .= progData.design * x
-            store.μ .= progData.mean.(store.linear_effect)
-            store.∇μ_η .= progData.mean_first_derivative.(store.linear_effect)
-            store.∇∇μ_η .= progData.mean_second_derivative.(store.linear_effect)
-            store.variance .= progData.variance.(store.μ)
-            store.∇variance .= progData.variance_first_derivative.(store.μ)
-            store.weighted_residual .= 
-                progData.weighted_residual.(store.μ, progData.response)
-        end
-
-        # compute hessian
-        nobs = size(progData.design, 1)
-        fill!(store.hess, 0)
-        for i in 1:nobs
-            t1 = store.variance[i]^(-1) * store.∇variance[i] * 
-                (store.∇μ_η[i]^2) * store.weighted_residual[i]
-            t2 = store.variance[i]^(-1) * (store.∇μ_η[i]^2)
-            t3 = store.residual[i] * store.∇∇μ_η[i] 
-
-            store.hess .-= (t3 - t1 - t2) .* view(precomp.obs_obs_t, i, :, :)
-        end
-    end
-
 end

@@ -25,11 +25,36 @@ Parametric type for pre-allocating data structures for an optimization problem.
 """
 abstract type AbstractProblemAllocate{T} end
 
+"""
+    AbstractDefaultQL{T, S} <: AbstractNLPModel{T, S}
+
+Parametric type for default implementations of data structures for 
+  quasi-likelihood problems.
+"""
+abstract type AbstractDefaultQL{T, S} <: AbstractNLPModel{T, S} end
+
+"""
+    AbstractDefaultQLPrecompute{T} <: AbstractPrecompute{T}
+  
+Parametric type for default implementations of data structures for
+  precomputed values for quasi-likelihood optimization problems.
+"""
+abstract type AbstractDefaultQLPrecompute{T} <: AbstractPrecompute{T} end
+
+"""
+    AbstractDefaultQLAllocate{T} <: AbstractProblemAllocate{T}
+
+Parametric type for default implementations of data structures that
+  pre-allocate space for quasi-likelihood optimization problems.
+"""
+abstract type AbstractDefaultQLAllocate{T} <: AbstractProblemAllocate{T} end
+
 ## Helper functions
 include("problems/regression_helpers/link_functions.jl")
 include("problems/regression_helpers/link_function_derivatives.jl")
 include("problems/regression_helpers/variance_functions.jl")
 include("problems/regression_helpers/variance_functions_derivatives.jl")
+include("problems/regression_helpers/quaslikelihood_functionality.jl")
 
 ## Source Code
 include("problems/least_squares.jl")
