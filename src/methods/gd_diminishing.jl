@@ -105,10 +105,10 @@ Implements gradient descent with diminishing step sizes and applies the method
 
 [Patel, Vivak, and Albert Berahas. “Gradient Descent in the Absence of Global 
     Lipschitz Continuity of the Gradients.” SIAM 6 (3): 579–846. 
-    https://doi.org/10.1137/22M1527210.](@cite patel2024gradient)
+    https://doi.org/10.1137/22M1527210.](@cite patel2024Gradient)
 
 [Bertsekas, Dimitri. "Nonlinear Programming". 3rd Edition, Athena Scientific, 
-    Chapter 1.](@cite bertsekas2016nonlinear)
+    Chapter 1.](@cite bertsekas2016Nonlinear)
 
 # Method
 
