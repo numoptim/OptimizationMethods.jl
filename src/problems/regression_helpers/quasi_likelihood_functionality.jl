@@ -173,7 +173,7 @@ args_pre = [
     Computes the Hessian function value at `x`.
         Utilizes the precomputed values in `precomp`.
     """
-    function NLPModels.hess($(args_pre...)) where {T, S}
+    function hess($(args_pre...)) where {T, S}
         increment!(progData, :neval_hess)
 
         # compoute required quantities
@@ -273,7 +273,7 @@ args_store = [
 
         fill!(store.grad, 0)
         for i in 1:length(progData.response)
-            store.grad .-= store.weighted_residual[i] * store.∇μ_∇η[i] .* 
+            store.grad .-= store.weighted_residual[i] * store.∇μ_η[i] .* 
                 view(progData.design, i, :)
         end
     end
@@ -289,7 +289,7 @@ args_store = [
         in `store` are used for computation, otherwise values required in the
         computation are computed and used.
     """
-    function NLPModels.objgrad($(args_store...); recompute = true) where {T, S}
+    function NLPModels.objgrad!($(args_store...); recompute = true) where {T, S}
         NLPModels.grad!(progData, precomp, store, x; recompute = recompute)
         o = NLPModels.obj(progData, precomp, store, x; recompute = false)
         return o
@@ -328,7 +328,7 @@ args_store = [
             t1 = store.variance[i]^(-1) * store.∇variance[i] * 
                 (store.∇μ_η[i]^2) * store.weighted_residual[i]
             t2 = store.variance[i]^(-1) * (store.∇μ_η[i]^2)
-            t3 = store.residual[i] * store.∇∇μ_η[i] 
+            t3 = store.weighted_residual[i] * store.∇∇μ_η[i] 
 
             store.hess .-= (t3 - t1 - t2) .* view(precomp.obs_obs_t, i, :, :)
         end

@@ -23,7 +23,7 @@ Let ``A_i`` be row ``i`` of ``A`` and ``b_i`` entry ``i`` of ``b``. Let
 ```
 and
 ```math
-    v_i(\\mu) = 1 + \\mu(x) + \\sin(2 * \\pi * \\mu(x)). 
+    v_i(\\mu) = 1 + \\mu + \\sin(2 * \\pi * \\mu). 
 ```
 
 Let ``n`` be the number of rows in ``A``, then the quasi-likelihood objective is
@@ -212,7 +212,7 @@ function PrecomputeQLLogisticSin(progData::QLLogisticSin{T, S}) where {T, S}
     
     for i in 1:nobs
         obs_obs_t[i, :, :] .= view(progData.design, i, :) *
-            view(progData, i, :)'
+            view(progData.design, i, :)'
     end
 
     return PrecomputeQLLogisticSin{T}(obs_obs_t)
@@ -267,19 +267,21 @@ function AllocateQLLogisticSin(progData::QLLogisticSin{T, S}) where {T, S}
     # initialize memory
     linear_effect = zeros(T, nobs)
     μ = zeros(T, nobs)
-    ∇μ_∇η = zeros(T, nobs)
+    ∇μ_η = zeros(T, nobs)
+    ∇∇μ_η = zeros(T, nobs)
     variance = zeros(T, nobs)
-    residual = zeros(T, nobs)
+    ∇variance = zeros(T, nobs)
+    weighted_residual = zeros(T, nobs)
     grad = zeros(T, nvar)
     hess = zeros(T, nvar, nvar)
 
     return AllocateQLLogisticSin(
-        linear_effect,
-        μ, ∇μ_∇η,
-        variance, 
-        residual,
-        grad, 
-        hess
+        linear_effect,           # buffer for linear effect
+        μ, ∇μ_η, ∇∇μ_η,          # mean, first, and second derivative link
+        variance, ∇variance,     # variance and first derivative 
+        weighted_residual,       # buffer for weighted residual
+        grad,                    # buffer for gradient
+        hess                     # buffer for hessian
     )
 end
 
