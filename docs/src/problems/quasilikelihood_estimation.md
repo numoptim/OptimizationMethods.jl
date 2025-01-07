@@ -55,7 +55,7 @@ the expected value and variance of $y_i$ using the statistical model above.
 Below, we provide a list of variance functions that lead to the quasi-likelihood objective being hard
 to analytically integrate (if not impossible), some of which appear in literature.
 
-- Let $V : \mathbb{R} \to \mathbb{R}$ be defined as $V(\mu) = 1 + \mu + \sin(2\pi\mu)$. See Section 4 of [lanteri2023designing](@citet).
+- Let $V : \mathbb{R} \to \mathbb{R}$ be defined as $V(\mu) = 1 + \mu + \sin(2\pi\mu)$. See Section 4 of [lanteri2023Designing](@citet).
 - Let $V : \mathbb{R} \to \mathbb{R}$ be defined as $V(\mu) = (\mu^{2})^p + c$ for $c \in \mathbb{R}_{> 0}$ and $p \in \mathbb{R}_{>.5}$. See for example [variance stabilization transformations](https://en.wikipedia.org/wiki/Variance-stabilizing_transformation).
 - Let $V : \mathbb{R} \to \mathbb{R}$ be defined as $V(\mu) = \exp(-((\mu - c)^{2})^p)$ for $c \in \mathbb{R}$ and $p \in \mathbb{R}_{>.5}$. See Section 4 of [lanteri2023designing](@citet).
 - Let $V : \mathbb{R} \to \mathbb{R}$ be defined as $V(\mu) = \log( ((\mu - c)^{2})^p + 1)$ for $c \in \mathbb{R}$ and $p \in \mathbb{R}_{>.5}$.
