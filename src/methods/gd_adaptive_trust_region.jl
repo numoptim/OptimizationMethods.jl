@@ -181,13 +181,14 @@ function first_order_adaptive_trust_region_gd(
 
     # iteration 0
     iter = 0
-
     x = copy(optData.iter_hist[iter + 1])
 
+    # compute initial values
     grad!(progData, precomp, store, x)
     optData.grad_val_hist[iter + 1] = norm(store.grad)
     optData.w .= (optData.ζ .+ (store.grad .^ 2)) .^ optData.μ
 
+    # optimization loop
     while (iter < optData.max_iterations) && 
         (optData.grad_val_hist[iter + 1] > optData.threshold)
         
