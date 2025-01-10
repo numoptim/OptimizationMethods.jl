@@ -61,6 +61,13 @@ OptimizationMethods.inverse_log2k_step_size
 OptimizationMethods.stepdown_100_step_size
 ```
 
+# First Order Adaptive Trust Region
+```@docs
+FirstOrderAdaptiveTrustRegionGD
+
+first_order_adaptive_trust_region_gd
+```
+
 # Index 
 ```@index
 ```
