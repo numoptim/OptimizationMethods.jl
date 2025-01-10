@@ -65,6 +65,6 @@ include("methods/gd_lipschitz_approximation.jl")
 include("methods/gd_nesterov_accelerated.jl")
 include("methods/gd_diminishing.jl")
 include("methods/gd_weighted_norm_damping.jl")
-include("methods/gd_adaptive_trust_region.jl")
+include("methods/gd_fo_adaptive_trust_region.jl")
 
 end
