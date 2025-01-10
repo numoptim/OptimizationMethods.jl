@@ -2,3 +2,5 @@ Manifest.toml
 docs/Manifest.toml
 .vscode/
 docs/build
+
+.DS_Store
