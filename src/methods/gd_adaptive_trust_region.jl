@@ -90,7 +90,7 @@ function FirstOrderAdaptiveTrustRegionGD(
 
     # create buffer arrays for iterate history and gradient norm
     d = length(x0)
-    iter_hist = Vector{T}[Vector{T}(under, d) for i in 1:max_iterations + 1]
+    iter_hist = Vector{T}[Vector{T}(undef, d) for i in 1:max_iterations + 1]
     grad_val_hist = Vector{T}(undef, max_iterations + 1)
     stop_iteration = -1 ## dummy value
 
@@ -186,7 +186,7 @@ function first_order_adaptive_trust_region_gd(
 
     grad!(progData, precomp, store, x)
     optData.grad_val_hist[iter + 1] = norm(store.grad)
-    optData.w .= (optData.ζ + store.grad .^ 2) .^ optData.μ
+    optData.w .= (optData.ζ .+ (store.grad .^ 2)) .^ optData.μ
 
     while (iter < optData.max_iterations) && 
         (optData.grad_val_hist[iter + 1] > optData.threshold)
@@ -197,7 +197,7 @@ function first_order_adaptive_trust_region_gd(
         optData.Δ .= abs.(store.grad) ./ optData.w
 
         # take step
-        x .-= optData.τ .* sign(store.grad) .* optData.Δ
+        x .-= optData.τ .* sign.(store.grad) .* optData.Δ
         grad!(progData, precomp, store, x)
 
         # store values
@@ -205,7 +205,8 @@ function first_order_adaptive_trust_region_gd(
         optData.grad_val_hist[iter + 1] = norm(store.grad)
 
         # prep for next iteration
-        optData.w .= ((optData.w .^ (1/μ)) + (store.grad .^ 2)) .^ μ
+        optData.w .= ((optData.w .^ (1/optData.μ)) + 
+            (store.grad .^ 2)) .^ optData.μ
     end
 
     optData.stop_iteration = iter
