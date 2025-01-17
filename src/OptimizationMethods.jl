@@ -32,6 +32,7 @@ include("problems/regression_helpers/variance_functions.jl")
 include("problems/least_squares.jl")
 include("problems/logistic_regression.jl")
 include("problems/poisson_regression.jl")
+include("problems/proximal_point_subproblem.jl")
 
 
 ################################################################################
