@@ -159,8 +159,8 @@ Constructs `ProximalPointSubproblem{T, S}` and
 """
 function initialize(
     progData::ProximalPointSubproblem{T, S}
-)
-    precomp = PrecomputeProximalPointSubproblem(progData)
+) where {T, S}
+    precomp = PrecomputeProximalPointSubproblem{T}()
     store = AllocateProximalPointSubproblem(progData)
     
     return precomp, store
@@ -342,8 +342,8 @@ args_store = [
         grad!(progData.progData, progData.progData_precomp, 
             progData.progData_store, x)
 
-        store.grad .= progData.progData_store.grad 
-            + progData.penalty .* (x - progData.θkm1) 
+        store.grad .= progData.progData_store.grad + 
+            progData.penalty .* (x - progData.θkm1) 
     end
 
     @doc """
