@@ -34,6 +34,14 @@ OptimizationMethods.centered_exp
 OptimizationMethods.centered_shifted_log
 ```
 
+# Sub-problems
+
+## Proximal Point
+
+```@docs
+OptimizationMethods.ProximalPointSubproblem
+```
+
 # Index
 
 ```@index

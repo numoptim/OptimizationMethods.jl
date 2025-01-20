@@ -61,6 +61,13 @@ OptimizationMethods.inverse_log2k_step_size
 OptimizationMethods.stepdown_100_step_size
 ```
 
+# Proximal Point Gradient Descent
+```@docs
+proximal_point_gd
+
+ProximalPointGD
+```
+
 # Index 
 ```@index
 ```
