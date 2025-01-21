@@ -22,19 +22,19 @@ subproblem is formulated and solved to obtain the next iterate;
 for a penalty term ``\\lambda \\in \\mathbb{R}_{\\geq 0}``
 ```math
     \\theta_{k+1} = 
-    \\arg\\min_{\\theta} f(\\theta) + \\frac{\\lambda}{2}||\\theta - \\theta_{k}||_2^2
+    \\arg\\min_{\\theta} f(\\theta) + \\frac{\\lambda}{2}||\\theta - \\theta_{k}||_2^2,
 ```
 where ``\\theta_{k}`` is the current iterate, and ``||\\cdot||_2`` is the L2 norm.
 This struct represents this optimization problem for finding ``\\theta_{k+1}``.
 In particular, ``F(\\theta)`` is
 ```math
-F(\\theta) = f(\\theta) + \\frac{\\lambda}{2}||\\theta - \\theta_{k}||_2^2
+F(\\theta) = f(\\theta) + \\frac{\\lambda}{2}||\\theta - \\theta_{k}||_2^2.
 ```
 
 # Fields
 
 - `meta::NLPModelMeta{T, S}`, NLPModel struct for storing meta information for 
-    the problem
+    the problem.
 - `counters::Counters`, NLPModel Counter struct that provides evaluations 
     tracking.
 - `progData::P1 where P1 <: AbstractNLPModel{T, S}`, problem data from
@@ -55,7 +55,7 @@ F(\\theta) = f(\\theta) + \\frac{\\lambda}{2}||\\theta - \\theta_{k}||_2^2
 
 !!! note
     Currently, the proximal point subproblem only uses the L2 norm as the penalty
-    function. This is part of a more general class of methods called Bregman-
+    function. This is part of a more general class of methods called Bregman
     Distance gradient methods.
 
 # Constructors
@@ -63,7 +63,8 @@ F(\\theta) = f(\\theta) + \\frac{\\lambda}{2}||\\theta - \\theta_{k}||_2^2
     function ProximalPointSubproblem(::Type{T};
         progData::P1 where P1 <: AbstractNLPModel{T, S},
         progData_precomp::P2 where P2 <: AbstractPrecompute{T},
-        progData_store::P3 where P3 <: AbstractProblemAllocate{T}, penalty::T,
+        progData_store::P3 where P3 <: AbstractProblemAllocate{T},
+        penalty::T,
         θkm1::S) where {T, S}
 
 Construct the `struct` for the Proximal Point Subproblem. This will create the

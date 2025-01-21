@@ -108,7 +108,9 @@ Method that implements the proximal point gradient descent algorithm using the
 
 # Reference(s)
 
-TODO
+[Bauschke et. al. "A Descent Lemma Beyond Lipschitz Gradient Continuity:
+    First-Order Methods Revisited and Applications."
+    Mathematics of Operations Research.](@cite bauschke2017a)
 
 # Method
 
@@ -124,7 +126,9 @@ where ``||\\cdot||_2^2`` is the L2-norm.
 
 !!! note
     This is a special case of the more general Bregman Distance method
-    proposed in ... with the L2-norm as the distance generating function.
+    proposed in 
+    ["A Descent Lemma Beyond Lipschitz Gradient Continuity"](@cite bauschke2017a) 
+    with the L2-norm as the penalty function.
 
 # Arguments
 
