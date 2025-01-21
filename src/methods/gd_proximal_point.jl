@@ -49,6 +49,7 @@ Constructs an instance of type `ProximalPointGD{T}`.
 
 ## Keyword Arguments
 
+- `x0::Vector{T}`, initial point to start the solver at.
 - `distance_penalty::T`, penalty applied to the distance function
 - `subproblem_solver_struct::P where P <: AbstractOptimizerData{T}`, struct
     that specifies the inner solver optimization algorithm.
@@ -71,6 +72,7 @@ mutable struct ProximalPointGD{T} <: AbstractOptimizerData{T}
 end
 function ProximalPointGD(
     ::Type{T};
+    x0::Vector{T},
     distance_penalty::T,
     subproblem_solver_struct::P where P <: AbstractOptimizerData{T},
     subproblem_solver_function::Function,
@@ -115,7 +117,7 @@ penalty parameter on the distance function.
 Then, ``\\theta_{k+1}`` is generated as the following
 
 ```math
-    \\theta_{k + 1} = \\arg\\min_{\\theta} F(\theta) + \\frac{\\lambda}{2}
+    \\theta_{k + 1} = \\arg\\min_{\\theta} F(\\theta) + \\frac{\\lambda}{2}
     ||\\theta - \\theta_{k}||_2^2,
 ```
 where ``||\\cdot||_2^2`` is the L2-norm.
@@ -149,8 +151,9 @@ function proximal_point_gd(
     penalty::T = optData.distance_penalty
 
     # initialize for subproblem
-    subproblem_prog_data = ProximalPointSubproblem(T; progData, precomp, 
-        penalty, x)
+    subproblem_prog_data = ProximalPointSubproblem(T; 
+        progData = progData, progData_precomp = precomp, progData_store = store, 
+        penalty = penalty, θkm1 = x)
 
     # store initial gradient
     grad!(progData, precomp, store, x)
@@ -163,7 +166,7 @@ function proximal_point_gd(
         iter += 1
 
         # solve inner problem
-        x .= progData.subproblem_solver(subproblem_prog_data)
+        x .= optData.subproblem_solver(subproblem_prog_data)
 
         # store values
         grad!(progData, precomp, store, x)
