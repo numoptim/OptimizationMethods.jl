@@ -56,6 +56,7 @@ export WeightedNormDampingGD, weighted_norm_damping_gd
 
 ## Helper functions for optimization methods
 include("methods/stepsize_helpers/diminishing_stepsizes.jl")
+include("methods/line_search_helpers/backtracking.jl")
 
 ## Source Code 
 include("methods/gd_barzilai_borwein.jl")
