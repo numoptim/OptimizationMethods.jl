@@ -1,7 +1,7 @@
 using OptimizationMethods
 
 progData = OptimizationMethods.LogisticRegression(Float64)
-optData = NegativeCurvatureGD(
+optData = NegativeCurvatureTwoStepGD(
     Float64;
     x0 = randn(50),
     alpha = 1e-3,
@@ -10,7 +10,7 @@ optData = NegativeCurvatureGD(
     max_iterations = 1000
 )
 
-x = negative_curvature_gd(optData, progData)
+x = negative_curvature_two_step_gd(optData, progData)
 
 # Compute objective and residual evals during optimization 
 obj_evals = progData.counters.neval_obj

@@ -63,9 +63,9 @@ OptimizationMethods.stepdown_100_step_size
 
 # Two Step Gradient Descent Using Negative Curvature Directions
 ```@docs
-negative_curvature_gd
+negative_curvature_two_step_gd
 
-NegativeCurvatureGD
+NegativeCurvatureTwoStepGD
 ```
 
 # Index 

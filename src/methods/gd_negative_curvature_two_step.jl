@@ -5,7 +5,7 @@
 # method.
 
 """
-    NegativeCurvatureGD{T} <: AbstractOptimizerData{T}
+    NegativeCurvatureTwoStepGD{T} <: AbstractOptimizerData{T}
 
 A mutable struct that represents gradient descent using negative curvature directions.
     It stores the specification for the mthod and records values during iteration.
@@ -31,10 +31,10 @@ A mutable struct that represents gradient descent using negative curvature direc
 
 # Constructors
 
-    NegativeCurvatureGD(::Type{T}; x0::Vector{T}, alpha::T, beta::T, 
+    NegativeCurvatureTwoStepGD(::Type{T}; x0::Vector{T}, alpha::T, beta::T, 
         threshold::T, max_iterations::Int64) where {T}
 
-Constructs an instance of type `NegativeCurvatureGD{T}`.
+Constructs an instance of type `NegativeCurvatureTwoStepGD{T}`.
 
 ## Arguments
 
@@ -53,7 +53,7 @@ Constructs an instance of type `NegativeCurvatureGD{T}`.
 - `max_iterations::Int64`, max number of iterates that are produced, not 
     including the initial iterate.
 """
-mutable struct NegativeCurvatureGD{T} <: AbstractOptimizerData{T}
+mutable struct NegativeCurvatureTwoStepGD{T} <: AbstractOptimizerData{T}
     name::String
     alpha::T
     beta::T
@@ -64,7 +64,7 @@ mutable struct NegativeCurvatureGD{T} <: AbstractOptimizerData{T}
     grad_val_hist::Vector{T}
     stop_iteration::Int64
 end
-function NegativeCurvatureGD(::Type{T};
+function NegativeCurvatureTwoStepGD(::Type{T};
     x0::Vector{T},
     alpha::T,
     beta::T,
@@ -85,13 +85,13 @@ function NegativeCurvatureGD(::Type{T};
     stop_iteration::Int64 = -1
 
     # return progData
-    return NegativeCurvatureGD{T}(name, alpha, beta, zeros(T, d),
+    return NegativeCurvatureTwoStepGD{T}(name, alpha, beta, zeros(T, d),
         threshold, max_iterations, iter_hist, grad_val_hist, 
         stop_iteration)
 end
 
 """
-    negative_curvature_gd(optData::NegativeCurvatureGD{T},
+    negative_curvature_gd(optData::NegativeCurvatureTwoStepGD{T},
         progData::P where P <: AbstractNLPModel{T,S}) where {T, S}
 
 Implementation of gradient descent with negative curvature information using
@@ -141,8 +141,8 @@ Combining these two directions, the ``k+1^{th}`` is generated as
     `AbstractPrecompute` and `AbstractProblemAllocate`, where the latter has
     a `grad` argument. 
 """
-function negative_curvature_gd(
-    optData::NegativeCurvatureGD{T},
+function negative_curvature_two_step_gd(
+    optData::NegativeCurvatureTwoStepGD{T},
     progData::P where P <: AbstractNLPModel{T, S}
 ) where {T, S}
 
