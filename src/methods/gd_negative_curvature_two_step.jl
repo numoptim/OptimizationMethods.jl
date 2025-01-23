@@ -98,6 +98,11 @@ Implementation of gradient descent with negative curvature information using
     the two step method with the specification defined in `optData` on the problem
     specified by `progData`.
 
+!!! note
+    The implementation and method description is a special case of the 
+    general framework outlined in [Algorithm 1](@cite curtis2018Exploiting)
+    of the linked paper.
+
 # Reference(s)
 
 [Curtis, F.E., Robinson, D.P. "Exploiting negative curvature in deterministic
