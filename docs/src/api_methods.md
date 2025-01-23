@@ -61,6 +61,13 @@ OptimizationMethods.inverse_log2k_step_size
 OptimizationMethods.stepdown_100_step_size
 ```
 
+# Two Step Gradient Descent Using Negative Curvature Directions
+```@docs
+negative_curvature_gd
+
+NegativeCurvatureGD
+```
+
 # Index 
 ```@index
 ```
