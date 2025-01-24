@@ -10,3 +10,4 @@ methods/gd_diminishing.jl
 problems/regression_helpers/link_functions.jl
 problems/regression_helpers/variance_functions.jl
 methods/stepsize_helpers/diminishing_stepsizes.jl
+methods/line_search_helpers/backtracking.jl
