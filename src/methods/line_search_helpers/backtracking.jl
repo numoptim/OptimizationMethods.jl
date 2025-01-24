@@ -3,9 +3,9 @@
 # Purpose: Implementation of a simple backtracking algorithm
 
 """
-    backtracking!(θk::S, θkm1::S, gkm1::S, step_direction::S,
-        reference_value::T, α::T, δ::T, ρ::T; 
-        max_iteration::Int64 = 100) where {T, S}
+    backtracking!(θk::S, θkm1::S, F::Function, gkm1::S, step_direction::S,
+        reference_value::T, α::T, δ::T, ρ::T; max_iteration::Int64 = 100
+        ) where {T, S}
 
 Implementation of backtracking which modifies `θk` in place. This method
     should be used for general step directions. If `gkm1` is the step direction

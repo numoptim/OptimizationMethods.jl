@@ -61,6 +61,20 @@ OptimizationMethods.inverse_log2k_step_size
 OptimizationMethods.stepdown_100_step_size
 ```
 
+# Gradient Descent with Backtracking
+```@docs
+backtracking_gd
+
+BacktrackingGD
+```
+
+# Line search Helper Functions
+
+## Backtracking
+```@docs
+OptimizationMethods.backtracking!
+```
+
 # Index 
 ```@index
 ```
