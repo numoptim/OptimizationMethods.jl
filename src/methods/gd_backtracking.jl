@@ -13,8 +13,8 @@ Mutable sturcture representing gradient descent using backtracking.
 
 - `name:String`, name of the solver for reference.
 - `α::T`, initial step size used for backtracking.
-- `δ::T`, backtracking decreasing factor applied to the `α` when line
-    search criterion not satisfied.
+- `δ::T`, backtracking decreasing factor applied to `α` when line
+    search criterion is not satisfied.
 - `ρ::T`, factor involved in the acceptance criterion in the line search
     procedure. Larger values correspond to stricter descent conditions, and
     smaller values correspond to looser descent conditions.
@@ -24,10 +24,6 @@ Mutable sturcture representing gradient descent using backtracking.
     iteration stops.
 - `max_iterations::Int64`, max number of iterations (gradient steps) taken by 
     the solver.
-- `iter_diff::Vector{T}`, a buffer for storing differences between subsequent
-    iterate values that are used for computing the step size
-- `grad_diff::Vector{T}`, a buffer for storing differences between gradient 
-    values at adjacent iterates, which is used to compute the step size
 - `iter_hist::Vector{Vector{T}}`, a history of the iterates. The first entry
     corresponds to the initial iterate (i.e., at iteration `0`). The `k+1` entry
     corresponds to the iterate at iteration `k`.
@@ -36,10 +32,6 @@ Mutable sturcture representing gradient descent using backtracking.
     correpsonds to the gradient norm at iteration `k`.
 - `stop_iteration::Int64`, the iteration number that the solver stopped on.
     The terminal iterate is saved at `iter_hist[stop_iteration+1]`.
-
-!!! warning
-    The method does not check if the line search procedure is successful
-    or not. 
 
 # Constructors
 
@@ -55,7 +47,7 @@ Mutable sturcture representing gradient descent using backtracking.
 
 - `x0::Vector{T}`, initial point to start the solver at.
 - `α::T`, initial step size used for backtracking.
-- `δ::T`, backtracking decreasing factor applied to the `α` when line
+- `δ::T`, backtracking decreasing factor applied to `α` when line
     search criterion not satisfied.
 - `ρ::T`, factor involved in the acceptance criterion in the line search
     procedure. Larger values correspond to stricter descent conditions, and
@@ -128,7 +120,7 @@ Let ``\\theta_{k-1}`` be the current iterate, and let
 where ``t + 1 \\in \\mathbb{N}`` is the smallest such number satisfying
 
 ```math
-    F(\\theta_k) \\leq F(\\theta_k) - \\rho\\delta^t\\alpha
+    F(\\theta_k) \\leq F(\\theta_{k-1}) - \\rho\\delta^t\\alpha
     ||\\dot F(\\theta_{k-1})||_2^2,
 ```
 
@@ -137,8 +129,8 @@ where ``||\\cdot||_2`` is the L2-norm.
 !!! note
     Theoretically, there exists such a ``t``, but it can be made
     arbitrarily large. Therefore, the line search procedure stops
-    search for such a ``t`` after `optData.line_search_max_iteration`.
-    The current implementation does not check if line search
+    searching after `optData.line_search_max_iteration`.
+    The current implementation does not check if the line search
     methodology terminates successful, and tries to continue
     regardless.
 
