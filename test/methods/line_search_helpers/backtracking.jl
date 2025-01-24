@@ -1,0 +1,96 @@
+# Date: 01/24/2025
+# Author: Christian Varner
+# Purpose: Test the backtracking implementation
+
+module TestBacktracking
+
+using Test, OptimizationMethods, LinearAlgebra, Random
+
+@testset "Helper: Backtracking" begin
+
+# test definitions
+@test isdefined(OptimizationMethods, :backtracking!)
+
+################################################################################
+# Testing of backtracking!(...) v1
+################################################################################
+
+let dim = 50
+    Random.seed!(1010)
+    progData = OptimizationMethods.LeastSquares(Float64)
+
+    # functions required
+    F(θ) = OptimizationMethods.obj(progData, θ)
+
+    # other arguments
+    θk = zeros(dim)
+    θkm1 = randn(dim)
+    gkm1 = OptimizationMethods.grad(progData, θkm1)
+    step_direction = 100 * gkm1
+    reference_value = F(θkm1)
+    α = 1.0
+    δ = .5
+    ρ = 1e-4
+    max_iteration = 100
+
+    # backtrack
+    output = OptimizationMethods.backtracking!(θk, θkm1, F, gkm1, step_direction, 
+        reference_value, α, δ, ρ; max_iteration = max_iteration)
+
+    ## test output
+    @test isnothing(output)
+
+    ## test inequality
+    t = log(δ, (θk[1] - θkm1[1])/(-α * step_direction[1]) ) 
+    @test F(θk) <= reference_value - ρ * (δ^t * α) * dot(gkm1, step_direction) || 
+        t == max_iteration
+    if t > 0
+        @test F(θkm1 - (α * δ^(t-1)) .* step_direction) > reference_value - 
+            ρ * (δ^(t-1) * α) * dot(gkm1, step_direction) 
+    end
+    @test θk ≈ θkm1 - (δ^t * α) .* step_direction
+end
+
+################################################################################
+# Testing of backtracing!(...) v2
+################################################################################
+
+let dim = 50
+    Random.seed!(1010)
+    progData = OptimizationMethods.LeastSquares(Float64)
+
+    # functions required
+    F(θ) = OptimizationMethods.obj(progData, θ)
+
+    # other arguments
+    θk = zeros(dim)
+    θkm1 = randn(dim)
+    gkm1 = OptimizationMethods.grad(progData, θkm1)
+    norm_gkm1_squared = norm(gkm1)^2
+    reference_value = F(θkm1)
+    α = 1.0
+    δ = .5
+    ρ = 1e-4
+    max_iteration = 100
+
+    # backtrack
+    output = OptimizationMethods.backtracking!(θk, θkm1, F, gkm1, norm_gkm1_squared, 
+        reference_value, α, δ, ρ; max_iteration = max_iteration)
+
+    ## test output
+    @test isnothing(output)
+
+    ## test inequality
+    t = log(δ, (θk[1] - θkm1[1])/(-α * gkm1[1]) ) 
+    @test F(θk) <= reference_value - ρ * (δ^t * α) * norm_gkm1_squared || 
+        t == max_iteration
+    if t > 0
+        @test F(θkm1 - (α * δ^(t-1)) .* gkm1) > reference_value - 
+            ρ * (δ^(t-1) * α) * norm_gkm1_squared
+    end
+    @test θk ≈ θkm1 - (δ^t * α) .* gkm1
+end
+
+end
+
+end

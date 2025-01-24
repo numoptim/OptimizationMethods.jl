@@ -80,6 +80,8 @@ function backtracking!(
         t += 1
         θk .= θkm1 - (δ^t * α) .* step_direction
     end
+
+    return nothing
 end
 
 """
@@ -163,4 +165,6 @@ function backtracking!(
         t += 1
         θk .= θkm1 - (δ^t * α) .* gkm1 
     end
+
+    return nothing
 end
