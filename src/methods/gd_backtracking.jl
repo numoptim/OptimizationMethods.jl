@@ -93,12 +93,12 @@ function BacktrackingGD(
     d = length(x0)
 
     # initialization iterate history
-    iter_hist = Vector{T}[Vector{T}(under, d) for i in 
+    iter_hist = Vector{T}[Vector{T}(undef, d) for i in 
         1:max_iteration + 1]
     iter_hist[1] = x0
 
     # initialization of gradient and dummy value for stop_iteration
-    grad_val_hist = Vector{T}(under, max_iteration + 1)
+    grad_val_hist = Vector{T}(undef, max_iteration + 1)
     stop_iteration = -1
 
     return BacktrackingGD("Gradient Descent with Backtracking",
@@ -111,6 +111,13 @@ end
         progData::P where P <: AbstractNLPModel{T, S}) where {T, S}
 
 # Reference(s)
+
+[Armijo, Larry. “Minimization of Functions Having Lipschitz Continuous 
+    First Partial Derivatives.” Pacific Journal of Mathematics 16.1 
+    (1966): 1–3. Pacific Journal of Mathematics. Web.](@cite armijo1966Minimization)
+
+[Nocedal and Wright. "Numerical Optimization". 
+    Springer New York, NY.](@cite nocedal2006Numerical)
 
 # Method
 
@@ -153,6 +160,7 @@ function backtracking_gd(
 
     # initializations
     precomp, store = initialize(progData)
+    F(θ) = OptimizationMethods.obj(progData, precomp, store, θ) 
 
     # Iteration 0
     iter = 0
@@ -169,13 +177,15 @@ function backtracking_gd(
 
         iter += 1
 
-        # backtrack
-        obj!(progData, precomp, store, x)
+        # backtrack -- solution is stored in x
         OptimizationMethods.backtracking!(x, optData.iter_hist[iter],
-            store.grad, store.grad, reference_value, 
+            F, store.grad, optData.grad_val_hist[iter]^2, F(x), 
             optData.α, optData.δ, optData.ρ; 
             max_iteration = optData.line_search_max_iteration)
         
+        # compute the next gradient value
+        OptimizationMethods.grad!(progData, precomp, store, x)
+
         # store values
         optData.iter_hist[iter + 1] .= x
         optData.grad_val_hist[iter + 1] = norm(store.grad)
