@@ -19,7 +19,7 @@
 """
 mutable struct NonmonotoneLSMaxValGD{T} <: AbstractOptimizerData{T}
     name::String
-    α::T
+    α::T                                        # TODO - this should probs be a function?
     δ::T
     ρ::T
     window_size::Int64                          # for reference value
@@ -43,16 +43,16 @@ function NonmonotoneLSMaxValGD(
     line_search_max_iteration::Int64,
     threshold::T,
     max_iterations::Int64,
-)
+) where {T}
     d = length(x0)
 
     # initialization iterate history
     iter_hist = Vector{T}[Vector{T}(undef, d) for i in 
-        1:max_iteration + 1]
+        1:max_iterations + 1]
     iter_hist[1] = x0
 
     # initialization of gradient and dummy value for stop_iteration
-    grad_val_hist = Vector{T}(undef, max_iteration + 1)
+    grad_val_hist = Vector{T}(undef, max_iterations + 1)
     stop_iteration = -1
 
     # name of the optimizer for reference
@@ -73,7 +73,8 @@ end
 function nonmonotone_ls_maxval_gd(
     optData::NonmonotoneLSMaxValGD{T},
     progData::P where P <: AbstractNLPModel{T, S}
-)
+) where {T, S}
+
     # initializations
     precomp, store = initialize(progData)
     F(θ) = OptimizationMethods.obj(progData, precomp, store, θ)
@@ -100,8 +101,9 @@ function nonmonotone_ls_maxval_gd(
 
         # backtracking
         OptimizationMethods.backtracking!(x, optData.iter_hist[iter], 
-            optData.max_value, F, store.grad, optData.grad_val_hist[iter] ^ 2, 
-            optData.α, optData.δ, optData.ρ; optData.line_search_max_iteration)
+            F, store.grad, optData.grad_val_hist[iter] ^ 2, optData.max_value,
+            optData.α, optData.δ, optData.ρ; 
+            max_iteration = optData.line_search_max_iteration)
 
         # compute the next gradient value
         OptimizationMethods.grad!(progData, precomp, store, x)
