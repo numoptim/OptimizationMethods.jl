@@ -1,7 +1,7 @@
 using OptimizationMethods
 
 progData = OptimizationMethods.LeastSquares(Float64);
-optData = NonmonotoneLSMaxValGD(
+optData = FixedStepNLSMaxValGD(
     Float64,
     x0 = randn(50),
     α = 10.0,
@@ -13,7 +13,7 @@ optData = NonmonotoneLSMaxValGD(
     max_iterations = 100
 )
 
-x = nonmonotone_ls_maxval_gd(
+x = fixed_step_nls_maxval_gd(
     optData,
     progData
 )

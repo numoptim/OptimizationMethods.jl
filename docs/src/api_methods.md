@@ -68,11 +68,27 @@ backtracking_gd
 BacktrackingGD
 ```
 
+# Gradient Descent with Non-monotone Line Search
+
+## Fixed Step
+```@docs
+fixed_step_nls_maxval_gd
+
+FixedStepNLSMaxValGD
+```
+
 # Line search Helper Functions
 
 ## Backtracking
 ```@docs
 OptimizationMethods.backtracking!
+```
+
+## Objective Cache and Maximum Value Utility
+```@docs
+OptimizationMethods.shift_left!
+
+OptimizationMethods.update_maximum
 ```
 
 # Index 
