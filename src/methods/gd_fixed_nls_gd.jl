@@ -35,18 +35,18 @@ track of values during the optimization procedure implemented in
 - `δ::T`, backtracking decreasing factor applied to `α` when the line search
     criterion is not satisfied
 - `ρ::T`, factor involved in the acceptance criterion in the line search
-    procedure. Larger values correpsond to stricter descetn conditions, and
+    procedure. Larger values correspond to stricter descent conditions, and
     smaller values correspond to looser descent conditions.
 - `window_size::Int64`, number of previous objective values that are used
-    to construct the reference value for the line search criterion.
+    to construct the reference objective value for the line search criterion.
 - `line_search_max_iteration::Int64`, maximum number of iterations for
     line search.
 - `objective_hist::Vector{T}`, buffer array of size `window_size` that stores
     `window_size` previous objective values.
-- `max_value::T`, maximum value of `objective_hist`. This is the reference value
-    used in the line search procedure.
+- `max_value::T`, maximum value of `objective_hist`. This is the reference 
+    objective value used in the line search procedure.
 - `max_index::Int64`, index of the maximum value that corresponds to the 
-    reference value.
+    reference objective value.
 - `threshold::T`, gradient threshold. If the norm gradient is below this, then 
     iteration stops.
 - `max_iterations::Int64`, max number of iterations (gradient steps) taken by 
@@ -62,7 +62,16 @@ track of values during the optimization procedure implemented in
 
 # Constructors
 
-    NonmonotoneLSMaxValGD(::Type{T}; x0::Vector{T}, α::T, δ::T, ρ::T,
+## Inner Constructor
+    
+    FixedStepNLSMaxValGD{T}(name::String, α::T, δ::T, ρ::T, window_size::Int64,
+        line_search_max_iteration::Int64, threshold::T, max_iterations::Int64,
+        iter_hist::Vector{Vector{T}}, grad_val_hist::Vector{T}, 
+        stop_iteration::Int64)
+
+## Outer Constructor
+
+    FixedStepNLSMaxValGD(::Type{T}; x0::Vector{T}, α::T, δ::T, ρ::T,
         window_size::Int64, line_search_max_iteration::Int64,
         threshold::T, max_iterations::Int64) where {T}
 
@@ -105,11 +114,11 @@ mutable struct FixedStepNLSMaxValGD{T} <: AbstractOptimizerData{T}
 
     # inner constructor
     FixedStepNLSMaxValGD{T}(name, α, δ, ρ, window_size, line_search_max_iteration,
-        max_value, max_index, threshold, max_iterations, iter_hist, 
-        grad_val_hist, stop_iteration) where {T} = 
+        threshold, max_iterations, iter_hist, grad_val_hist, 
+        stop_iteration) where {T} = 
         begin
             new(name, α, δ, ρ, window_size, line_search_max_iteration, 
-                zeros(T, window_size), max_value, max_index, threshold,
+                zeros(T, window_size), T(0.0), -1, threshold,
                 max_iterations, iter_hist, grad_val_hist, stop_iteration)
         end
 end
@@ -141,7 +150,7 @@ function FixedStepNLSMaxValGD(
     " of the previous $(window_size) values" 
 
     return FixedStepNLSMaxValGD{T}(name, α, δ, ρ, window_size,
-        line_search_max_iteration, T(0.0), -1, threshold, max_iterations, 
+        line_search_max_iteration, threshold, max_iterations, 
         iter_hist, grad_val_hist, stop_iteration)
 end
 
@@ -152,7 +161,7 @@ end
 Implementation of gradient descent with non-monotone line search using
 the maximum value of a fixed number of previous objective values on
 an optimization problem specified by `progData`. This implementation 
-initializes the line search procedure with the same step size each iteration.
+initializes the line search procedure with `optData.α` every iteration.
 
 # Reference(s)
 
@@ -229,9 +238,7 @@ function fixed_step_nls_maxval_gd(
         optData.iter_hist[iter + 1] .= x
         optData.grad_val_hist[iter + 1] = norm(store.grad)
 
-        # TODO - can a max-heap be used here instead?
-        # TODO - should this be separated out into a different function?
-
+        # update the objective cache 
         F_x = F(x)
 
         # shift and delete old objective value

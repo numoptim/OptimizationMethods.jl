@@ -61,6 +61,8 @@ function update_maximum(
     sz::Int
     ) where {T}
 
+    # TODO - should we use a max heap here instead?
+
     # update the maximum value and the index for the maximum value
     # of the array optData.objective_hist
     if previous_max_index == 0

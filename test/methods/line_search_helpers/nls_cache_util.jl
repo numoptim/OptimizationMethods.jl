@@ -58,6 +58,8 @@ let dimensions = dim
         @test length(output) == 2
         @test sum(array .<= output[1]) == dim
         @test sum(array .<= array[output[2]]) == dim
+        @test (output[1] in array)
+        @test (output[1] == array[output[2]])
     end
 end
 
