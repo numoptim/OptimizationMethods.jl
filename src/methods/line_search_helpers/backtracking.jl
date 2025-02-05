@@ -54,6 +54,10 @@ where ``O_{k-1}`` is some reference value.
     for the line search procedure. In the language above, when
     ``t`` is equal to `max_iteration` the algorithm will terminate.
 
+# Return
+
+- `backtracking_condition_satisfied::Bool`, whether the backtracking condition
+    is satisfied before the max iteration limit.
 """
 function backtracking!(
     θk::S,
@@ -74,14 +78,19 @@ function backtracking!(
     θk .= θkm1 - (δ^t * α) .* step_direction
 
     # backtracking
+    backtracking_condition_satisfied = false
     while (t < max_iteration) &&
-        (F(θk) > reference_value - ρ * (δ^t * α) * inner_prod_grad_by_direction)
+        (!backtracking_condition_satisfied)
 
-        t += 1
-        θk .= θkm1 - (δ^t * α) .* step_direction
+        if F(θk) > reference_value - ρ * (δ^t * α) * inner_prod_grad_by_direction
+            t += 1
+            θk .= θkm1 - (δ^t * α) .* step_direction
+        else
+            backtracking_condition_satisfied = true
+        end 
     end
 
-    return nothing
+    return backtracking_condition_satisfied
 end
 
 """
@@ -140,6 +149,10 @@ where ``O_{k-1}`` is some reference value, and ``||\\cdot||_2`` is the L2-norm.
     for the line search procedure. In the language above, when
     ``t`` is equal to `max_iteration` the algorithm will terminate.
 
+# Return
+
+- `backtracking_condition_satisfied::Bool`, whether the backtracking condition
+    is satisfied before the max iteration limit.
 """
 function backtracking!(
     θk::S,
@@ -159,12 +172,17 @@ function backtracking!(
     θk .= θkm1 - (δ^t * α) .* gkm1
 
     # backtracking
+    backtracking_condition_satisfied = false
     while (t < max_iteration) &&
-        (F(θk) > reference_value - ρ * (δ^t * α) * norm_gkm1_squared)
+        (!backtracking_condition_satisfied)
 
-        t += 1
-        θk .= θkm1 - (δ^t * α) .* gkm1 
+        if F(θk) > reference_value - ρ * (δ^t * α) * norm_gkm1_squared 
+            t += 1
+            θk .= θkm1 - (δ^t * α) .* gkm1 
+        else
+            backtracking_condition_satisfied = true
+        end
     end
 
-    return nothing
+    return backtracking_condition_satisfied
 end
