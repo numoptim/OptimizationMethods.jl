@@ -38,7 +38,7 @@ let dim = 50
         reference_value, α, δ, ρ; max_iteration = max_iteration)
 
     ## test output
-    @test isnothing(output)
+    @test output == true
 
     ## test inequality
     t = log(δ, (θk[1] - θkm1[1])/(-α * step_direction[1]) ) 
@@ -78,7 +78,7 @@ let dim = 50
         reference_value, α, δ, ρ; max_iteration = max_iteration)
 
     ## test output
-    @test isnothing(output)
+    @test output == true  
 
     ## test inequality
     t = log(δ, (θk[1] - θkm1[1])/(-α * gkm1[1]) ) 
