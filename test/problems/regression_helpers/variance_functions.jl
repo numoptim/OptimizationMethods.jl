@@ -2,7 +2,7 @@
 # Author: Christian Varner
 # Purpose: Test variance functions
 
-module ProceduralLinkFunctions
+module ProceduralVarianceFunctions
 
 using Test, OptimizationMethods, Random
 
