@@ -61,8 +61,52 @@ end
 """
     TODO
 """
-function wolfe_gd(
+function wolfe_ebls_gd(
     optData::WolfeEBLSGD{T},
     progData::P where P <: AbstractNLPModel{T, S}
-)
+) where {T, S}
+
+    # initialize the problem
+    precomp, store = initialize(progData)
+
+    # initialization of variables for optimization
+    iter::Int64 = 0
+    x::S = copy(optData.iter_hist[1])
+
+    # initial gradient information
+    OptimizationMethods.grad!(progData, precomp, store, x)
+    optData.grad_val_hist[iter + 1] = norm(store.grad)
+
+
+    while (iter < optData.max_iterations) &&
+        (optData.grad_val_hist[iter + 1] > optData.threshold)
+
+        # update iteration number
+        iter += 1
+
+        # get point that satisfies wolfe conditions
+        wolfe_condition_satisfied = OptimizationMethods.EBLS!(
+            x, 
+            optData.iter_hist[iter],
+            progData,
+            precomp,
+            store,
+            store.grad,
+            optData.grad_val_hist[iter] ^ 2, 
+            OptimizationMethods.obj(progData, precomp, store, x),
+            optData.α,
+            optData.δ,
+            optData.c1,
+            optData.c2;
+            max_iterations = optData.line_search_max_iterations
+        )
+
+        # save input
+        optData.iter_hist[iter + 1] .= x
+        optData.grad_val_hist[iter + 1] = norm(store.grad)
+    end
+
+    optData.stop_iteration = iter
+
+    return x
 end

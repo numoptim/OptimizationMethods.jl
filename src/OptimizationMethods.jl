@@ -53,9 +53,11 @@ export LipschitzApproxGD, lipschitz_approximation_gd
 export NesterovAcceleratedGD, nesterov_accelerated_gd
 export DiminishingStepGD, diminishing_step_gd
 export WeightedNormDampingGD, weighted_norm_damping_gd
+export WolfeEBLSGD, wolfe_ebls_gd
 
 ## Helper functions for optimization methods
 include("methods/stepsize_helpers/diminishing_stepsizes.jl")
+include("methods/line_search_helpers/weak_wolfe_util.jl")
 
 ## Source Code 
 include("methods/gd_barzilai_borwein.jl")
@@ -64,5 +66,6 @@ include("methods/gd_lipschitz_approximation.jl")
 include("methods/gd_nesterov_accelerated.jl")
 include("methods/gd_diminishing.jl")
 include("methods/gd_weighted_norm_damping.jl")
+include("methods/gd_wolfe_ebls.jl")
 
 end
