@@ -4,7 +4,7 @@
 # version of Wolfe line search
 
 """
-    WolfeGD{T} <: AbstractOptimizerData{T}
+    WolfeEBLSGD{T} <: AbstractOptimizerData{T}
 
 Mutable `struct` that represents gradient descent using the ELBS routine to
 satisfy weak wolfe conditions. 
