@@ -5,6 +5,7 @@ using LinearAlgebra
 using NLPModels
 using Distributions
 using Integrals
+using QuadGK: quadgk
 
 ################################################################################
 # Optimization Problems 
