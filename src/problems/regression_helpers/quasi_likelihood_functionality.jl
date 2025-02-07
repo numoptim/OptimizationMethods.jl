@@ -27,18 +27,6 @@ args = [:(progData::P where P<:AbstractDefaultQL{T, S}),
         μ_hat = progData.mean.(η)
         obj = 0
         for i in 1:length(progData.response)
-            # ## create numerical integration problem
-            # prob = IntegralProblem(
-            #     progData.weighted_residual, 
-            #     (0, μ_hat[i]), 
-            #     progData.response[i]
-            #     )
-
-            # ## solve the numerical integration problem
-            # ## TODO: this is just with some default parameters
-            # ## TODO: what happens when the code is false
-            # obj -= solve(prob, HCubatureJL(); reltol = 1e-3, abstol = 1e-3).u
-
             obj -= quadgk(
                 x -> progData.weighted_residual(x, progData.response[i]),
                 0, μ_hat[i])[1]
@@ -239,18 +227,6 @@ args_store = [
         # recompute possible objective functions
         obj = 0
         for i in 1:length(progData.response)
-            # ## create numerical integration problem
-            # prob = IntegralProblem(
-            #     progData.weighted_residual, 
-            #     (0, store.μ[i]), 
-            #     progData.response[i]
-            #     )
-
-            # ## solve the numerical integration problem
-            # ## TODO: this is just with some default parameters
-            # ## TODO: what happens when the code is false
-            # obj -= solve(prob, HCubatureJL(); reltol = 1e-3, abstol = 1e-3).u
-
             obj -= quadgk(
                 x -> progData.weighted_residual(x, progData.response[i]),
                 0, store.μ[i])[1]
