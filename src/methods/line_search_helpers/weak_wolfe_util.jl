@@ -50,9 +50,10 @@ the sufficient descent condition which enforces that
 and the second condition is the curvature condition which enforces that
 
 ```math
-    \\dot F(\\theta_k)^\\intercal (-d_k) \\geq 
-        c_2 \\dot F(\\theta_{k-1})^\\intercal (-d_{k-1}).
+    \\dot F(\\theta_k)^\\intercal (-d_{k-1}) \\geq 
+        c_2 \\dot F(\\theta_{k-1})^\\intercal (-d_{k-1}),
 ```
+where ``0 < c_1 < c_2 < 1`` are constant selected by the user.
 
 This is done by maintaining a guess ``\\alpha`` and a range
 ``\\alpha \\in [L, U]`` of possible values. The upper and lower bounds
@@ -196,8 +197,9 @@ and the second condition is the curvature condition which enforces that
 
 ```math
     \\dot F(\\theta_k)^\\intercal (-\\dot F(\\theta_{k-1})) \\geq 
-        -c_2 ||\\dot F(\\theta_{k-1})||_2^2.
+        -c_2 ||\\dot F(\\theta_{k-1})||_2^2,
 ```
+where ``0 < c_1 < c_2 < 1`` are constant selected by the user.
 
 This is done by maintaining a guess ``\\alpha`` and a range
 ``\\alpha \\in [L, U]`` of possible values. The upper and lower bounds
