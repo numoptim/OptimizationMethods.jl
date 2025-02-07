@@ -68,6 +68,13 @@ wolfe_ebls_gd
 WolfeEBLSGD
 ```
 
+# Line search Helper Functions
+
+## Weak Wolfe Conditions
+```@docs
+OptimizationMethods.EBLS!
+```
+
 # Index 
 ```@index
 ```
