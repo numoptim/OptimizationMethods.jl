@@ -15,7 +15,7 @@
         α::T, δ::T, c1::T, c2::T; max_iterations::Int64 = 100) where {T, S}
 
 Implementation of an algorithm that finds a step size satisfying the weak
-    wolfe condition. The function modifies `θk` in place, and updates
+    wolfe conditions. The function modifies `θk` in place, and updates
     the values in `store` related to the gradient. If `gkm1` is the step
     direction, use the other `EBLS!(...)` method to save on a dot product
     computation. This method will return a boolean flag which indicates
@@ -45,7 +45,7 @@ the sufficient descent condition which enforces that
 
 ```math
     F(\\theta_k) \\leq F(\\theta_{k-1}) -
-        c1 * \\alpha_{k-1} * \\dot F(\\theta_{k-1})^\\intercal d_{k-1},
+        c_1 * \\alpha_{k-1} * \\dot F(\\theta_{k-1})^\\intercal d_{k-1},
 ```
 and the second condition is the curvature condition which enforces that
 
@@ -53,11 +53,10 @@ and the second condition is the curvature condition which enforces that
     \\dot F(\\theta_k)^\\intercal (-d_{k-1}) \\geq 
         c_2 \\dot F(\\theta_{k-1})^\\intercal (-d_{k-1}),
 ```
-where ``0 < c_1 < c_2 < 1`` are constant selected by the user.
+where ``0 < c_1 < c_2 < 1`` are constants selected by the user.
 
 This is done by maintaining a guess ``\\alpha`` and a range
-``\\alpha \\in [L, U]`` of possible values. The upper and lower bounds
-are updated similar to a binary search algorithm. Initially, ``L = 0``,
+``\\alpha \\in [L, U]`` of possible values. Initially, ``L = 0``,
 ``U = \\infty``, and (commonly) ``\\alpha = 1``. When the first
 condition is not satisfied, ``U = \\alpha`` and the algorithms next guess
 is ``\\alpha = (U + L)/2``. If the first condition is satisfied, but
@@ -160,7 +159,7 @@ end
         δ::T, c1::T, c2::T; max_iterations::Int64 = 100) where {T, S}
 
 Implementation of an algorithm that finds a step size satisfying the weak
-    wolfe condition. The function modifies `θk` in place, and updates
+    wolfe conditions. The function modifies `θk` in place, and updates
     the values in `store` related to the gradient. A boolean flag which 
     indicates whether the method was successful or not is returned. 
     
@@ -191,7 +190,7 @@ the sufficient descent condition which enforces that
 
 ```math
     F(\\theta_k) \\leq F(\\theta_{k-1}) -
-        c1 * \\alpha_{k-1} * ||\\dot F(\\theta_{k-1})||_2^2,
+        c_1 * \\alpha_{k-1} * ||\\dot F(\\theta_{k-1})||_2^2,
 ```
 and the second condition is the curvature condition which enforces that
 
@@ -199,11 +198,10 @@ and the second condition is the curvature condition which enforces that
     \\dot F(\\theta_k)^\\intercal (-\\dot F(\\theta_{k-1})) \\geq 
         -c_2 ||\\dot F(\\theta_{k-1})||_2^2,
 ```
-where ``0 < c_1 < c_2 < 1`` are constant selected by the user.
+where ``0 < c_1 < c_2 < 1`` are constants selected by the user.
 
 This is done by maintaining a guess ``\\alpha`` and a range
-``\\alpha \\in [L, U]`` of possible values. The upper and lower bounds
-are updated similar to a binary search algorithm. Initially, ``L = 0``,
+``\\alpha \\in [L, U]`` of possible values. Initially, ``L = 0``,
 ``U = \\infty``, and (commonly) ``\\alpha = 1``. When the first
 condition is not satisfied, ``U = \\alpha`` and the algorithms next guess
 is ``\\alpha = (U + L)/2``. If the first condition is satisfied, but

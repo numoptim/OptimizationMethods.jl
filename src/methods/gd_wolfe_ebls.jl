@@ -131,7 +131,7 @@ two conditions. The first is the sufficient decrease condition
 
 ```math
     F(\\theta_k) \\leq F(\\theta_{k-1}) -
-        c1 * \\alpha_{k-1} * ||\\dot F(\\theta_{k-1})||_2^2,
+        c_1 * \\alpha_{k-1} * ||\\dot F(\\theta_{k-1})||_2^2,
 ```
 and the second condition is the curvature condition which enforces that
 
