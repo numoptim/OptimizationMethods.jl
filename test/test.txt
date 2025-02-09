@@ -9,5 +9,7 @@ methods/gd_weighted_norm_damping.jl
 methods/gd_nesterov_accelerated.jl
 methods/gd_diminishing.jl
 problems/regression_helpers/link_functions.jl
+problems/regression_helpers/link_function_derivatives.jl
 problems/regression_helpers/variance_functions.jl
+problems/regression_helpers/variance_function_derivatives.jl
 methods/stepsize_helpers/diminishing_stepsizes.jl
