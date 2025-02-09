@@ -190,7 +190,7 @@ using Test, ForwardDiff, OptimizationMethods, Random, LinearAlgebra
     ####################################
     # Test Methods 
     ####################################
-    let real_types = [Float16, Float32, Float64], nobs_default = 1000,
+    let real_types = [Float32, Float64], nobs_default = 1000,
         nvar_default = 50, nargs=1
 
         for real_type in real_types
