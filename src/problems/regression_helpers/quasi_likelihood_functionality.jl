@@ -236,7 +236,7 @@ args_store = [
     end
 
     @doc """
-        grad(
+        grad!(
             $(join(string.(args),",\n\t    "))
         ) where {T,S}
 
@@ -263,7 +263,7 @@ args_store = [
     end
 
     @doc """
-         objgrad(
+         objgrad!(
             $(join(string.(args),",\n\t    "))
         ) where {T,S}
 
@@ -280,7 +280,7 @@ args_store = [
     end
 
     @doc """
-        hess(
+        hess!(
             $(join(string.(args),",\n\t    "))
         ) where {T,S}
     
