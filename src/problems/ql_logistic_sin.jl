@@ -123,11 +123,9 @@ function QLLogisticSin(
     nvar::Int64 = 50
 ) where {T}
 
-    @assert nobs > 0 "Number of observations is $(nobs) which is not"*
-    "greater than 0."
+    @assert nobs > 0 "Number of observations ($(nobs)) must be positive."
     
-    @assert nvar > 0 "Number of variables is $(nvar) which is not"*
-    "greater than 0."
+    @assert nvar > 0 "Number of variables ($(nvar)) must be positive."
 
     # initialize the meta data and counters
     meta = NLPModelMeta(
@@ -162,11 +160,11 @@ function QLLogisticSin(
     x0::Vector{T} = zeros(T, size(design)[2])
 ) where {T}
 
-    @assert size(design, 1) == size(response, 1) "Number rows in design matrix is not"*
-    "equal to the number of observations."
+    @assert size(design, 1) == size(response, 1) "Number rows in design matrix"*
+    " must be equal to the number of observations."
 
-    @assert size(design, 2) == size(x0, 1) "Number of columns in design matrix is not"*
-    "equal to the number of elements in x0."
+    @assert size(design, 2) == size(x0, 1) "Number of columns in design matrix"*
+    " must be equal to parameter dimension."
     
     # initialize meta
     meta = NLPModelMeta(
