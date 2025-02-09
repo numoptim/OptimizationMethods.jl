@@ -226,7 +226,7 @@ end
 
 # allocate struct
 """
-    AllocateQLLogisticSin{T} <: AbstractProblemAllocate{T}
+    AllocateQLLogisticSin{T} <: AbstractDefaultQLAllocate{T}
 
 Mutable struct that contains buffer arrays for various computations used for
     this objective function and for optimization algorithms.
