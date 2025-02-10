@@ -82,9 +82,13 @@ export LipschitzApproxGD, lipschitz_approximation_gd
 export NesterovAcceleratedGD, nesterov_accelerated_gd
 export DiminishingStepGD, diminishing_step_gd
 export WeightedNormDampingGD, weighted_norm_damping_gd
+export BacktrackingGD, backtracking_gd
+export FixedStepNLSMaxValGD, fixed_step_nls_maxval_gd
 
 ## Helper functions for optimization methods
 include("methods/stepsize_helpers/diminishing_stepsizes.jl")
+include("methods/line_search_helpers/backtracking.jl")
+include("methods/line_search_helpers/nls_cache_util.jl")
 
 ## Source Code 
 include("methods/gd_barzilai_borwein.jl")
@@ -93,5 +97,7 @@ include("methods/gd_lipschitz_approximation.jl")
 include("methods/gd_nesterov_accelerated.jl")
 include("methods/gd_diminishing.jl")
 include("methods/gd_weighted_norm_damping.jl")
+include("methods/gd_backtracking.jl")
+include("methods/gd_fixed_nls_gd.jl")
 
 end
