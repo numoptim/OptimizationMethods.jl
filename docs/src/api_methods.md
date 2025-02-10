@@ -61,6 +61,20 @@ OptimizationMethods.inverse_log2k_step_size
 OptimizationMethods.stepdown_100_step_size
 ```
 
+# Gradient Descent with EBLS for Weak Wolfe Conditions
+```@docs
+wolfe_ebls_gd
+
+WolfeEBLSGD
+```
+
+# Line search Helper Functions
+
+## Weak Wolfe Conditions
+```@docs
+OptimizationMethods.EBLS!
+```
+
 # Index 
 ```@index
 ```
