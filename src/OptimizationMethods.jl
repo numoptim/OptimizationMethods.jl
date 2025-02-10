@@ -60,6 +60,7 @@ include("problems/regression_helpers/quasi_likelihood_functionality.jl")
 include("problems/least_squares.jl")
 include("problems/logistic_regression.jl")
 include("problems/poisson_regression.jl")
+include("problems/proximal_point_subproblem.jl")
 include("problems/ql_logistic_sin.jl")
 
 
@@ -82,6 +83,7 @@ export LipschitzApproxGD, lipschitz_approximation_gd
 export NesterovAcceleratedGD, nesterov_accelerated_gd
 export DiminishingStepGD, diminishing_step_gd
 export WeightedNormDampingGD, weighted_norm_damping_gd
+export ProximalPointGD, proximal_point_gd
 
 ## Helper functions for optimization methods
 include("methods/stepsize_helpers/diminishing_stepsizes.jl")
@@ -93,5 +95,6 @@ include("methods/gd_lipschitz_approximation.jl")
 include("methods/gd_nesterov_accelerated.jl")
 include("methods/gd_diminishing.jl")
 include("methods/gd_weighted_norm_damping.jl")
+include("methods/gd_proximal_point.jl")
 
 end

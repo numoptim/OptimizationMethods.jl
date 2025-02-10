@@ -58,6 +58,15 @@ OptimizationMethods.centered_shifted_log
 OptimizationMethods.dlinear_plus_sin
 ```
 
+# Sub-problems
+
+## Proximal Point
+
+```@docs
+OptimizationMethods.ProximalPointSubproblem
+```
+
+
 # Index
 
 ```@index
