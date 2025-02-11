@@ -19,3 +19,26 @@ Compute the following function
 function dlinear_plus_sin(μ::T) where {T}
     return T(1 + cos(2 * pi * μ) * 2 * pi)
 end
+
+"""
+    dcentered_exp(μ::T, p::T, c::T) where {T}
+
+Compute the following function
+```math
+    \\frac{d}{d\\mu} \\exp\\left( -|\\mu - c|^{2p} \\right).
+```
+See [Quasi-likelihood Estimation](@ref) for details.
+
+# Arguments
+
+- `μ::T`, scalar. In the regression context, this is the estimated mean of a 
+    datapoint.
+- `p::T`, scalar. Power applied to `(μ-c)^2`.
+- `c::T`, scalar. Center where noise level is highest.
+
+!!! note
+    For `p` smaller than ``.5``, the derivative is not well-defined at ``c``.
+"""
+function dcentered_exp(μ::T, p::T, c::T) where {T}
+    return centered_exp(μ, p, c) * -(μ-c)^(2 * p - 1) * 2 * p
+end
