@@ -34,5 +34,5 @@ Compute the following function
     `.5`. User beware.
 """
 function dmonomial_plus_constant(μ::T, p::T) where {T}
-    return 2 * p * (μ ^ (2 * p - 1))
+    return T(sign(μ) * 2 * p * (abs(μ) ^ (2 * p - 1)))
 end

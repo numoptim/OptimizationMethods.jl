@@ -20,6 +20,8 @@ OptimizationMethods.PoissonRegression
 
 ```@docs
 OptimizationMethods.QLLogisticSin
+
+OptimizationMethods.QLLogisticMonomial
 ```
 
 # Problem Utility
@@ -56,6 +58,8 @@ OptimizationMethods.centered_shifted_log
 
 ```@docs
 OptimizationMethods.dlinear_plus_sin
+
+OptimizationMethods.dmonomial_plus_constant
 ```
 
 # Index
