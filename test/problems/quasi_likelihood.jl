@@ -191,7 +191,7 @@ const ql_precomp_symbols = [:PrecomputeQLLogisticSin]
 const ql_allocate_types = [OptimizationMethods.AllocateQLLogisticSin] 
 const ql_allocate_symbols = [:AllocateQLLogisticSin]
 
-@testset "Problem -- Quasi-likelihood Problems" begin
+@testset "Quasi-likelihood Problems" begin
 
     ####################################
     # Test Struct: Precompute structures
