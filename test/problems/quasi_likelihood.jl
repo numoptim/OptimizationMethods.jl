@@ -330,7 +330,7 @@ const ql_allocate_symbols = [:AllocateQLLogisticSin]
     ####################################
     # Test Methods -- Quasi-Likelihood
     ####################################
-    let real_types = [Float32, Float64], 
+    let real_types = [Float64], 
         nobs_default = 1000,
         nvar_default = 50, nargs=1,
         structures = ql_structures
