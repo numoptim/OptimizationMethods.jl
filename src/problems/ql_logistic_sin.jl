@@ -69,7 +69,7 @@ Initializes the data structure for a quasi-likelihood estimation problem with
 
 ## Outer Constructors
 
-    function QLLogisticSin(::Type{T}; nobs::Int64 = 1000,
+    QLLogisticSin(::Type{T}; nobs::Int64 = 1000,
         nvar::Int64 = 50) where {T}
 
 Construct a quasi-likelihood estimation problem with 
@@ -83,7 +83,7 @@ Construct a quasi-likelihood estimation problem with
     `mean.(design * x) + variance.(mean.(design * x)) .^ (.5) * ϵ`, where `ϵ` is a noise
     vector generated from the Arcsine distribution with default parameters.
  
-    function QLLogisticSin(design::Matrix{T}, response::Vector{T}, 
+    QLLogisticSin(design::Matrix{T}, response::Vector{T}, 
         x0::Vector{T} = zeros(T, size(design)[2])) where {T}
 
 Constructs a quasi-likelihood estimation problem with 
