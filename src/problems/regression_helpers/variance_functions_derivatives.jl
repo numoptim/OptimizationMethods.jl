@@ -19,3 +19,9 @@ Compute the following function
 function dlinear_plus_sin(μ::T) where {T}
     return T(1 + cos(2 * pi * μ) * 2 * pi)
 end
+
+"""
+"""
+function dcentered_shifted_log(μ::T, p::T, c::T) where {T}
+    return 1/(abs(μ-c)^(2*p) + 1) * (2 * p) * (μ-c)^(2 * p-1)
+end 
