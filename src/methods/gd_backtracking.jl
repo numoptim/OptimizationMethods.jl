@@ -130,9 +130,8 @@ where ``||\\cdot||_2`` is the L2-norm.
     Theoretically, there exists such a ``t``, but it can be made
     arbitrarily large. Therefore, the line search procedure stops
     searching after `optData.line_search_max_iteration`.
-    The current implementation does not check if the line search
-    methodology terminates successful, and tries to continue
-    regardless.
+    The current implementation terminates the procedure if the backtracking
+    condition is not satisfied.
 
 # Arguments
 
@@ -170,10 +169,15 @@ function backtracking_gd(
         iter += 1
 
         # backtrack -- solution is stored in x
-        OptimizationMethods.backtracking!(x, optData.iter_hist[iter],
-            F, store.grad, optData.grad_val_hist[iter]^2, F(x), 
-            optData.α, optData.δ, optData.ρ; 
+        backtracking_condition_satisfied = OptimizationMethods.backtracking!(x, 
+            optData.iter_hist[iter], F, store.grad, optData.grad_val_hist[iter]^2, 
+            F(x), optData.α, optData.δ, optData.ρ;  
             max_iteration = optData.line_search_max_iteration)
+
+        if !backtracking_condition_satisfied
+            optData.stop_iteration = (iter-1)
+            return optData.iter_hist[iter]
+        end
         
         # compute the next gradient value
         OptimizationMethods.grad!(progData, precomp, store, x)
