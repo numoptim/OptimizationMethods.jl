@@ -140,7 +140,7 @@ function QLLogisticCenteredLog(
     nvar::Int64 = 50,
     p::T = T(1),
     c::T = T(1)
-)
+) where {T}
 
     @assert nobs > 0 "Number of observations ($(nobs)) must be positive."
 
@@ -181,7 +181,7 @@ function QLLogisticCenteredLog(
     x0::Vector{T} = zeros(T, size(design, 2)),
     p::T = T(1),
     c::T = T(1)
-)  
+) where {T}
 
     @assert size(design, 1) == size(response, 1) "Number rows in design matrix"*
     " must be equal to the number of observations."

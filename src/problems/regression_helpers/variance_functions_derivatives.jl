@@ -21,7 +21,27 @@ function dlinear_plus_sin(μ::T) where {T}
 end
 
 """
+    dcentered_shifted_log(μ::T, p::T, c::T) where {T}
+
+Compute and returns the following function
+```math
+    \\frac{d}{d\\mu} \\log(|\\mu-c|^{2p} + 1) =
+    sign(\\mu - c) \\frac{2p|\\mu - c|^{2p-1}}{|\\mu-c|^{2p} + 1},
+```
+where ``sign(x)`` returns the sign of ``x``. This equality is only 
+correct everywhere when ``p > .5``.
+
+!!! warning
+    The function does not check the correctness of `p` and is not guaranteed
+    to return the correct derivative at ``c`` when `p <= .5`.
+
+# Arguments
+
+- `μ::T`, point at which to compute the derivative. In the context of 
+    regression, this is the mean.
+- `p::T`, scalar. Power applied to ``|\\mu-c|^2``.
+- `c::T`, scalar. Center where noise level is lowest.
 """
 function dcentered_shifted_log(μ::T, p::T, c::T) where {T}
-    return 1/(abs(μ-c)^(2*p) + 1) * (2 * p) * (μ-c)^(2 * p-1)
+    return sign(μ - c) * (2 * p * abs(μ - c)^(2 * p -1))/(abs(μ - c)^(2 * p) + 1)
 end 
