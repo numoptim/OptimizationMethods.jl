@@ -25,9 +25,12 @@ end
 
 Compute the following function
 ```math
-    \\frac{d}{d\\mu} \\exp\\left( -|\\mu - c|^{2p} \\right).
+    \\frac{d}{d\\mu} \\exp\\left( -|\\mu - c|^{2p} \\right),
 ```
-See [Quasi-likelihood Estimation](@ref) for details.
+where ``c \\in \\mathbb{R}`` and ``p \\in \\mathbb{R}``. See [Quasi-likelihood Estimation](@ref) for details.
+
+!!! warning
+    For `p` smaller than ``.5``, the derivative is not well-defined at ``c``.
 
 # Arguments
 
@@ -35,10 +38,7 @@ See [Quasi-likelihood Estimation](@ref) for details.
     datapoint.
 - `p::T`, scalar. Power applied to `(μ-c)^2`.
 - `c::T`, scalar. Center where noise level is highest.
-
-!!! note
-    For `p` smaller than ``.5``, the derivative is not well-defined at ``c``.
 """
 function dcentered_exp(μ::T, p::T, c::T) where {T}
-    return centered_exp(μ, p, c) * -(μ-c)^(2 * p - 1) * 2 * p
+    return -centered_exp(μ, p, c) * sign(μ-c) * 2 * p * abs(μ-c)^(2*p-1)
 end
