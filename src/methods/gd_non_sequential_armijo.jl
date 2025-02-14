@@ -28,6 +28,7 @@ mutable struct NonsequentialArmijoGD{T} <: AbstractOptimizerData{T}
     ρ::T
     τ_lower::T
     τ_upper::T
+    local_lipschitz_estimate::T
     threshold::T
     max_iterations::Int64
     iter_hist::Vector{Vector{T}}
@@ -70,6 +71,7 @@ function NonsequentialArmijoGD(
         ρ,
         T(-1),
         T(-1),
+        T(1.0),
         threshold,
         max_iterations,
         iter_hist,
@@ -91,6 +93,46 @@ Given the previous approximation of the local Lipschitz constant,
 
 # Method
 
+The local Lipschitz approximation method is conducted as follows. Let ``j``
+    be the current inner loop iteration counter, and let ``k`` be the current
+    outer loop iteration counter. Let ``\\psi_j^k`` be the ``j^{th}`` iterate
+    of the ``k^{th}`` outer loop, and let ``\\hat L_{j}^k`` be the ``j^th`` estimate
+    of the ``k^{th}`` outer loop of the local Lipschitz constant. The local
+    estimate is updated according the following five cases.
+
+1) When ``j == 1`` and ``k == 1``, this is the first iteration of the first 
+inner loop, and as there is no information available we set it to `1.0`.
+
+2) When ``j == 1`` and ``k > 1``, this is the first iteration of the ``k^{th}``
+inner loop, and we return ``L_{j_{k-1}}^{k-1}`` which is the local Lipschitz
+estimates formed using information at the terminal iteration of the ``k-1^{th}``
+inner loop (i.e., this is the latest estimate).
+
+3) When ``j > 1`` and ``k == 1``, this is an inner loop iteration where we have
+possible taken multiple steps, so we return the most 'local' estimate
+of the local Lipschitz constant which is
+
+```math
+||\\dot F(\\psi_{j}^k) - \\dot F(\\psi_{j-1}^k||_2 / 
+    ||\\psi_{j}^k - \\psi_{j-1}^k||_2.
+```
+
+4) When ``j > 1`` and ``k > 1`` and ``\\psi_{j_{k-1}}^{k-1}`` satisfied the
+descent condition, then we return 
+
+```math
+||\\dot F(\\psi_{j}^k) - \\dot F(\\psi_{j-1}^k||_2 / 
+    ||\\psi_{j}^k - \\psi_{j-1}^k||_2.
+```
+
+5) When ``j > 1`` and ``k > 1`` and ``\\psi_{j_{k-1}}^{k-1}`` did not satisfy the
+descent condition, then we return 
+
+```math
+max\\left( ||\\dot F(\\psi_{j}^k) - \\dot F(\\psi_{j-1}^k||_2 / 
+    ||\\psi_{j}^k - \\psi_{j-1}^k||_2, \\hat L_{j-1}^k \\right).
+```
+
 # Arguments
 
 - `j::Int64`, inner loop iteration.
@@ -107,7 +149,6 @@ Given the previous approximation of the local Lipschitz constant,
 # Return
 
 `estimate::T`, estimate of the local Lipschitz constant.
-
 """
 function update_local_lipschitz_approximation(j::Int64, k::Int64,
     djk::S, curr_grad::S, prev_grad::S, prev_approximation::T, 
@@ -129,7 +170,16 @@ function update_local_lipschitz_approximation(j::Int64, k::Int64,
 end
 
 """
-TODO
+    compute_step_size(τ_lower::T, norm_grad::T, local_lipschitz_estimate::T
+        ) where {T}
+
+Computes the step size for the inner loop iterates.
+
+# Method
+
+# Arguments
+
+# Return
 """
 function compute_step_size(τ_lower::T, norm_grad::T, local_lipschitz_estimate::T) where {T}
 
@@ -144,12 +194,16 @@ end
 """
 TODO
 """
-function inner_loop!(optData::NonsequentialArmijoGD{T}, 
+function inner_loop!(
+    ψjk::S,
+    θk::S,
+    optData::NonsequentialArmijoGD{T}, 
     progData::P1 where P1 <: AbstractNLPModel{T, S}, 
     precomp::P2 where P2 <: AbstractPrecompute{T}, 
     store::P3 where P3 <: AbstractProblemAllocate{T}, 
-    local_lipschitz_estimate::T, 
-    past_acceptance::Bool, ψjk::S, θk::S, k::Int64; max_iteration = 100) where {T, S}
+    past_acceptance::Bool, 
+    k::Int64; 
+    max_iteration = 100) where {T, S}
 
     # inner loop
     j = 0
@@ -163,20 +217,20 @@ function inner_loop!(optData::NonsequentialArmijoGD{T},
         j += 1
 
         # update local lipschitz estimate
-        local_lipschitz_estimate = update_local_lipschitz_approximation(
-            j, k, optData.δk * αjk .* optData.prev_∇F_ψ, store.grad,
-            optData.prev_∇F_ψ, local_lipschitz_estimate, past_acceptance)
+        optData.local_lipschitz_estimate = update_local_lipschitz_approximation(
+            j, k, -optData.δk * αjk .* optData.prev_∇F_ψ, store.grad,
+            optData.prev_∇F_ψ, optData.local_lipschitz_estimate, past_acceptance)
 
         # compute the step size
         αjk = compute_step_size(optData.τ_lower, optData.norm_∇F_ψ, 
-            local_lipschitz_estimate)
+            optData.local_lipschitz_estimate)
 
         # save the first step size for non-sequential armijo
         if j == 1
             optData.α0k = αjk
         end
 
-        ## take step
+        # take step
         ψjk .-= optData.δk * αjk * store.grad
 
         ## store values for next iteration
@@ -185,13 +239,15 @@ function inner_loop!(optData::NonsequentialArmijoGD{T},
         optData.norm_∇F_ψ = norm(store.grad)
     end
 
-    return local_lipschitz_estimate
+    optData.local_lipschitz_estimate = update_local_lipschitz_approximation(
+            j, k, -optData.δk * αjk .* optData.prev_∇F_ψ, store.grad,
+            optData.prev_∇F_ψ, optData.local_lipschitz_estimate, past_acceptance)
 end
 
 """
 TODO
 """
-function update_algorithm_parameters!(optData::NonsequentialArmijoGD{T}, θkp1::S,
+function update_algorithm_parameters!(θkp1::S, optData::NonsequentialArmijoGD{T},
     achieved_descent::Bool, iter::Int64) where {T, S}
     if !achieved_descent
         θkp1 .= optData.iter_hist[iter]
@@ -235,7 +291,6 @@ function nonsequential_armijo_gd(
     optData.τ_upper = sqrt(10) * optData.grad_val_hist[1]   
 
     # constants required by the algorithm
-    local_lipschitz_estimate = T(1)
     past_acceptance = true
     reference_value = F(optData.iter_hist[1])
 
@@ -246,10 +301,8 @@ function nonsequential_armijo_gd(
         iter += 1
 
         # inner loop
-        local_lipschitz_estimate = inner_loop!(
-            optData, progData, precomp, store,
-            local_lipschitz_estimate, past_acceptance, x, optData.iter_hist[iter],
-            iter)
+        inner_loop!(x, optData.iter_hist[iter], optData, progData,
+            precomp, store, past_acceptance, iter)
 
         # check non-sequential armijo condition
         Fx = F(x)
@@ -258,7 +311,7 @@ function nonsequential_armijo_gd(
             optData.grad_val_hist[iter], optData.ρ, optData.δk, optData.α0k)
         
         # update the algorithm parameters and current iterate
-        update_algorithm_parameters!(optData, x, achieved_descent, iter)
+        update_algorithm_parameters!(x, optData, achieved_descent, iter)
         past_acceptance = achieved_descent
         if past_acceptance
             reference_value = Fx

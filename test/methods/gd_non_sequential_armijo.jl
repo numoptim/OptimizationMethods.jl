@@ -40,13 +40,79 @@ using Test, OptimizationMethods, LinearAlgebra, Random
             # test output
             @test typeof(output) == Float64
 
-            # TODO - test correctness
+            # test correctness of output
+            if j == 1 && k == 1
+                @test output == 1.0
+            elseif j == 1 && k > 1
+                @test output == prev_approximation
+            elseif j > 1 && k == 1
+                @test output == norm(curr_grad - prev_grad) / norm(djk)
+            elseif j > 1 && k > 1 && past_acceptance
+                @test output == norm(curr_grad - prev_grad) / norm(djk)
+            elseif j > 1 && k > 1 && (!past_acceptance)
+                @test output == 
+                    max(prev_approximation, norm(curr_grad - prev_grad) / norm(djk))
+            end
         end
     end
-
 end
 
 @testset "Utility -- Novel Step Size Computation" begin
+
+    # set seed for reproducibility
+    Random.seed!(1010)
+
+    # test definition
+    @test isdefined(OptimizationMethods, :compute_step_size)
+
+    # Test case 1
+    let
+        τ_lower = 1.0
+        norm_grad = 1.0
+        local_lipschitz_estimate = 1.0
+
+        output = OptimizationMethods.compute_step_size(τ_lower, norm_grad,
+            local_lipschitz_estimate)
+
+        @test output == (1/(1 + .5 + 1e-16)) + 1e-16
+    end
+
+    # Test case 2
+    let 
+        τ_lower = 2.0
+        norm_grad = 1.0
+        local_lipschitz_estimate = 1.0
+
+        output = OptimizationMethods.compute_step_size(τ_lower, norm_grad,
+            local_lipschitz_estimate)
+
+        @test output == (1/(1 + .5 + 1e-16)) + 1e-16
+    end
+    
+    # Test case 3
+    let 
+        τ_lower = .5
+        norm_grad = 1.0
+        local_lipschitz_estimate = 1.0
+
+        output = OptimizationMethods.compute_step_size(τ_lower, norm_grad,
+            local_lipschitz_estimate)
+
+        @test output == ((.5 ^ 2)/(1 + .5 + 1e-16)) + 1e-16
+    end
+
+    # Test case 4
+    let 
+        τ_lower = 1.0
+        norm_grad = 10.
+        local_lipschitz_estimate = 1.
+
+        output = OptimizationMethods.compute_step_size(τ_lower, norm_grad,
+            local_lipschitz_estimate)
+        
+        @test output == (1 / (10 ^ 3 + .5 * (10 ^ 2) + 1e-16)) + 1e-16
+    end
+    
 end
 
 @testset "Utility -- Inner Loop" begin
