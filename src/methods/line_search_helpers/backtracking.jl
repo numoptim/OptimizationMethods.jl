@@ -79,8 +79,7 @@ function backtracking!(
 
     # backtracking
     backtracking_condition_satisfied = false
-    while (t < max_iteration) &&
-        (!backtracking_condition_satisfied)
+    while (t < max_iteration) && (!backtracking_condition_satisfied)
 
         if F(θk) > reference_value - ρ * (δ^t * α) * inner_prod_grad_by_direction
             t += 1
@@ -173,8 +172,7 @@ function backtracking!(
 
     # backtracking
     backtracking_condition_satisfied = false
-    while (t < max_iteration) &&
-        (!backtracking_condition_satisfied)
+    while (t < max_iteration) && (!backtracking_condition_satisfied)
 
         if F(θk) > reference_value - ρ * (δ^t * α) * norm_gkm1_squared 
             t += 1
