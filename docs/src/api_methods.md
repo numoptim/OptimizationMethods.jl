@@ -68,6 +68,13 @@ NonsequentialArmijoGD
 nonsequential_armijo_gd
 ```
 
+The method above requires several utility functions. These are listed
+below.
+
+```@docs
+OptimizationMethods.update_local_lipschitz_approximation
+```
+
 # Line search Helper Functions
 
 ## Non-sequential Armijo

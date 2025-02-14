@@ -83,7 +83,31 @@ end
 ################################################################################
 
 """
-TODO
+    update_local_lipschitz_approximation(j::Int64, k::Int64, djk::S, curr_grad::S,
+        prev_grad::S, prev_approximation::T, prev_acceptance::Bool) where {T, S}
+
+Given the previous approximation of the local Lipschitz constant,
+    `prev_approximation::T`, update the current estimate.
+
+# Method
+
+# Arguments
+
+- `j::Int64`, inner loop iteration.
+- `k::Int6`, outer loop iteration.
+- `djk::S`, difference between `\\psi_j^k` and ``\\psi_{j-1}^k``. On the first
+    iteration of the inner loop this is set to `0`.
+- `curr_grad::S`, gradient at ``\\psi_j^k`` (i.e., the current iterate).
+- `prev_grad::S`, gradient at ``\\psi_{j-1}^k`` (i.e., the previous iterate).
+- `prev_approximation::T`, the local Lipschitz approximation from the previous 
+    iteration
+- `prev_acceptance::Bool`, whether or not the previous inner loop resulted in
+    an accepted iterate.
+
+# Return
+
+`estimate::T`, estimate of the local Lipschitz constant.
+
 """
 function update_local_lipschitz_approximation(j::Int64, k::Int64,
     djk::S, curr_grad::S, prev_grad::S, prev_approximation::T, 
