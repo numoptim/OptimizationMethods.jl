@@ -39,6 +39,9 @@ Mutable sturcture representing gradient descent using backtracking.
         line_search_max_iteration::Int64, threshold::T, max_iteration::Int64)
         where {T}
 
+Returns a `struct` of type `BacktrackingGD{T}` with all the field initialized to
+    either initialized to the values given, or their default values.
+
 ## Arguments
 
 - `T::DataType`, specific data type used for calculations.
@@ -131,7 +134,7 @@ where ``||\\cdot||_2`` is the L2-norm.
     arbitrarily large. Therefore, the line search procedure stops
     searching after `optData.line_search_max_iteration`.
     The current implementation terminates the procedure if the backtracking
-    condition is not satisfied.
+    condition is not satisfied, and returns the previous iterate.
 
 # Arguments
 
@@ -174,6 +177,7 @@ function backtracking_gd(
             F(x), optData.α, optData.δ, optData.ρ;  
             max_iteration = optData.line_search_max_iteration)
 
+        # if backtracking is not satisfied returned the previous point
         if !backtracking_condition_satisfied
             optData.stop_iteration = (iter-1)
             return optData.iter_hist[iter]
