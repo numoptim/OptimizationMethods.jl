@@ -86,7 +86,7 @@ See [Quasi-likelihood Estimation](@ref) for details.
 - `c::T`, scalar. Center where noise level is lowest.
 
 !!! note
-    For `p` smaller than or eqal to ``.5``, the variance function is not 
+    For `p` smaller than or equal to ``.5``, the variance function is not 
     continuously differentiable at ``c``.
 """
 function centered_shifted_log(μ::T, p::T, c::T) where {T}
