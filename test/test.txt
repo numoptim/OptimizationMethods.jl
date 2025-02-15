@@ -2,6 +2,7 @@ problems/least_squares.jl
 problems/logistic_regression.jl
 problems/poisson_regression.jl
 problems/ql_logistic_sin.jl
+problems/ql_logistic_centered_log.jl
 problems/quasi_likelihood.jl
 methods/gd_fixed.jl
 methods/gd_barzilai_borwein.jl
