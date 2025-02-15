@@ -78,7 +78,7 @@ function test_methods(
     
     # Objective Difference Trapezoidal Rule
     function trapezoidal(y, x=baseline_arg)
-        Δ = 1e-3
+        Δ = 1e-4
         δ = y - x
         interpolation_points = 0:Δ:1.0
         obj_diff_approx = 0.0 
