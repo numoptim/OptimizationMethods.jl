@@ -59,6 +59,8 @@ Let ``n`` be the number of rows in ``A``, then the quasi-likelihood objective is
 - `variance_first_derivative::Function`, function that returns the first 
     derivative of the variance function.
 - `weighted_residual::Function`, computes the weighted residual of the model. 
+- `p::T`, parameter of the variance function saved for testing
+- `c::T`, parameter of the variance function saved for testing
 
 # Constructors
 
@@ -107,6 +109,8 @@ mutable struct QLLogisticCenteredExp{T, S} <: AbstractDefaultQL{T, S}
     variance::Function
     variance_first_derivative::Function
     weighted_residual::Function
+    p::T
+    c::T
 
     QLLogisticCenteredExp{T, S}(meta::NLPModelMeta{T, S}, counters::Counters,
         design::Matrix{T}, response::Vector{T}, p::T, c::T) where {T, S} =
@@ -121,9 +125,12 @@ mutable struct QLLogisticCenteredExp{T, S} <: AbstractDefaultQL{T, S}
             response,
             OptimizationMethods.logistic,
             OptimizationMethods.dlogistic,
-            V(μ),
-            dV(μ),
-            weighted_residual
+            OptimizationMethods.ddlogistic,
+            V,
+            dV,
+            weighted_residual,
+            p,
+            c
         )
     end
 end
@@ -158,7 +165,7 @@ function QLLogisticCenteredExp(
 
     # generate responses
     response = μ_obs + 
-        (OptimizationMethods.centered_exp.(μ_obs, p, c) .^ (.5) ) * ϵ
+        T.((OptimizationMethods.centered_exp.(μ_obs, p, c) .^ (.5) )) * ϵ
 
     return QLLogisticCenteredExp{T, Vector{T}}(
         meta,

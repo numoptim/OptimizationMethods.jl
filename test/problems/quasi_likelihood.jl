@@ -78,7 +78,7 @@ function test_methods(
     
     # Objective Difference Trapezoidal Rule
     function trapezoidal(y, x=baseline_arg)
-        Δ = 1e-3
+        Δ = 1e-4
         δ = y - x
         interpolation_points = 0:Δ:1.0
         obj_diff_approx = 0.0 
@@ -177,19 +177,40 @@ function gradient_logistic_sin(
     return  - progData.design'*(residual .* d_predicted)
 end
 
+function gradient_logistic_centered_exp(
+    x,
+    progData::P where P <: OptimizationMethods.AbstractDefaultQL{T, S}
+) where {T, S}
+
+    c = progData.c
+    p = progData.p
+
+    η = progData.design * x
+    μ = 1 ./ (1 .+ exp.(-η))
+    dμ = μ .* (1 .- μ)
+    V = exp.(-abs.(μ.-c).^(2*p))
+
+    return -progData.design'*(dμ .* (progData.response .- μ)./V)
+end
+
 ################################################################################
 # Testing set for Quasi-likelihood problems
 ################################################################################
 
-const ql_structures = [OptimizationMethods.QLLogisticSin]
-const ql_structure_symbols = [:QLLogisticSin]
-const ql_gradients = [gradient_logistic_sin]
+const ql_structures = [OptimizationMethods.QLLogisticSin,
+    OptimizationMethods.QLLogisticCenteredExp]
+const ql_structure_symbols = [:QLLogisticSin, :QLLogisticCenteredExp]
+const ql_gradients = [gradient_logistic_sin, gradient_logistic_centered_exp]
 
-const ql_precomp_types = [OptimizationMethods.PrecomputeQLLogisticSin]
-const ql_precomp_symbols = [:PrecomputeQLLogisticSin]
+const ql_precomp_types = [OptimizationMethods.PrecomputeQLLogisticSin,
+    OptimizationMethods.PrecomputeQLLogisticCenteredExp]
+const ql_precomp_symbols = [:PrecomputeQLLogisticSin, 
+    :PrecomputeQLLogisticCenteredExp]
 
-const ql_allocate_types = [OptimizationMethods.AllocateQLLogisticSin] 
-const ql_allocate_symbols = [:AllocateQLLogisticSin]
+const ql_allocate_types = [OptimizationMethods.AllocateQLLogisticSin,
+    OptimizationMethods.AllocateQLLogisticCenteredExp] 
+const ql_allocate_symbols = [:AllocateQLLogisticSin, 
+    :AllocateQLLogisticCenteredExp]
 
 @testset "Quasi-likelihood Problems" begin
 
