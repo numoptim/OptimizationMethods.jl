@@ -59,7 +59,9 @@ Let ``n`` be the number of rows in ``A``, then the quasi-likelihood objective is
     response.
 - `variance_first_derivative::Function`, function that returns the first 
     derivative of the variance function.
-- `weighted_residual::Function`, computes the weighted residual of the model. 
+- `weighted_residual::Function`, computes the weighted residual of the model.
+- `p::T`, parameter of the variance function for testing purposes.
+- `c::T`, parameter of the variance function for testing purposes.
 
 # Constructors
 
@@ -111,6 +113,8 @@ mutable struct QLLogisticMonomial{T, S} <: AbstractDefaultQL{T, S}
     variance::Function
     variance_first_derivative::Function
     weighted_residual::Function
+    p::T
+    c::T
 
     QLLogisticMonomial{T, S}(
         meta::NLPModelMeta{T, S}, 
@@ -133,9 +137,11 @@ mutable struct QLLogisticMonomial{T, S} <: AbstractDefaultQL{T, S}
             OptimizationMethods.logistic,
             OptimizationMethods.dlogistic,
             OptimizationMethods.ddlogistic,
-            V(μ),
-            dV(μ),
-            weighted_residual
+            V,
+            dV,
+            weighted_residual,
+            p,
+            c
         )
     end
 end

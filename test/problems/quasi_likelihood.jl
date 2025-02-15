@@ -177,19 +177,39 @@ function gradient_logistic_sin(
     return  - progData.design'*(residual .* d_predicted)
 end
 
+function gradient_logistic_monomial(
+    x,
+    progData::P where P <: OptimizationMethods.AbstractDefaultQL{T, S}
+) where {T, S}
+
+    p = progData.p
+    c = progData.c
+
+    η = progData.design * x
+    μ = 1 ./ (1 .+ exp.(-η))
+    dμ = μ .* (1 .- μ)
+    V = abs.(μ).^(2*p) .+ c
+
+    return -progData.design' * (dμ .* (progData.response .- μ) ./ V)
+end
+
 ################################################################################
 # Testing set for Quasi-likelihood problems
 ################################################################################
 
-const ql_structures = [OptimizationMethods.QLLogisticSin]
-const ql_structure_symbols = [:QLLogisticSin]
-const ql_gradients = [gradient_logistic_sin]
+const ql_structures = [OptimizationMethods.QLLogisticSin, 
+    OptimizationMethods.QLLogisticMonomial]
+const ql_structure_symbols = [:QLLogisticSin, :QLLogisticMonomial]
+const ql_gradients = [gradient_logistic_sin, gradient_logistic_monomial]
 
-const ql_precomp_types = [OptimizationMethods.PrecomputeQLLogisticSin]
-const ql_precomp_symbols = [:PrecomputeQLLogisticSin]
+const ql_precomp_types = [OptimizationMethods.PrecomputeQLLogisticSin,
+    OptimizationMethods.PrecomputeQLLogisticMonomial]
+const ql_precomp_symbols = [:PrecomputeQLLogisticSin, 
+    :PrecomputeQLLogisticMonomial]
 
-const ql_allocate_types = [OptimizationMethods.AllocateQLLogisticSin] 
-const ql_allocate_symbols = [:AllocateQLLogisticSin]
+const ql_allocate_types = [OptimizationMethods.AllocateQLLogisticSin,
+    OptimizationMethods.AllocateQLLogisticMonomial] 
+const ql_allocate_symbols = [:AllocateQLLogisticSin, :AllocateQLLogisticMonomial]
 
 @testset "Quasi-likelihood Problems" begin
 

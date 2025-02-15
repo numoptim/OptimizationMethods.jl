@@ -83,7 +83,7 @@ Construct a quasi-likelihood estimation problem with
     `mean.(design * x) + variance.(mean.(design * x)) .^ (.5) * ϵ`, where `ϵ` is a noise
     vector generated from the Arcsine distribution with default parameters.
  
-    QLLogisticSin(design::Matrix{T}, response::Vector{T}, 
+    QLLogisticSin(design::Matrix{T}, response::Vector{T}; 
         x0::Vector{T} = zeros(T, size(design)[2])) where {T}
 
 Constructs a quasi-likelihood estimation problem with 
@@ -156,7 +156,7 @@ function QLLogisticSin(
 end
 function QLLogisticSin(
     design::Matrix{T},
-    response::Vector{T},
+    response::Vector{T};
     x0::Vector{T} = zeros(T, size(design)[2])
 ) where {T}
 
