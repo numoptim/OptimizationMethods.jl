@@ -59,6 +59,8 @@ Let ``n`` be the number of rows in ``A``, then the quasi-likelihood objective is
 - `variance_first_derivative::Function`, function that returns the first 
     derivative of the variance function.
 - `weighted_residual::Function`, computes the weighted residual of the model. 
+- `p::T`, parameter for the variance function for testing purposes
+- `c::T`, parameter for the variance function for testing purposes
 
 # Constructors
 
@@ -107,6 +109,8 @@ mutable struct QLLogisticCenteredLog{T, S} <: AbstractDefaultQL{T, S}
     variance::Function
     variance_first_derivative::Function
     weighted_residual::Function
+    p::T
+    c::T
 
     QLLogisticCenteredLog{T, S}(
         meta::NLPModelMeta{T, S},
@@ -130,7 +134,9 @@ mutable struct QLLogisticCenteredLog{T, S} <: AbstractDefaultQL{T, S}
             OptimizationMethods.ddlogistic,
             V,
             dV,
-            weighted_residual
+            weighted_residual,
+            p,
+            c
         )
     end
 end
@@ -164,7 +170,7 @@ function QLLogisticCenteredLog(
     ϵ = T.((rand(Distributions.Arcsine()) .- .5)./(1/8)) # standardize
 
     response = μ_obs + 
-        OptimizationMethods.centered_shifted_log.(μ_obs, p, c).^(.5) * ϵ
+        T.(OptimizationMethods.centered_shifted_log.(μ_obs, p, c).^(.5)) * ϵ
 
     return QLLogisticCenteredLog{T, Vector{T}}(
         meta,
@@ -324,7 +330,7 @@ Creates a `PrecomputeQLLogisticCenteredLog` and `AllocateQLLogisticCenteredLog`
 """
 function initialize(progData::QLLogisticCenteredLog{T, S}) where {T, S}
     precomp = PrecomputeQLLogisticCenteredLog(progData)
-    store = PrecomputeQLLogisticCenteredLog(progData)
+    store = AllocateQLLogisticCenteredLog(progData)
 
     return precomp, store
 end

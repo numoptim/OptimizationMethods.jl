@@ -177,19 +177,38 @@ function gradient_logistic_sin(
     return  - progData.design'*(residual .* d_predicted)
 end
 
+function gradient_logistic_centered_log(
+    x,
+    progData::P where P <: OptimizationMethods.AbstractDefaultQL{T, S}
+) where {T, S}
+
+    p = progData.p
+    c = progData.c
+
+    η = progData.design * x
+    μ = 1 ./ (1 .+ exp.(-η))
+    dμ = μ .* (1 .- μ)
+    V = log.(abs.(μ.-c).^(2p).+1)
+
+    return -progData.design' * (dμ .* (progData.response .- μ) ./ V)
+end
+
 ################################################################################
 # Testing set for Quasi-likelihood problems
 ################################################################################
 
-const ql_structures = [OptimizationMethods.QLLogisticSin]
-const ql_structure_symbols = [:QLLogisticSin]
-const ql_gradients = [gradient_logistic_sin]
+const ql_structures = [OptimizationMethods.QLLogisticSin, 
+    OptimizationMethods.QLLogisticCenteredLog]
+const ql_structure_symbols = [:QLLogisticSin, :QLLogisticCenteredLog]
+const ql_gradients = [gradient_logistic_sin, gradient_logistic_centered_log]
 
-const ql_precomp_types = [OptimizationMethods.PrecomputeQLLogisticSin]
-const ql_precomp_symbols = [:PrecomputeQLLogisticSin]
+const ql_precomp_types = [OptimizationMethods.PrecomputeQLLogisticSin,
+    OptimizationMethods.PrecomputeQLLogisticCenteredLog]
+const ql_precomp_symbols = [:PrecomputeQLLogisticSin, :PrecomputeQLLogisticCenteredLog]
 
-const ql_allocate_types = [OptimizationMethods.AllocateQLLogisticSin] 
-const ql_allocate_symbols = [:AllocateQLLogisticSin]
+const ql_allocate_types = [OptimizationMethods.AllocateQLLogisticSin,
+    OptimizationMethods.AllocateQLLogisticCenteredLog] 
+const ql_allocate_symbols = [:AllocateQLLogisticSin, :AllocateQLLogisticCenteredLog]
 
 @testset "Quasi-likelihood Problems" begin
 
