@@ -2,7 +2,7 @@
 # Author: Christian Varner
 # Purpose: Test QLLogisticCenteredExp
 
-module TestQLLogisticCeneteredExp
+module TestQLLogisticCenteredExp
 
 using Test, OptimizationMethods, Random, LinearAlgebra
 
@@ -29,7 +29,7 @@ using Test, OptimizationMethods, Random, LinearAlgebra
 
     # Test Custom Field Names 
     for name in [:mean, :mean_first_derivative, :mean_second_derivative,
-        :variance, :variance_first_derivative, :weighted_residual]
+        :variance, :variance_first_derivative, :weighted_residual, :p, :c]
         @test name in fieldnames(OptimizationMethods.QLLogisticCenteredExp)
     end
 
