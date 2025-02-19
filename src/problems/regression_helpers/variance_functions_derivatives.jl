@@ -21,6 +21,7 @@ function dlinear_plus_sin(μ::T) where {T}
 end
 
 """
+<<<<<<< HEAD
     dcentered_exp(μ::T, p::T, c::T) where {T}
 
 Compute the following function
@@ -41,4 +42,21 @@ where ``c \\in \\mathbb{R}`` and ``p \\in \\mathbb{R}``. See [Quasi-likelihood E
 """
 function dcentered_exp(μ::T, p::T, c::T) where {T}
     return -centered_exp(μ, p, c) * sign(μ-c) * 2 * p * abs(μ-c)^(2*p-1)
+end
+
+"""
+    dmonomial_plus_constant(μ::T, p::T) where {T}
+
+Compute the following function
+```math
+    \\frac{d}{d\\mu} (\\mu^{2p} + c) = 2p \\mu^{2p-1}
+```
+
+!!! warning
+    The derivative above is only correct everywhere when `p` is larger than 
+    `.5`. We do not guarantee correctness if `p` is smaller than or equal to 
+    `.5`. User beware.
+"""
+function dmonomial_plus_constant(μ::T, p::T) where {T}
+    return T(sign(μ) * 2 * p * (abs(μ) ^ (2 * p - 1)))
 end

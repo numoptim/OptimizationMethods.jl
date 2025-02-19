@@ -177,6 +177,22 @@ function gradient_logistic_sin(
     return  - progData.design'*(residual .* d_predicted)
 end
 
+function gradient_logistic_monomial(
+    x,
+    progData::P where P <: OptimizationMethods.AbstractDefaultQL{T, S}
+) where {T, S}
+
+    p = progData.p
+    c = progData.c
+
+    η = progData.design * x
+    μ = 1 ./ (1 .+ exp.(-η))
+    dμ = μ .* (1 .- μ)
+    V = abs.(μ).^(2*p) .+ c
+
+    return -progData.design' * (dμ .* (progData.response .- μ) ./ V)
+end
+
 function gradient_logistic_centered_exp(
     x,
     progData::P where P <: OptimizationMethods.AbstractDefaultQL{T, S}
@@ -197,20 +213,23 @@ end
 # Testing set for Quasi-likelihood problems
 ################################################################################
 
-const ql_structures = [OptimizationMethods.QLLogisticSin,
+const ql_structures = [OptimizationMethods.QLLogisticSin, 
+    OptimizationMethods.QLLogisticMonomial,
     OptimizationMethods.QLLogisticCenteredExp]
-const ql_structure_symbols = [:QLLogisticSin, :QLLogisticCenteredExp]
-const ql_gradients = [gradient_logistic_sin, gradient_logistic_centered_exp]
+const ql_structure_symbols = [:QLLogisticSin, :QLLogisticMonomial, :QLLogisticCenteredExp]
+const ql_gradients = [gradient_logistic_sin, gradient_logistic_monomial, gradient_logistic_centered_exp]
 
 const ql_precomp_types = [OptimizationMethods.PrecomputeQLLogisticSin,
+    OptimizationMethods.PrecomputeQLLogisticMonomial,
     OptimizationMethods.PrecomputeQLLogisticCenteredExp]
 const ql_precomp_symbols = [:PrecomputeQLLogisticSin, 
+    :PrecomputeQLLogisticMonomial,
     :PrecomputeQLLogisticCenteredExp]
 
 const ql_allocate_types = [OptimizationMethods.AllocateQLLogisticSin,
+    OptimizationMethods.AllocateQLLogisticMonomial,
     OptimizationMethods.AllocateQLLogisticCenteredExp] 
-const ql_allocate_symbols = [:AllocateQLLogisticSin, 
-    :AllocateQLLogisticCenteredExp]
+const ql_allocate_symbols = [:AllocateQLLogisticSin, :AllocateQLLogisticMonomial, :AllocateQLLogisticCenteredExp]
 
 @testset "Quasi-likelihood Problems" begin
 
