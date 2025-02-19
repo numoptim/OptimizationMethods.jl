@@ -1,13 +1,13 @@
-# Date: 12/19/2024
+# Date: 02/11/2025
 # Author: Christian Varner
-# Purpose: Implement a quasi-likelihood examples
-# with a linear mean and variance function that is 1 + mean + sin(2pi*mean)
+# Purpose: Implementation of a quasi-likelihood function
+# with a logistic link function and centered exponential variance
 
 """
-    QLLogisticSin{T, S} <: AbstractDefaultQL{T, S}
+    QLLogisticCenteredExp{T, S} <: AbstractDefaultQL{T, S}
 
 Implements a Quasi-likelihood objective with a logistic link function and
-    `linear_plus_sin` variance funtion. If the design matrix and the
+    `centered_exp` variance funtion. If the design matrix and the
     responses are not supplied, they are randomly generated.
 
 # Objective Function
@@ -23,8 +23,12 @@ Let ``A_i`` be row ``i`` of ``A`` and ``b_i`` entry ``i`` of ``b``. Let
 ```
 and
 ```math
-    v_i(\\mu) = 1 + \\mu + \\sin(2 \\pi \\mu). 
+    v_i(\\mu) = \\exp\\left( -|\\mu - c|^{2p} \\right). 
 ```
+where ``p \\in \\mathbb{R}`` and ``c \\in \\mathbb{R}``.
+
+!!! note
+    For the variance to be differentiable everywhere, ``p > .5``.
 
 Let ``n`` be the number of rows in ``A``, then the quasi-likelihood objective is
 ```math
@@ -55,26 +59,28 @@ Let ``n`` be the number of rows in ``A``, then the quasi-likelihood objective is
 - `variance_first_derivative::Function`, function that returns the first 
     derivative of the variance function.
 - `weighted_residual::Function`, computes the weighted residual of the model. 
+- `p::T`, parameter of the variance function saved for testing
+- `c::T`, parameter of the variance function saved for testing
 
 # Constructors
 
 ## Inner Constructors
 
-    QLLogisticSin{T, S}(meta::NLPModelMeta{T, S}, counters::Counters,
-        design::Matrix{T}, response::Vector{T})
+    QLLogisticCenteredExp{T, S}(meta::NLPModelMeta{T, S}, counters::Counters,
+        design::Matrix{T}, response::Vector{T}, p::T, c::T)
     
 Initializes the data structure for a quasi-likelihood estimation problem with 
     a [logistic link function](@ref OptimizationMethods.logistic) and 
-    a [linear plus sine variance function](@ref OptimizationMethods.linear_plus_sin).
+    a [centered exponential variance function](@ref OptimizationMethods.centered_exp).
 
 ## Outer Constructors
 
-    QLLogisticSin(::Type{T}; nobs::Int64 = 1000,
-        nvar::Int64 = 50) where {T}
+    QLLogisticCenteredExp(::Type{T}; nobs::Int64 = 1000, nvar::Int64 = 50,
+        p::T = T(1), c::T = T(1)) where {T}
 
 Construct a quasi-likelihood estimation problem with 
     a [logistic link function](@ref OptimizationMethods.logistic); 
-    a [linear plus sine variance function](@ref OptimizationMethods.linear_plus_sin);
+    a [centered exponential variance function](@ref OptimizationMethods.centered_exp);
     and a randomly generated `design` matrix and `response` vector that is consistent 
     with the quasi-likelihood model. 
     The `design` matrix has a column of all ones and the rest generated from a 
@@ -83,15 +89,16 @@ Construct a quasi-likelihood estimation problem with
     `mean.(design * x) + variance.(mean.(design * x)) .^ (.5) * ϵ`, where `ϵ` is a noise
     vector generated from the Arcsine distribution with default parameters.
  
-    QLLogisticSin(design::Matrix{T}, response::Vector{T}; 
-        x0::Vector{T} = zeros(T, size(design)[2])) where {T}
+    QLLogisticCenteredExp(design::Matrix{T}, response::Vector{T};
+        x0::Vector{T} = zeros(T, size(design)[2]), p::T = T(1), c::T = T(1)
+        ) where {T}
 
 Constructs a quasi-likelihood estimation problem with 
     a [logistic link function](@ref OptimizationMethods.logistic); 
-    a [linear plus sine variance function](@ref OptimizationMethods.linear_plus_sin);
+    a [centered exponential variance function](@ref OptimizationMethods.centered_exp);
     and user-supplied `design` matrix and `response` vector.
 """
-mutable struct QLLogisticSin{T, S} <: AbstractDefaultQL{T, S}
+mutable struct QLLogisticCenteredExp{T, S} <: AbstractDefaultQL{T, S}
     meta::NLPModelMeta{T, S}
     counters::Counters
     design::Matrix{T}
@@ -102,25 +109,37 @@ mutable struct QLLogisticSin{T, S} <: AbstractDefaultQL{T, S}
     variance::Function
     variance_first_derivative::Function
     weighted_residual::Function
+    p::T
+    c::T
 
-    QLLogisticSin{T, S}(meta::NLPModelMeta{T, S}, counters::Counters, 
-        design::Matrix{T}, response::Vector{T}) where {T, S} = 
+    QLLogisticCenteredExp{T, S}(meta::NLPModelMeta{T, S}, counters::Counters,
+        design::Matrix{T}, response::Vector{T}, p::T, c::T) where {T, S} =
     begin
-        weighted_residual(μ, y) = (y - μ)/OptimizationMethods.linear_plus_sin(μ) 
-        new(meta, counters, design, response, 
-            OptimizationMethods.logistic,           # force the correct mean function
-            OptimizationMethods.dlogistic,          # force the correct derivative function
-            OptimizationMethods.ddlogistic,         # force the correct derivative function
-            OptimizationMethods.linear_plus_sin,    # force the correct variance function
-            OptimizationMethods.dlinear_plus_sin,   # force the correct derivative function
-            weighted_residual                       # residual function
+        V(μ) = OptimizationMethods.centered_exp(μ, p, c)
+        dV(μ) = OptimizationMethods.dcentered_exp(μ, p, c)
+        weighted_residual(μ, y) = (y - μ) / V(μ)
+        new(
+            meta,
+            counters,
+            design,
+            response,
+            OptimizationMethods.logistic,
+            OptimizationMethods.dlogistic,
+            OptimizationMethods.ddlogistic,
+            V,
+            dV,
+            weighted_residual,
+            p,
+            c
         )
     end
 end
-function QLLogisticSin(
+function QLLogisticCenteredExp(
     ::Type{T};
     nobs::Int64 = 1000,
-    nvar::Int64 = 50
+    nvar::Int64 = 50,
+    p::T = T(1),
+    c::T = T(1)
 ) where {T}
 
     @assert nobs > 0 "Number of observations ($(nobs)) must be positive."
@@ -130,7 +149,7 @@ function QLLogisticSin(
     # initialize the meta data and counters
     meta = NLPModelMeta(
         nvar,
-        name = "Quasi-likelihood with logistic link function and sine variance",
+        name = "Quasi-likelihood with logistic link function and centered exp",
         x0 = zeros(T, nvar)
     )
     counters = Counters()
@@ -145,19 +164,24 @@ function QLLogisticSin(
     ϵ = T.((rand(Distributions.Arcsine()) .- .5)./(1/8)) # standardize
 
     # generate responses
-    response = μ_obs + T.(OptimizationMethods.linear_plus_sin.(μ_obs) .^ (.5)) * ϵ
+    response = μ_obs + 
+        T.((OptimizationMethods.centered_exp.(μ_obs, p, c) .^ (.5) )) * ϵ
 
-    return QLLogisticSin{T, Vector{T}}(
+    return QLLogisticCenteredExp{T, Vector{T}}(
         meta,
         counters,
         design,
-        response
+        response,
+        p,
+        c
     )
 end
-function QLLogisticSin(
+function QLLogisticCenteredExp(
     design::Matrix{T},
     response::Vector{T};
-    x0::Vector{T} = zeros(T, size(design)[2])
+    x0::Vector{T} = zeros(T, size(design, 2)),
+    p::T = T(1),
+    c::T = T(1)
 ) where {T}
 
     @assert size(design, 1) == size(response, 1) "Number rows in design matrix"*
@@ -169,25 +193,25 @@ function QLLogisticSin(
     # initialize meta
     meta = NLPModelMeta(
             size(design, 2),
-            name = "Quasi-likelihood with logistic link function and sine variance",
+            name = "Quasi-likelihood with logistic link function and centered exp",
             x0 = x0
            )
 
     # initialize counters
     counters = Counters()
 
-    # return the struct
-    return QLLogisticSin{T, Vector{T}}(
+    return QLLogisticCenteredExp{T, Vector{T}}(
         meta,
         counters,
         design,
         response,
+        p, 
+        c
     )
 end
 
-# precompute struct
 """
-    PrecomputeQLLogisticSin{T} <: AbstractDefaultQLPrecompute{T}
+    PrecomputeQLLogisticCenteredExp{T} <: AbstractDefaultQLPrecompute{T}
 
 Structure that holds precomputed values for the quasi-likelihood problem.
     These values are precomputed to save on time, and they remain unchanged
@@ -200,16 +224,18 @@ Structure that holds precomputed values for the quasi-likelihood problem.
 
 # Constructor
 
-    PrecomputeQLLogisticSin(progData::QLLogisticSin{T, S}) where {T, S}
+    PrecomputeQLLogisticCenteredExp(progData::QLLogisticCenteredExp{T, S}
+        ) where {T, S}
 
 Initializes the field values for the precompute data structure and returns 
     a `struct`.
 """
-struct PrecomputeQLLogisticSin{T} <: AbstractDefaultQLPrecompute{T}
+struct PrecomputeQLLogisticCenteredExp{T} <: AbstractDefaultQLPrecompute{T}
     obs_obs_t::Array{T, 3}
 end
-function PrecomputeQLLogisticSin(progData::QLLogisticSin{T, S}) where {T, S}
-
+function PrecomputeQLLogisticCenteredExp(progData::QLLogisticCenteredExp{T, S}
+    ) where {T, S}
+    
     # get the size of the matrix
     nobs, nvar = size(progData.design)
 
@@ -221,12 +247,11 @@ function PrecomputeQLLogisticSin(progData::QLLogisticSin{T, S}) where {T, S}
             view(progData.design, i, :)'
     end
 
-    return PrecomputeQLLogisticSin{T}(obs_obs_t)
+    return PrecomputeQLLogisticCenteredExp{T}(obs_obs_t)
 end
 
-# allocate struct
 """
-    AllocateQLLogisticSin{T} <: AbstractDefaultQLAllocate{T}
+    AllocateQLLogisticCenteredExp{T} <: AbstractDefaultQLAllocate{T}
 
 Mutable struct that contains buffer arrays for various computations used for
     this objective function and for optimization algorithms.
@@ -249,11 +274,12 @@ Mutable struct that contains buffer arrays for various computations used for
 
 # Constructors
 
-    AllocateQLLogisticSin(progData::QLLogisticSin{T,S}) where {T,S}
+    AllocateQLLogisticCenteredExp(progData::QLLogisticCenteredExp{T,S}
+        ) where {T,S}
 
 Allocates memory for each of the field values and returns the struct.
 """
-struct AllocateQLLogisticSin{T} <: AbstractDefaultQLAllocate{T}
+struct AllocateQLLogisticCenteredExp{T} <: AbstractDefaultQLAllocate{T}
     linear_effect::Vector{T}   
     μ::Vector{T}
     ∇μ_η::Vector{T}
@@ -264,7 +290,8 @@ struct AllocateQLLogisticSin{T} <: AbstractDefaultQLAllocate{T}
     grad::Vector{T}
     hess::Matrix{T}
 end
-function AllocateQLLogisticSin(progData::QLLogisticSin{T, S}) where {T, S}
+function AllocateQLLogisticCenteredExp(progData::QLLogisticCenteredExp{T, S}
+    ) where {T, S}
 
     # get dimensions
     nobs = size(progData.design, 1)
@@ -281,25 +308,25 @@ function AllocateQLLogisticSin(progData::QLLogisticSin{T, S}) where {T, S}
     grad = zeros(T, nvar)
     hess = zeros(T, nvar, nvar)
 
-    return AllocateQLLogisticSin(
-        linear_effect,           # buffer for linear effect
-        μ, ∇μ_η, ∇∇μ_η,          # mean, first, and second derivative link
-        variance, ∇variance,     # variance and first derivative 
-        weighted_residual,       # buffer for weighted residual
-        grad,                    # buffer for gradient
-        hess                     # buffer for hessian
+    return AllocateQLLogisticCenteredExp{T}(
+        linear_effect,
+        μ, ∇μ_η, ∇∇μ_η,
+        variance, ∇variance,
+        weighted_residual,
+        grad,
+        hess
     )
 end
 
 """
-    initialize(progData::QLLogisticSin{T,S}) where {T,S}
+    initialize(progData::QLLogisticCenteredExp{T,S}) where {T,S}
 
-Creates a `PrecomputeQLLogisticSin` and `AllocateQLLogisticSin` struct, returning
-    them in that order.
+Creates a `PrecomputeQLLogisticCenteredExp` and `AllocateQLLogisticCenteredExp` 
+    struct, returning them in that order.
 """
-function initialize(progData::QLLogisticSin{T, S}) where {T, S}
-    precomp = PrecomputeQLLogisticSin(progData)
-    store = AllocateQLLogisticSin(progData)
+function initialize(progData::QLLogisticCenteredExp{T, S}) where {T, S}
+    precomp = PrecomputeQLLogisticCenteredExp(progData)
+    store = AllocateQLLogisticCenteredExp(progData)
 
     return precomp, store
 end
