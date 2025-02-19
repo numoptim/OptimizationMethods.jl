@@ -61,11 +61,9 @@ OptimizationMethods.centered_shifted_log
 ```@docs
 OptimizationMethods.dlinear_plus_sin
 
-<<<<<<< HEAD
 OptimizationMethods.dcentered_shifted_log
-=======
+
 OptimizationMethods.dmonomial_plus_constant
->>>>>>> main
 ```
 
 # Index
