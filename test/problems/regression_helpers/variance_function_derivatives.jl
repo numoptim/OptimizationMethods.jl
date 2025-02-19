@@ -36,6 +36,56 @@ using Test, ForwardDiff, OptimizationMethods, Random
     end
 end
 
+
+@testset "Variance Function First Derivatives -- Monomial Plus Constant" begin
+
+    # set seed for reproducibility
+    Random.seed!(1010)
+
+    # test definition
+    @test isdefined(OptimizationMethods, :dmonomial_plus_constant)
+
+    # test at a sequence of random points
+    num_points = 1
+    float_type = [Float32, Float64]
+    tolerance = [1e-6, 1e-9]
+    c = [.01, .1, .5, 1, 2, 5]
+    p = [.51, .6, 1, 1.5, 2]
+    let num_points =  num_points, 
+        float_types = float_type, 
+        tolerances = tolerance,
+        c = c,
+        p = p
+
+        for constant in c
+            for power in p
+
+                # create gradient function to test against
+                f(μ) = (μ^(2))^power + constant
+                g(μ) = ForwardDiff.derivative(f, μ)
+
+                for (float_type, float_toler) in zip(float_types, tolerances)
+                    for npoint in 1:num_points
+
+                        # test gradient value
+                        x = randn(float_type)
+
+                        output = OptimizationMethods.dmonomial_plus_constant(x, 
+                            float_type(power))
+                        gdiff = float_type(g(x))
+
+                        @test typeof(output) == float_type
+                        @test gdiff ≈ output atol = float_toler
+
+                    end
+                end
+            end
+        end
+
+    end
+
+end
+
 @testset "Variance Function First Derivatives -- Centered Shifted Log" begin
 
     # set seed for reproducibility

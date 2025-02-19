@@ -62,7 +62,7 @@ include("problems/logistic_regression.jl")
 include("problems/poisson_regression.jl")
 include("problems/ql_logistic_sin.jl")
 include("problems/ql_logistic_centered_log.jl")
-
+include("problems/ql_logistic_monomial.jl")
 
 ################################################################################
 # Optimization Methods 
