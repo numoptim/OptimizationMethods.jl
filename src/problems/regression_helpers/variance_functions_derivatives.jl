@@ -21,7 +21,6 @@ function dlinear_plus_sin(μ::T) where {T}
 end
 
 """
-<<<<<<< HEAD
     dcentered_shifted_log(μ::T, p::T, c::T) where {T}
 
 Compute and returns the following function
