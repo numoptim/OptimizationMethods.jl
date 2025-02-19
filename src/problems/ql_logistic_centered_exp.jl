@@ -89,13 +89,13 @@ Construct a quasi-likelihood estimation problem with
     `mean.(design * x) + variance.(mean.(design * x)) .^ (.5) * ϵ`, where `ϵ` is a noise
     vector generated from the Arcsine distribution with default parameters.
  
-    QLLogisticSin(design::Matrix{T}, response::Vector{T};
+    QLLogisticCenteredExp(design::Matrix{T}, response::Vector{T};
         x0::Vector{T} = zeros(T, size(design)[2]), p::T = T(1), c::T = T(1)
         ) where {T}
 
 Constructs a quasi-likelihood estimation problem with 
     a [logistic link function](@ref OptimizationMethods.logistic); 
-    a [centered exponential variance function](@ref OptimizationMethods.linear_plus_sin);
+    a [centered exponential variance function](@ref OptimizationMethods.centered_exp);
     and user-supplied `design` matrix and `response` vector.
 """
 mutable struct QLLogisticCenteredExp{T, S} <: AbstractDefaultQL{T, S}
