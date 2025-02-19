@@ -73,6 +73,12 @@ below.
 
 ```@docs
 OptimizationMethods.update_local_lipschitz_approximation
+
+OptimizationMethods.compute_step_size
+
+OptimizationMethods.inner_loop!
+
+OptimizationMethods.update_algorithm_parameters!
 ```
 
 # Line search Helper Functions
