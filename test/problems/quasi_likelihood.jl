@@ -209,33 +209,50 @@ function gradient_logistic_centered_log(
     return -progData.design' * (dμ .* (progData.response .- μ) ./ V)
 end
 
+function gradient_logistic_centered_exp(
+    x,
+    progData::P where P <: OptimizationMethods.AbstractDefaultQL{T, S}
+) where {T, S}
+
+    c = progData.c
+    p = progData.p
+
+    η = progData.design * x
+    μ = 1 ./ (1 .+ exp.(-η))
+    dμ = μ .* (1 .- μ)
+    V = exp.(-abs.(μ.-c).^(2*p))
+
+    return -progData.design'*(dμ .* (progData.response .- μ)./V)
+end
+
 ################################################################################
 # Testing set for Quasi-likelihood problems
 ################################################################################
 
 const ql_structures = [OptimizationMethods.QLLogisticSin, 
     OptimizationMethods.QLLogisticMonomial,
+    OptimizationMethods.QLLogisticCenteredExp,
     OptimizationMethods.QLLogisticCenteredLog]
-const ql_structure_symbols = [:QLLogisticSin, 
-    :QLLogisticMonomial, 
-    :QLLogisticCenteredLog]
-const ql_gradients = [gradient_logistic_sin, 
-    gradient_logistic_monomial,
-    gradient_logistic_centered_log]
+const ql_structure_symbols = [:QLLogisticSin, :QLLogisticMonomial, 
+    :QLLogisticCenteredExp, :QLLogisticCenteredLog]
+const ql_gradients = [gradient_logistic_sin, gradient_logistic_monomial, 
+    gradient_logistic_centered_exp, gradient_logistic_centered_log]
 
 const ql_precomp_types = [OptimizationMethods.PrecomputeQLLogisticSin,
     OptimizationMethods.PrecomputeQLLogisticMonomial,
+    OptimizationMethods.PrecomputeQLLogisticCenteredExp,
     OptimizationMethods.PrecomputeQLLogisticCenteredLog]
 const ql_precomp_symbols = [:PrecomputeQLLogisticSin, 
-    :PrecomputeQLLogisticMonomial, 
+    :PrecomputeQLLogisticMonomial,
+    :PrecomputeQLLogisticCenteredExp,
     :PrecomputeQLLogisticCenteredLog]
 
-const ql_allocate_types = [OptimizationMethods.AllocateQLLogisticSin, 
+const ql_allocate_types = [OptimizationMethods.AllocateQLLogisticSin,
     OptimizationMethods.AllocateQLLogisticMonomial,
+    OptimizationMethods.AllocateQLLogisticCenteredExp,
     OptimizationMethods.AllocateQLLogisticCenteredLog] 
-const ql_allocate_symbols = [:AllocateQLLogisticSin, 
-    :AllocateQLLogisticMonomial,
-    :AllocateQLLogisticCenteredLog]
+const ql_allocate_symbols = [:AllocateQLLogisticSin, :AllocateQLLogisticMonomial, 
+    :AllocateQLLogisticCenteredExp, :AllocateQLLogisticCenteredLog]
 
 @testset "Quasi-likelihood Problems" begin
 
