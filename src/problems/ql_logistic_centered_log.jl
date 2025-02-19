@@ -226,7 +226,7 @@ Structure that holds precomputed values for the quasi-likelihood problem.
 
 # Constructor
 
-    PrecomputeQLLogisticCenteredLog(progData::QLLogisticSin{T, S}) where {T, S}
+    PrecomputeQLLogisticCenteredLog(progData::QLLogisticCenteredLog{T, S}) where {T, S}
 
 Initializes the field values for the precompute data structure and returns 
     a `struct`.
