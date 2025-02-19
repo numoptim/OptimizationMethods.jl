@@ -15,7 +15,68 @@
 ################################################################################ 
 
 """
-TODO
+    NonsequentialArmijoGD{T} <: AbstractOptimizerData{T}
+
+A mutable struct that represents gradient descent with non-sequential armijo
+    line search and triggering events. It stores the specification for the
+    method and records values during iteration.
+
+# Fields
+
+- `name::String`, name of the optimizer for reference.
+- `∇F_θk::Vector{T}`, buffer array for the gradient of the initial inner
+    loop iterate.
+- `norm_∇F_ψ::T`, norm of the gradient of the current inner loop iterate.
+- `prev_∇F_ψ::Vector{T}`, buffer array for the previous gradient in the inner 
+    loop. Necessary for updating the local Lipschitz approximation.
+- `prev_norm_step::T`, norm of the step between inner loop iterates. 
+    Used for updating the local Lipschitz approximation.
+- `α0k::T`, first step size used in the inner loop. 
+- `δk::T`, scaling factor used to condition the step size.
+- `δ_upper::T`, upper limit imposed on the scaling factor when updating.
+- `ρ::T`, parameter used in the non-sequential Armijo condition. Larger
+    numbers indicate stricter descent conditions. Smaller numbers indicate
+    less strict descent conditions.
+- `τ_lower::T`, lower bound on the gradient interval.
+- `τ_upper::T`, upper bound on the gradient interval.
+- `local_lipschitz_estimate::T`, local Lipshitz approximation.
+- `threshold::T`, norm gradient tolerance condition. Induces stopping when norm 
+    is at most `threshold`.
+- `max_iterations::Int64`, max number of iterates that are produced, not 
+    including the initial iterate.
+- `iter_hist::Vector{Vector{T}}`, store the iterate sequence as the algorithm 
+    progresses. The initial iterate is stored in the first position.
+- `grad_val_hist::Vector{T}`, stores the norm gradient values at each iterate. 
+    The norm of the gradient evaluated at the initial iterate is stored in the 
+    first position.
+- `stop_iteration::Int64`, the iteration number the algorithm stopped on. The 
+    iterate that induced stopping is saved at `iter_hist[stop_iteration + 1]`.
+
+# Constructors
+
+    NonsequentialArmijoGD(::Type{T}; x0::Vector{T}, δ0::T, δ_upper::T, ρ::T,
+        threshold::T, max_iterations::Int64) where {T}
+
+Constructs an instance of type `NonsequentialArmijoGD{T}`.
+
+## Arguments
+
+- `T::DataType`, type for data and computation.
+
+## Keyword Arguments
+
+- `x0::Vector{T}`, initial point to start the optimization routine. Saved in
+    `iter_hist[1]`.
+- `δ0::T`, starting scaling factor.
+- `δ_upper::T`, upper limit imposed on the scaling factor when updating.
+- `ρ::T`, parameter used in the non-sequential Armijo condition. Larger
+    numbers indicate stricter descent conditions. Smaller numbers indicate
+    less strict descent conditions.
+- `threshold::T`, norm gradient tolerance condition. Induces stopping when norm 
+    at most `threshold`.
+- `max_iterations::Int64`, max number of iterates that are produced, not 
+    including the initial iterate.
+
 """
 mutable struct NonsequentialArmijoGD{T} <: AbstractOptimizerData{T}
     name::String
@@ -45,6 +106,12 @@ function NonsequentialArmijoGD(
     threshold::T,
     max_iterations::Int64
 ) where {T}
+
+    # error checking
+    @assert 0 < δ0 "Initial scaling factor $(δ0) needs to be positive."
+
+    @assert δ0 <= δ_upper "Initial scaling factor $(δ0) needs to be smaller"*
+    "than its upper bound $(δ_upper)."
 
     # name for recording purposes
     name::String = "Gradient Descent with Triggering Events and Nonsequential Armijo"

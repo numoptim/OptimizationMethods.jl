@@ -34,7 +34,7 @@ using Test, OptimizationMethods, LinearAlgebra, Random
         
             # get the output
             output = OptimizationMethods.update_local_lipschitz_approximation(j, 
-                k, djk, curr_grad, prev_grad, prev_approximation, 
+                k, norm(djk), curr_grad, prev_grad, prev_approximation, 
                 past_acceptance)
 
             # test output
@@ -112,7 +112,7 @@ end
         
         @test output == (1 / (10 ^ 3 + .5 * (10 ^ 2) + 1e-16)) + 1e-16
     end
-    
+
 end
 
 @testset "Utility -- Inner Loop" begin
