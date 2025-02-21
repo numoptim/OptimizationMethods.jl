@@ -146,12 +146,6 @@ end
     end
 end
 
-@testset "Utility -- Inner Loop" begin
-end
-
-@testset "Utility -- Update Algorithm Parameters" begin
-end
-
 ################################################################################
 # Test cases for the method struct
 ################################################################################
@@ -282,6 +276,115 @@ end
         end
     end 
 
+end
+
+@testset "Utility -- Update Algorithm Parameters" begin
+
+    ## arguments
+    dim = 50
+    x0 = randn(50)
+    δ0 = abs(randn(1)[1])
+    δ_upper = δ0 + 1
+    ρ = abs(randn(1)[1])
+    threshold = abs(randn(1)[1])
+    max_iterations = rand(1:100)
+
+    ## build structure
+    optData = NonsequentialArmijoGD(Float64;
+        x0 = x0,
+        δ0 = δ0,
+        δ_upper = δ_upper,
+        ρ = ρ,
+        threshold = threshold,
+        max_iterations = max_iterations)
+    
+    ############################################################################
+    # Case 1: Did not satisfy armijo condition
+    ############################################################################
+    let optData = optData, achieved_descent = false, dim = dim
+
+        # first iteration
+
+        ## gradient interval satisfied
+        optData.norm_∇F_ψ = 2
+        optData.τ_lower = 1
+        optData.τ_upper = 3
+
+        θkp1::Vector{Float64} = zeros(Float64, dim)
+        OptimizationMethods.update_algorithm_parameters!(
+            θkp1, optData, achieved_descent, 1
+        )
+        @test θkp1 == optData.iter_hist[1]
+
+        ## gradient interval not satisfied -- lower bound off
+        optData.norm_∇F_ψ = 0
+        optData.τ_lower = 1
+        optData.τ_upper = 3
+
+        OptimizationMethods.update_algorithm_parameters!(
+            θkp1, optData, achieved_descent, 1
+        )
+        @test θkp1 == optData.iter_hist[1] 
+
+        ## gradient interval not satisfied -- upper bound off
+        optData.norm_∇F_ψ = 4
+        optData.τ_lower = 1
+        optData.τ_upper = 3
+
+        OptimizationMethods.update_algorithm_parameters!(
+            θkp1, optData, achieved_descent, 1
+        )
+        @test θkp1 == optData.iter_hist[1] 
+
+        # arbitrary iteration
+        x10 = randn(dim)
+        optData.iter_hist[10] = x10
+
+        ## gradient interval satisfied
+        optData.norm_∇F_ψ = 2
+        optData.τ_lower = 1
+        optData.τ_upper = 3
+
+        OptimizationMethods.update_algorithm_parameters!(
+            θkp1, optData, achieved_descent, 10
+        )
+        @test θkp1 == x10
+
+        ## gradient interval not satisfied -- lower bound off
+        optData.norm_∇F_ψ = 0
+        optData.τ_lower = 1
+        optData.τ_upper = 3
+
+        OptimizationMethods.update_algorithm_parameters!(
+            θkp1, optData, achieved_descent, 10
+        )
+        @test θkp1 == x10 
+
+        ## gradient interval not satisfied -- upper bound off
+        optData.norm_∇F_ψ = 4
+        optData.τ_lower = 1
+        optData.τ_upper = 3
+
+        OptimizationMethods.update_algorithm_parameters!(
+            θkp1, optData, achieved_descent, 10
+        )
+        @test θkp1 == x10
+    end
+
+    ############################################################################
+    # Case 2: Did satisfy condition + lower bound not correct
+    ############################################################################
+
+    ############################################################################
+    # Case 3: Did satisfy condition + upper bound not correct
+    ############################################################################
+    
+    ############################################################################
+    # Case 4: Did satisfy condition + inside interval
+    ############################################################################
+end
+
+@testset "Utility -- Inner Loop" begin
 end
 
 @testset "Method -- Gradient Descent with Nonsequential Armijo: method" begin
