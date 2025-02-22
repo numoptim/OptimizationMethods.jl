@@ -158,9 +158,9 @@ end
         prev_grad::S, prev_approximation::T, prev_acceptance::Bool) where {T, S}
 
 Given the previous approximation of the local Lipschitz constant,
-    `prev_approximation::T`, update the current estimate. That is, return the
-    lipschitz approximation for inner loop iteration `j` and outer loop
-    iteration `k`.
+    `prev_approximation::T`, update the current estimate. 
+    That is, return the Lipschitz approximation for inner loop iteration `j` 
+    and outer loop iteration `k`.
 
 # Method
 
@@ -171,38 +171,33 @@ The local Lipschitz approximation method is conducted as follows. Let ``j``
     of the ``k^{th}`` outer loop of the local Lipschitz constant. The local
     estimate is updated according the following five cases.
 
-1) When ``j == 1`` and ``k == 1``, this is the first iteration of the first 
-inner loop, and as there is no information available we set it to `1.0`.
+1. When ``j == 1`` and ``k == 1``, this is the first iteration of the first 
+    inner loop, and as there is no information available we set it to `1.0`.
+2. When ``j == 1`` and ``k > 1``, this is the first iteration of the ``k^{th}``
+    inner loop, and we return ``L_{j_{k-1}}^{k-1}`` which is the local Lipschitz
+    estimates formed using information at the terminal iteration of the ``k-1^{th}``
+    inner loop (i.e., this is the latest estimate).
+3. When ``j > 1`` and ``k == 1``, this is an inner loop iteration where we have
+    possible taken multiple steps, so we return the most 'local' estimate
+    of the local Lipschitz constant which is
+    ``\\frac{
+        ||\\dot F(\\psi_{j}^k) - \\dot F(\\psi_{j-1}^k)||_2}{ 
+        ||\\psi_{j}^k - \\psi_{j-1}^k||_2}.
+    ``
 
-2) When ``j == 1`` and ``k > 1``, this is the first iteration of the ``k^{th}``
-inner loop, and we return ``L_{j_{k-1}}^{k-1}`` which is the local Lipschitz
-estimates formed using information at the terminal iteration of the ``k-1^{th}``
-inner loop (i.e., this is the latest estimate).
+4. When ``j > 1`` and ``k > 1`` and ``\\psi_{j_{k-1}}^{k-1}`` satisfied the
+    descent condition, then we return 
+    ``\\frac{
+    ||\\dot F(\\psi_{j}^k) - \\dot F(\\psi_{j-1}^k)||_2}{
+        ||\\psi_{j}^k - \\psi_{j-1}^k||_2}.
+    ``
 
-3) When ``j > 1`` and ``k == 1``, this is an inner loop iteration where we have
-possible taken multiple steps, so we return the most 'local' estimate
-of the local Lipschitz constant which is
-
-```math
-||\\dot F(\\psi_{j}^k) - \\dot F(\\psi_{j-1}^k||_2 / 
-    ||\\psi_{j}^k - \\psi_{j-1}^k||_2.
-```
-
-4) When ``j > 1`` and ``k > 1`` and ``\\psi_{j_{k-1}}^{k-1}`` satisfied the
-descent condition, then we return 
-
-```math
-||\\dot F(\\psi_{j}^k) - \\dot F(\\psi_{j-1}^k||_2 / 
-    ||\\psi_{j}^k - \\psi_{j-1}^k||_2.
-```
-
-5) When ``j > 1`` and ``k > 1`` and ``\\psi_{j_{k-1}}^{k-1}`` did not satisfy the
-descent condition, then we return 
-
-```math
-max\\left( ||\\dot F(\\psi_{j}^k) - \\dot F(\\psi_{j-1}^k||_2 / 
-    ||\\psi_{j}^k - \\psi_{j-1}^k||_2, \\hat L_{j-1}^k \\right).
-```
+5. When ``j > 1`` and ``k > 1`` and ``\\psi_{j_{k-1}}^{k-1}`` did not satisfy the
+    descent condition, then we return 
+    ``\\max
+    \\left( \\frac{||\\dot F(\\psi_{j}^k) - \\dot F(\\psi_{j-1}^k)||_2}{
+        ||\\psi_{j}^k - \\psi_{j-1}^k||_2}, \\hat L_{j-1}^k \\right).
+    ``
 
 # Arguments
 
@@ -454,7 +449,7 @@ conditions are satisfied:
 
 1. ``||\\psi_{j_k}^k - \\theta_k||_2 > 10``, 
 2. ``||\\dot F(\\psi_{j_k}^k)||_2 \\not\\in (\\tau_{\\mathrm{grad},\\mathrm{lower}}^k,
-\\tau_{\\mathrm{grad},\\mathrm{upper}}^k)``, 
+    \\tau_{\\mathrm{grad},\\mathrm{upper}}^k)``, 
 3. ``j_k == 100``.
 
 The next iterate and algorithmic parameters in `optData` are updated based on 
