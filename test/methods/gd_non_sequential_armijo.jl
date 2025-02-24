@@ -287,7 +287,7 @@ end
     δ_upper = δ0 + 1
     ρ = abs(randn(1)[1])
     threshold = abs(randn(1)[1])
-    max_iterations = rand(1:100)
+    max_iterations = rand(3:100)
 
     ## build structure
     optData = NonsequentialArmijoGD(Float64;
@@ -302,86 +302,254 @@ end
     # Case 1: Did not satisfy armijo condition
     ############################################################################
     let optData = optData, achieved_descent = false, dim = dim
+        # First Iteration
+        xp1 = zeros(dim)
+        iter = 1
+        optData.τ_lower = 0.0
+        optData.τ_upper = 1.0
+        optData.δk = 1.0
 
-        # first iteration
+        params_update_flag = OptimizationMethods.update_algorithm_parameters!(xp1, 
+            optData, achieved_descent, iter)
 
-        ## gradient interval satisfied
-        optData.norm_∇F_ψ = 2
-        optData.τ_lower = 1
-        optData.τ_upper = 3
+        @test xp1 == optData.iter_hist[iter]
+        @test optData.τ_lower == 0.0 
+        @test optData.τ_upper == 1.0
+        @test optData.δk == 0.5
+        @test !params_update_flag
+    end
 
-        θkp1::Vector{Float64} = zeros(Float64, dim)
-        OptimizationMethods.update_algorithm_parameters!(
-            θkp1, optData, achieved_descent, 1
-        )
-        @test θkp1 == optData.iter_hist[1]
+    let optData = optData, achieved_descent = false, dim = dim,
+        max_iterations = max_iterations 
+        # General Iteration 
+        xp1 = zeros(dim)
+        iter = rand(3:max_iterations)
+        optData.τ_lower = 0.0 
+        optData.τ_upper = 1.0 
+        optData.δk = 1.0 
 
-        ## gradient interval not satisfied -- lower bound off
-        optData.norm_∇F_ψ = 0
-        optData.τ_lower = 1
-        optData.τ_upper = 3
+        params_update_flag = OptimizationMethods.update_algorithm_parameters!(xp1, 
+            optData, achieved_descent, iter)
 
-        OptimizationMethods.update_algorithm_parameters!(
-            θkp1, optData, achieved_descent, 1
-        )
-        @test θkp1 == optData.iter_hist[1] 
-
-        ## gradient interval not satisfied -- upper bound off
-        optData.norm_∇F_ψ = 4
-        optData.τ_lower = 1
-        optData.τ_upper = 3
-
-        OptimizationMethods.update_algorithm_parameters!(
-            θkp1, optData, achieved_descent, 1
-        )
-        @test θkp1 == optData.iter_hist[1] 
-
-        # arbitrary iteration
-        x10 = randn(dim)
-        optData.iter_hist[10] = x10
-
-        ## gradient interval satisfied
-        optData.norm_∇F_ψ = 2
-        optData.τ_lower = 1
-        optData.τ_upper = 3
-
-        OptimizationMethods.update_algorithm_parameters!(
-            θkp1, optData, achieved_descent, 10
-        )
-        @test θkp1 == x10
-
-        ## gradient interval not satisfied -- lower bound off
-        optData.norm_∇F_ψ = 0
-        optData.τ_lower = 1
-        optData.τ_upper = 3
-
-        OptimizationMethods.update_algorithm_parameters!(
-            θkp1, optData, achieved_descent, 10
-        )
-        @test θkp1 == x10 
-
-        ## gradient interval not satisfied -- upper bound off
-        optData.norm_∇F_ψ = 4
-        optData.τ_lower = 1
-        optData.τ_upper = 3
-
-        OptimizationMethods.update_algorithm_parameters!(
-            θkp1, optData, achieved_descent, 10
-        )
-        @test θkp1 == x10
+        @test xp1 == optData.iter_hist[iter]
+        @test optData.τ_lower == 0.0 
+        @test optData.τ_upper == 1.0
+        @test optData.δk == 0.5
+        @test !params_update_flag
+        
     end
 
     ############################################################################
-    # Case 2: Did satisfy condition + lower bound not correct
+    # Case 2: Did satisfy condition + grad-norm smaller than lower bound
     ############################################################################
+    let optData = optData, achieved_descent = true, dim = dim
+        # First Iteration
+        xp1 = rand(dim)
+        iter = 1
+        optData.τ_lower = 1.0
+        optData.τ_upper = 2.0
+        optData.norm_∇F_ψ = 0.5
+        optData.δk = 1.0
+
+        params_update_flag = OptimizationMethods.update_algorithm_parameters!(xp1, 
+            optData, achieved_descent, iter)
+
+        @test xp1 != optData.iter_hist[iter]
+        @test optData.τ_lower == 0.5 / sqrt(2)
+        @test optData.τ_upper == 0.5 * sqrt(10)
+        @test optData.δk == 1.0
+        @test params_update_flag
+    end 
+
+    let optData = optData, achieved_descent = true, dim = dim,
+        max_iterations = max_iterations 
+        # General Iteration 
+        xp1 = rand(dim)
+        iter = rand(3:max_iterations)
+        optData.τ_lower = 1.0
+        optData.τ_upper = 2.0
+        optData.norm_∇F_ψ = 0.5
+        optData.δk = 1.0 
+
+        params_update_flag = OptimizationMethods.update_algorithm_parameters!(xp1, 
+            optData, achieved_descent, iter)
+
+        @test xp1 != optData.iter_hist[iter]
+        @test optData.τ_lower == 0.5 / sqrt(2)
+        @test optData.τ_upper == 0.5 * sqrt(10)
+        @test optData.δk == 1.0
+        @test params_update_flag
+    end
 
     ############################################################################
-    # Case 3: Did satisfy condition + upper bound not correct
+    # Case 3: Did satisfy condition + grad-norm larger than upper bound
     ############################################################################
+    let optData = optData, achieved_descent = true, dim = dim
+        # First Iteration, upper bound on delta is not exceeded during update
+        xp1 = rand(dim)
+        iter = 1
+        optData.τ_lower = 1.0
+        optData.τ_upper = 2.0
+        optData.norm_∇F_ψ = 2.5
+        optData.δk = 1.0
+        optData.δ_upper = 2.0
+
+        params_update_flag = OptimizationMethods.update_algorithm_parameters!(xp1, 
+            optData, achieved_descent, iter)
+
+        @test xp1 != optData.iter_hist[iter]
+        @test optData.τ_lower == 2.5 / sqrt(2)
+        @test optData.τ_upper == 2.5 * sqrt(10)
+        @test optData.δk == 1.5
+        @test params_update_flag
+    end 
+
+    let optData = optData, achieved_descent = true, dim = dim
+        # First Iteration, upper bound on delta is exceeded during update
+        xp1 = rand(dim)
+        iter = 1
+        optData.τ_lower = 1.0
+        optData.τ_upper = 2.0
+        optData.norm_∇F_ψ = 2.5
+        optData.δk = 1.0
+        optData.δ_upper = 1.2
+
+        params_update_flag = OptimizationMethods.update_algorithm_parameters!(xp1, 
+            optData, achieved_descent, iter)
+
+        @test xp1 != optData.iter_hist[iter]
+        @test optData.τ_lower == 2.5 / sqrt(2)
+        @test optData.τ_upper == 2.5 * sqrt(10)
+        @test optData.δk == 1.2
+        @test params_update_flag
+    end 
+    
+    let optData = optData, achieved_descent = true, dim = dim,
+        max_iterations = max_iterations 
+        # General Iteration, upper bound on delta is not exceeded during update
+        xp1 = rand(dim)
+        iter = rand(3:max_iterations)
+        optData.τ_lower = 1.0
+        optData.τ_upper = 2.0
+        optData.norm_∇F_ψ = 2.5
+        optData.δk = 1.0 
+        optData.δ_upper = 2.0
+
+        params_update_flag = OptimizationMethods.update_algorithm_parameters!(xp1, 
+            optData, achieved_descent, iter)
+
+        @test xp1 != optData.iter_hist[iter]
+        @test optData.τ_lower == 2.5 / sqrt(2)
+        @test optData.τ_upper == 2.5 * sqrt(10)
+        @test optData.δk == 1.5
+        @test params_update_flag
+    end
+
+    let optData = optData, achieved_descent = true, dim = dim,
+        max_iterations = max_iterations 
+        # General Iteration, upper bound on delta is exceeded during update
+        xp1 = rand(dim)
+        iter = rand(3:max_iterations)
+        optData.τ_lower = 1.0
+        optData.τ_upper = 2.0
+        optData.norm_∇F_ψ = 2.5
+        optData.δk = 1.0 
+        optData.δ_upper = 1.2
+
+        params_update_flag = OptimizationMethods.update_algorithm_parameters!(xp1, 
+            optData, achieved_descent, iter)
+
+        @test xp1 != optData.iter_hist[iter]
+        @test optData.τ_lower == 2.5 / sqrt(2)
+        @test optData.τ_upper == 2.5 * sqrt(10)
+        @test optData.δk == 1.2
+        @test params_update_flag
+    end
     
     ############################################################################
     # Case 4: Did satisfy condition + inside interval
     ############################################################################
+    let optData = optData, achieved_descent = true, dim = dim
+        # First Iteration, delta upper bound is exceeded
+        xp1 = rand(dim)
+        iter = 1
+        optData.τ_lower = 1.0
+        optData.τ_upper = 2.0
+        optData.norm_∇F_ψ = 1.5
+        optData.δk = 1.0
+        optData.δ_upper = 1.2
+
+        params_update_flag = OptimizationMethods.update_algorithm_parameters!(xp1, 
+            optData, achieved_descent, iter)
+
+        @test xp1 != optData.iter_hist[iter]
+        @test optData.τ_lower == 1.0
+        @test optData.τ_upper == 2.0
+        @test optData.δk == 1.2
+        @test params_update_flag
+    end 
+
+    let optData = optData, achieved_descent = true, dim = dim
+        # First Iteration, delta upper bound is not exceeded
+        xp1 = rand(dim)
+        iter = 1
+        optData.τ_lower = 1.0
+        optData.τ_upper = 2.0
+        optData.norm_∇F_ψ = 1.5
+        optData.δk = 1.0
+        optData.δ_upper = 2.0
+
+        params_update_flag = OptimizationMethods.update_algorithm_parameters!(xp1, 
+            optData, achieved_descent, iter)
+
+        @test xp1 != optData.iter_hist[iter]
+        @test optData.τ_lower == 1.0
+        @test optData.τ_upper == 2.0
+        @test optData.δk == 1.5
+        @test params_update_flag
+    end 
+
+    let optData = optData, achieved_descent = true, dim = dim,
+        max_iterations = max_iterations 
+        # General Iteration, upper bound on delta is exceeded during update
+        xp1 = rand(dim)
+        iter = rand(3:max_iterations)
+        optData.τ_lower = 1.0
+        optData.τ_upper = 2.0
+        optData.norm_∇F_ψ = 1.5
+        optData.δk = 1.0 
+        optData.δ_upper = 1.2
+
+        params_update_flag = OptimizationMethods.update_algorithm_parameters!(xp1, 
+            optData, achieved_descent, iter)
+
+        @test xp1 != optData.iter_hist[iter]
+        @test optData.τ_lower == 1.0
+        @test optData.τ_upper == 2.0
+        @test optData.δk == 1.2
+        @test params_update_flag
+    end
+    
+    let optData = optData, achieved_descent = true, dim = dim,
+        max_iterations = max_iterations 
+        # General Iteration, upper bound on delta is not exceeded during update
+        xp1 = rand(dim)
+        iter = rand(3:max_iterations)
+        optData.τ_lower = 1.0
+        optData.τ_upper = 2.0
+        optData.norm_∇F_ψ = 1.5
+        optData.δk = 1.0 
+        optData.δ_upper = 2.0
+
+        params_update_flag = OptimizationMethods.update_algorithm_parameters!(xp1, 
+            optData, achieved_descent, iter)
+
+        @test xp1 != optData.iter_hist[iter]
+        @test optData.τ_lower == 1.0
+        @test optData.τ_upper == 2.0
+        @test optData.δk == 1.5
+        @test params_update_flag
+    end
 end
 
 @testset "Utility -- Inner Loop" begin
