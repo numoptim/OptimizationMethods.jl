@@ -23,9 +23,9 @@ Let ``A_i`` be row ``i`` of ``A`` and ``b_i`` entry ``i`` of ``b``. Let
 ```
 and
 ```math
-    v_i(\\mu) = \\log(|\\mu-c|^{2p} + 1),
+    v_i(\\mu) = \\log(|\\mu-c|^{2p} + 1) + d,
 ```
-where ``p \\in \\mathbb{R}`` and ``c \\in \\mathbb{R}``. 
+where ``p \\in \\mathbb{R}``, ``c \\in \\mathbb{R}``, ``d \\in \\mathbb{R}``. 
 
 !!! note
     This function is only differentiable everywhere when ``p > .5``.
@@ -61,6 +61,7 @@ Let ``n`` be the number of rows in ``A``, then the quasi-likelihood objective is
 - `weighted_residual::Function`, computes the weighted residual of the model. 
 - `p::T`, parameter for the variance function for testing purposes
 - `c::T`, parameter for the variance function for testing purposes
+- `d::T`, parameter for the variance function for testing purposes
 
 # Constructors
 
@@ -111,6 +112,7 @@ mutable struct QLLogisticCenteredLog{T, S} <: AbstractDefaultQL{T, S}
     weighted_residual::Function
     p::T
     c::T
+    d::T
 
     QLLogisticCenteredLog{T, S}(
         meta::NLPModelMeta{T, S},
@@ -118,10 +120,11 @@ mutable struct QLLogisticCenteredLog{T, S} <: AbstractDefaultQL{T, S}
         design::Matrix{T},
         response::Vector{T},
         p::T,
-        c::T
+        c::T,
+        d::T
     ) where {T, S} =
     begin
-        V(μ) = OptimizationMethods.centered_shifted_log(μ, p, c)
+        V(μ) = OptimizationMethods.centered_shifted_log(μ, p, c, d)
         dV(μ) = OptimizationMethods.dcentered_shifted_log(μ, p, c)
         weighted_residual(μ, y) = (y - μ) / V(μ)
         new(
@@ -136,7 +139,8 @@ mutable struct QLLogisticCenteredLog{T, S} <: AbstractDefaultQL{T, S}
             dV,
             weighted_residual,
             p,
-            c
+            c,
+            d
         )
     end
 end
@@ -145,7 +149,8 @@ function QLLogisticCenteredLog(
     nobs::Int64 = 1000,
     nvar::Int64 = 50,
     p::T = T(1),
-    c::T = T(1)
+    c::T = T(1),
+    d::T = T(1)
 ) where {T}
 
     @assert nobs > 0 "Number of observations ($(nobs)) must be positive."
@@ -170,7 +175,7 @@ function QLLogisticCenteredLog(
     ϵ = T.((rand(Distributions.Arcsine()) .- .5)./(1/8)) # standardize
 
     response = μ_obs + 
-        T.(OptimizationMethods.centered_shifted_log.(μ_obs, p, c).^(.5)) * ϵ
+        T.(OptimizationMethods.centered_shifted_log.(μ_obs, p, c, d).^(.5)) * ϵ
 
     return QLLogisticCenteredLog{T, Vector{T}}(
         meta,
@@ -178,7 +183,8 @@ function QLLogisticCenteredLog(
         design, 
         response,
         p,
-        c
+        c,
+        d
     )
 end
 function QLLogisticCenteredLog(
@@ -186,7 +192,8 @@ function QLLogisticCenteredLog(
     response::Vector{T};
     x0::Vector{T} = zeros(T, size(design, 2)),
     p::T = T(1),
-    c::T = T(1)
+    c::T = T(1),
+    d::T = T(1)
 ) where {T}
 
     @assert size(design, 1) == size(response, 1) "Number rows in design matrix"*
@@ -208,7 +215,8 @@ function QLLogisticCenteredLog(
         design, 
         response,
         p,
-        c
+        c,
+        d
     )
 end
 
