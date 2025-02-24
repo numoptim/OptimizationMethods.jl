@@ -87,9 +87,10 @@ end
         for μ in test_points
             p = rand(float_type)
             c = rand(float_type)
-            v = log(abs(μ-c)^(2*p) + 1)
+            d = rand(float_type)
+            v = log(abs(μ-c)^(2*p) + 1) + d
             
-            returned_v = OptimizationMethods.centered_shifted_log(μ, p, c)
+            returned_v = OptimizationMethods.centered_shifted_log(μ, p, c, d)
             @test v ≈ returned_v
             @test typeof(returned_v) == float_type 
         end
