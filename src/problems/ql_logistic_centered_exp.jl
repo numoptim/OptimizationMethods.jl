@@ -158,7 +158,8 @@ function QLLogisticCenteredExp(
     design = hcat(ones(T, nobs), randn(T, nobs, nvar-1) ./ T(sqrt(nvar - 1)))
 
     # get reponses
-    β_true = randn(T, nvar)
+    β_true_mean = randn(T, nvar)
+    β_true = β_true_mean + randn(T, nvar)
     η = design * β_true
     μ_obs = OptimizationMethods.logistic.(η)
     ϵ = T.((rand(Distributions.Arcsine()) .- .5)./(1/8)) # standardize
