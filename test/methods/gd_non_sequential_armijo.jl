@@ -344,7 +344,8 @@ end
     ############################################################################
     let optData = optData, achieved_descent = true, dim = dim
         # First Iteration
-        xp1 = rand(dim)
+        xp1_init = rand(dim)
+        xp1 = copy(xp1_init)
         iter = 1
         optData.τ_lower = 1.0
         optData.τ_upper = 2.0
@@ -355,6 +356,7 @@ end
             optData, achieved_descent, iter)
 
         @test xp1 != optData.iter_hist[iter]
+        @test xp1 == xp1_init
         @test optData.τ_lower == 0.5 / sqrt(2)
         @test optData.τ_upper == 0.5 * sqrt(10)
         @test optData.δk == 1.0
@@ -364,7 +366,8 @@ end
     let optData = optData, achieved_descent = true, dim = dim,
         max_iterations = max_iterations 
         # General Iteration 
-        xp1 = rand(dim)
+        xp1_init = rand(dim)
+        xp1 = copy(xp1_init)
         iter = rand(3:max_iterations)
         optData.τ_lower = 1.0
         optData.τ_upper = 2.0
@@ -375,6 +378,7 @@ end
             optData, achieved_descent, iter)
 
         @test xp1 != optData.iter_hist[iter]
+        @test xp1 == xp1_init
         @test optData.τ_lower == 0.5 / sqrt(2)
         @test optData.τ_upper == 0.5 * sqrt(10)
         @test optData.δk == 1.0
@@ -386,7 +390,8 @@ end
     ############################################################################
     let optData = optData, achieved_descent = true, dim = dim
         # First Iteration, upper bound on delta is not exceeded during update
-        xp1 = rand(dim)
+        xp1_init = rand(dim)
+        xp1 = copy(xp1_init)
         iter = 1
         optData.τ_lower = 1.0
         optData.τ_upper = 2.0
@@ -398,6 +403,7 @@ end
             optData, achieved_descent, iter)
 
         @test xp1 != optData.iter_hist[iter]
+        @test xp1 == xp1_init
         @test optData.τ_lower == 2.5 / sqrt(2)
         @test optData.τ_upper == 2.5 * sqrt(10)
         @test optData.δk == 1.5
@@ -406,7 +412,8 @@ end
 
     let optData = optData, achieved_descent = true, dim = dim
         # First Iteration, upper bound on delta is exceeded during update
-        xp1 = rand(dim)
+        xp1_init = rand(dim)
+        xp1 = copy(xp1_init)
         iter = 1
         optData.τ_lower = 1.0
         optData.τ_upper = 2.0
@@ -418,6 +425,7 @@ end
             optData, achieved_descent, iter)
 
         @test xp1 != optData.iter_hist[iter]
+        @test xp1 == xp1_init
         @test optData.τ_lower == 2.5 / sqrt(2)
         @test optData.τ_upper == 2.5 * sqrt(10)
         @test optData.δk == 1.2
@@ -427,7 +435,8 @@ end
     let optData = optData, achieved_descent = true, dim = dim,
         max_iterations = max_iterations 
         # General Iteration, upper bound on delta is not exceeded during update
-        xp1 = rand(dim)
+        xp1_init = rand(dim)
+        xp1 = copy(xp1_init)
         iter = rand(3:max_iterations)
         optData.τ_lower = 1.0
         optData.τ_upper = 2.0
@@ -439,6 +448,7 @@ end
             optData, achieved_descent, iter)
 
         @test xp1 != optData.iter_hist[iter]
+        @test xp1 == xp1_init
         @test optData.τ_lower == 2.5 / sqrt(2)
         @test optData.τ_upper == 2.5 * sqrt(10)
         @test optData.δk == 1.5
@@ -448,7 +458,8 @@ end
     let optData = optData, achieved_descent = true, dim = dim,
         max_iterations = max_iterations 
         # General Iteration, upper bound on delta is exceeded during update
-        xp1 = rand(dim)
+        xp1_init = rand(dim)
+        xp1 = copy(xp1_init)
         iter = rand(3:max_iterations)
         optData.τ_lower = 1.0
         optData.τ_upper = 2.0
@@ -460,6 +471,7 @@ end
             optData, achieved_descent, iter)
 
         @test xp1 != optData.iter_hist[iter]
+        @test xp1 == xp1_init
         @test optData.τ_lower == 2.5 / sqrt(2)
         @test optData.τ_upper == 2.5 * sqrt(10)
         @test optData.δk == 1.2
@@ -471,7 +483,8 @@ end
     ############################################################################
     let optData = optData, achieved_descent = true, dim = dim
         # First Iteration, delta upper bound is exceeded
-        xp1 = rand(dim)
+        xp1_init = rand(dim)
+        xp1 = copy(xp1_init)
         iter = 1
         optData.τ_lower = 1.0
         optData.τ_upper = 2.0
@@ -483,6 +496,7 @@ end
             optData, achieved_descent, iter)
 
         @test xp1 != optData.iter_hist[iter]
+        @test xp1 == xp1_init
         @test optData.τ_lower == 1.0
         @test optData.τ_upper == 2.0
         @test optData.δk == 1.2
@@ -491,7 +505,8 @@ end
 
     let optData = optData, achieved_descent = true, dim = dim
         # First Iteration, delta upper bound is not exceeded
-        xp1 = rand(dim)
+        xp1_init = rand(dim)
+        xp1 = copy(xp1_init)
         iter = 1
         optData.τ_lower = 1.0
         optData.τ_upper = 2.0
@@ -503,6 +518,7 @@ end
             optData, achieved_descent, iter)
 
         @test xp1 != optData.iter_hist[iter]
+        @test xp1 == xp1_init
         @test optData.τ_lower == 1.0
         @test optData.τ_upper == 2.0
         @test optData.δk == 1.5
@@ -512,7 +528,8 @@ end
     let optData = optData, achieved_descent = true, dim = dim,
         max_iterations = max_iterations 
         # General Iteration, upper bound on delta is exceeded during update
-        xp1 = rand(dim)
+        xp1_init = rand(dim)
+        xp1 = copy(xp1_init)
         iter = rand(3:max_iterations)
         optData.τ_lower = 1.0
         optData.τ_upper = 2.0
@@ -524,6 +541,7 @@ end
             optData, achieved_descent, iter)
 
         @test xp1 != optData.iter_hist[iter]
+        @test xp1 == xp1_init
         @test optData.τ_lower == 1.0
         @test optData.τ_upper == 2.0
         @test optData.δk == 1.2
@@ -533,7 +551,8 @@ end
     let optData = optData, achieved_descent = true, dim = dim,
         max_iterations = max_iterations 
         # General Iteration, upper bound on delta is not exceeded during update
-        xp1 = rand(dim)
+        xp1_init = rand(dim)
+        xp1 = copy(xp1_init)
         iter = rand(3:max_iterations)
         optData.τ_lower = 1.0
         optData.τ_upper = 2.0
@@ -545,6 +564,7 @@ end
             optData, achieved_descent, iter)
 
         @test xp1 != optData.iter_hist[iter]
+        @test xp1 == xp1_init
         @test optData.τ_lower == 1.0
         @test optData.τ_upper == 2.0
         @test optData.δk == 1.5
