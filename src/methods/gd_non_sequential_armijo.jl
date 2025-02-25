@@ -111,7 +111,7 @@ function NonsequentialArmijoGD(
     @assert 0 < δ0 "Initial scaling factor $(δ0) needs to be positive."
 
     @assert δ0 <= δ_upper "Initial scaling factor $(δ0) needs to be smaller"*
-    "than its upper bound $(δ_upper)."
+    " than its upper bound $(δ_upper)."
 
     # name for recording purposes
     name::String = "Gradient Descent with Triggering Events and Nonsequential Armijo"
