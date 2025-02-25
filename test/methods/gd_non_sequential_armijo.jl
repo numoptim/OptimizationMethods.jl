@@ -553,6 +553,82 @@ end
 end
 
 @testset "Utility -- Inner Loop" begin
+    
+    dim = 50
+    x0 = randn(50)
+    δ0 = abs(randn(1)[1])
+    δ_upper = δ0 + 1
+    ρ = abs(randn(1)[1])
+    threshold = abs(randn(1)[1])
+    max_iterations = rand(3:100)
+
+    ## build structure
+    optData = NonsequentialArmijoGD(Float64;
+        x0 = x0,
+        δ0 = δ0,
+        δ_upper = δ_upper,
+        ρ = ρ,
+        threshold = threshold,
+        max_iterations = max_iterations)
+
+    progData = OptimizationMethods.LeastSquares(Float64, nvar=dim)
+    precomp, store = OptimizationMethods.initialize(progData)
+
+    # Test first event trigger: radius violation
+    let ψjk=x0 .+ 11, θk=x0, optData=optData, progData=progData,
+        store=store, past_acceptance=false, k=1
+
+        optData.grad_val_hist[k] = 1.5
+        optData.τ_lower = 1.0
+        optData.τ_upper = 2.0
+        
+        OptimizationMethods.inner_loop!(ψjk, θk, optData, progData, precomp, 
+            store, past_acceptance,k,max_iteration=100)
+
+        @test ψjk == x0 .+ 11
+    end
+
+    # Test second event trigger: τ_lower 
+    let ψjk=x0, θk=x0, optData=optData, progData=progData,
+        store=store, past_acceptance=false, k=1
+
+        optData.grad_val_hist[k] = 0.5 
+        optData.τ_lower = 1.0
+        optData.τ_upper = 2.0
+        
+        OptimizationMethods.inner_loop!(ψjk, θk, optData, progData, precomp, 
+            store, past_acceptance,k,max_iteration=100)
+
+        @test ψjk == x0
+    end
+
+    # Test third event trigger: τ_upper 
+    let ψjk=x0, θk=x0, optData=optData, progData=progData,
+        store=store, past_acceptance=false, k=1
+
+        optData.grad_val_hist[k] = 2.5 
+        optData.τ_lower = 1.0
+        optData.τ_upper = 2.0
+        
+        OptimizationMethods.inner_loop!(ψjk, θk, optData, progData, precomp, 
+            store, past_acceptance,k,max_iteration=100)
+
+        @test ψjk == x0
+    end
+
+    # Test fourth event trigger: max_iteration
+    let ψjk=x0, θk=x0, optData=optData, progData=progData,
+        store=store, past_acceptance=false, k=1
+
+        optData.grad_val_hist[k] = 1.5 
+        optData.τ_lower = 1.0
+        optData.τ_upper = 2.0
+        
+        OptimizationMethods.inner_loop!(ψjk, θk, optData, progData, precomp, 
+            store, past_acceptance,k,max_iteration=0)
+
+        @test ψjk == x0
+    end
 end
 
 @testset "Method -- Gradient Descent with Nonsequential Armijo: method" begin
