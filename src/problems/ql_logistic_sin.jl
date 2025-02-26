@@ -143,10 +143,10 @@ function QLLogisticSin(
     β_true = β_true_mean + randn(T, nvar)
     η = design * β_true
     μ_obs = OptimizationMethods.logistic.(η)
-    ϵ = T.((rand(Distributions.Arcsine()) .- .5)./(1/8)) # standardize
+    ϵ = T.((rand(Distributions.Arcsine(), nobs) .- .5)./(1/8)) # standardize
 
     # generate responses
-    response = μ_obs + T.(OptimizationMethods.linear_plus_sin.(μ_obs) .^ (.5)) * ϵ
+    response = μ_obs + T.(OptimizationMethods.linear_plus_sin.(μ_obs) .^ (.5)) .* ϵ
 
     return QLLogisticSin{T, Vector{T}}(
         meta,

@@ -173,10 +173,10 @@ function QLLogisticCenteredLog(
     β_true = β_true_mean + randn(T, nvar)
     η = design * β_true
     μ_obs = OptimizationMethods.logistic.(η)
-    ϵ = T.((rand(Distributions.Arcsine()) .- .5)./(1/8)) # standardize
+    ϵ = T.((rand(Distributions.Arcsine(), nobs) .- .5)./(1/8)) # standardize
 
     response = μ_obs + 
-        T.(OptimizationMethods.centered_shifted_log.(μ_obs, p, c, d).^(.5)) * ϵ
+        T.(OptimizationMethods.centered_shifted_log.(μ_obs, p, c, d).^(.5)) .* ϵ
 
     return QLLogisticCenteredLog{T, Vector{T}}(
         meta,
