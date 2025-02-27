@@ -27,6 +27,9 @@ args = [:(progData::P where P<:AbstractDefaultQL{T, S}),
         μ_hat = progData.mean.(η)
         obj = 0
         for i in 1:length(progData.response)
+            if isnan(μ_hat[i])
+                return NaN
+            end
             obj -= quadgk(
                 x -> progData.weighted_residual(x, progData.response[i]),
                 0, μ_hat[i])[1]
