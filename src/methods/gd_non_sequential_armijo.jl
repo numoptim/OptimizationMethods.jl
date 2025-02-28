@@ -377,6 +377,8 @@ function inner_loop!(
     optData.local_lipschitz_estimate = update_local_lipschitz_approximation(
             j, k, optData.prev_norm_step, store.grad,
             optData.prev_∇F_ψ, optData.local_lipschitz_estimate, past_acceptance)
+
+    return j
 end
 
 """
