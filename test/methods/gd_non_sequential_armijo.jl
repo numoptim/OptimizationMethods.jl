@@ -609,7 +609,7 @@ end
     end
 
     # Test second event trigger: τ_lower 
-    let ψjk=x0, θk=x0, optData=optData, progData=progData,
+    let ψjk=copy(x0), θk=copy(x0), optData=optData, progData=progData,
         store=store, past_acceptance=false, k=1
 
         optData.grad_val_hist[k] = 0.5 
@@ -623,7 +623,7 @@ end
     end
 
     # Test third event trigger: τ_upper 
-    let ψjk=x0, θk=x0, optData=optData, progData=progData,
+    let ψjk=copy(x0), θk=copy(x0), optData=optData, progData=progData,
         store=store, past_acceptance=false, k=1
 
         optData.grad_val_hist[k] = 2.5 
@@ -637,7 +637,7 @@ end
     end
 
     # Test fourth event trigger: max_iteration
-    let ψjk=x0, θk=x0, optData=optData, progData=progData,
+    let ψjk=copy(x0), θk=copy(x0), optData=optData, progData=progData,
         store=store, past_acceptance=false, k=1
 
         optData.grad_val_hist[k] = 1.5 
@@ -648,6 +648,166 @@ end
             store, past_acceptance,k,max_iteration=0)
 
         @test ψjk == x0
+    end
+
+    # Test first iteration; past_acceptance=false
+    let ψjk=copy(x0), θk=copy(x0), optData=optData, progData=progData,
+        store=store, past_acceptance=false, k=1
+
+        j=1
+
+        optData.prev_norm_step = 0.0
+        OptimizationMethods.grad!(progData, precomp, store, θk)
+        optData.prev_∇F_ψ = copy(store.grad)
+        optData.grad_val_hist[1] = norm(store.grad)
+        optData.norm_∇F_ψ = norm(store.grad)
+        optData.τ_lower = 0.5 * norm(store.grad) 
+        optData.τ_upper = 1.5 * norm(store.grad)
+        optData.local_lipschitz_estimate = 1.0
+
+        optData.δk = 1.5
+
+        local_lipschitz = OptimizationMethods.update_local_lipschitz_approximation(
+            j, k, optData.prev_norm_step, store.grad, optData.prev_∇F_ψ, 
+            optData.local_lipschitz_estimate, past_acceptance
+        )
+
+        α = OptimizationMethods.compute_step_size(optData.τ_lower, 
+            optData.norm_∇F_ψ, local_lipschitz)
+
+        step = (optData.δk * α) .* store.grad 
+
+        OptimizationMethods.inner_loop!(ψjk, θk, optData, progData, precomp,
+            store, past_acceptance, k, max_iteration = 1
+        )
+
+        @test ψjk == θk - step 
+        @test optData.α0k == α
+        @test optData.prev_norm_step ≈ norm(step)
+        @test optData.prev_∇F_ψ ≈ OptimizationMethods.grad(progData, θk)
+        @test store.grad ≈ OptimizationMethods.grad(progData, ψjk)
+        @test optData.norm_∇F_ψ == norm(store.grad)
+    end
+
+    # Test first iteration; past_acceptance=true
+    let ψjk=copy(x0), θk=copy(x0), optData=optData, progData=progData,
+        store=store, past_acceptance=true, k=1
+
+        j=1
+
+        optData.prev_norm_step = 0.0
+        OptimizationMethods.grad!(progData, precomp, store, θk)
+        optData.prev_∇F_ψ = copy(store.grad)
+        optData.grad_val_hist[1] = norm(store.grad)
+        optData.norm_∇F_ψ = norm(store.grad)
+        optData.τ_lower = 0.5 * norm(store.grad) 
+        optData.τ_upper = 1.5 * norm(store.grad)
+        optData.local_lipschitz_estimate = 1.0
+
+        optData.δk = 1.5
+
+        local_lipschitz = OptimizationMethods.update_local_lipschitz_approximation(
+            j, k, optData.prev_norm_step, store.grad, optData.prev_∇F_ψ, 
+            optData.local_lipschitz_estimate, past_acceptance
+        )
+
+        α = OptimizationMethods.compute_step_size(optData.τ_lower, 
+            optData.norm_∇F_ψ, local_lipschitz)
+
+        step = (optData.δk * α) .* store.grad 
+
+        OptimizationMethods.inner_loop!(ψjk, θk, optData, progData, precomp,
+            store, past_acceptance, k, max_iteration = 1
+        )
+
+        @test ψjk == θk - step 
+        @test optData.α0k == α
+        @test optData.prev_norm_step ≈ norm(step)
+        @test optData.prev_∇F_ψ ≈ OptimizationMethods.grad(progData, θk)
+        @test store.grad ≈ OptimizationMethods.grad(progData, ψjk)
+        @test optData.norm_∇F_ψ == norm(store.grad)
+    end
+
+    # Test random iteration; past_acceptance=false
+    let ψjk=copy(x0), θk=copy(x0), optData=optData, progData=progData,
+        store=store, past_acceptance=true, k=1
+
+        #To do this test correctly, we would need to know at what iteration 
+        #j an inner loop exists.
+        max_iteration = rand(2:100)
+
+        # Reset 
+        optData.prev_norm_step = 0.0
+        OptimizationMethods.grad!(progData, precomp, store, θk)
+        optData.prev_∇F_ψ = copy(store.grad)
+        optData.grad_val_hist[1] = norm(store.grad)
+        optData.norm_∇F_ψ = norm(store.grad)
+        optData.τ_lower = 0.5 * norm(store.grad) 
+        optData.τ_upper = 1.5 * norm(store.grad)
+        optData.local_lipschitz_estimate = 1.0
+        optData.δk = 1.5
+
+        #Get exit iteration j
+        
+        j = OptimizationMethods.inner_loop!(ψjk, θk, optData, progData, precomp,
+            store, past_acceptance, k, max_iteration = max_iteration
+        )
+
+        # Reset 
+        ψjk = copy(x0)
+        θk = copy(x0)
+
+        optData.prev_norm_step = 0.0
+        OptimizationMethods.grad!(progData, precomp, store, θk)
+        optData.prev_∇F_ψ = copy(store.grad)
+        optData.grad_val_hist[1] = norm(store.grad)
+        optData.norm_∇F_ψ = norm(store.grad)
+        optData.τ_lower = 0.5 * norm(store.grad) 
+        optData.τ_upper = 1.5 * norm(store.grad)
+        optData.local_lipschitz_estimate = 1.0
+        optData.δk = 1.5
+
+        OptimizationMethods.inner_loop!(ψjk, θk, optData, progData, precomp,
+            store, past_acceptance, k, max_iteration = j-1
+        )
+
+        optData.local_lipschitz_estimate = 
+            OptimizationMethods.update_local_lipschitz_approximation(
+            j, k, optData.prev_norm_step, store.grad, optData.prev_∇F_ψ, 
+            optData.local_lipschitz_estimate, past_acceptance)
+
+        α = OptimizationMethods.compute_step_size(optData.τ_lower, 
+            optData.norm_∇F_ψ, optData.local_lipschitz_estimate
+        )
+
+        ψ_jm1_k = copy(ψjk)
+        grd = OptimizationMethods.grad(progData, ψ_jm1_k)
+        step = (optData.δk * α) * grd
+
+        # Reset 
+        ψjk = copy(x0)
+        θk = copy(x0)
+
+        optData.prev_norm_step = 0.0
+        OptimizationMethods.grad!(progData, precomp, store, θk)
+        optData.prev_∇F_ψ = copy(store.grad)
+        optData.grad_val_hist[1] = norm(store.grad)
+        optData.norm_∇F_ψ = norm(store.grad)
+        optData.τ_lower = 0.5 * norm(store.grad) 
+        optData.τ_upper = 1.5 * norm(store.grad)
+        optData.local_lipschitz_estimate = 1.0
+        optData.δk = 1.5
+
+        #Get ψ_{j,k}
+        OptimizationMethods.inner_loop!(ψjk, θk, optData, progData, precomp,
+            store, past_acceptance, k, max_iteration = max_iteration
+        )
+
+        @test ψjk ≈ ψ_jm1_k - step
+        @test optData.prev_norm_step ≈ norm(step)
+        @test optData.prev_∇F_ψ ≈ grd
+        @test store.grad ≈ OptimizationMethods.grad(progData, ψjk)
+        @test optData.norm_∇F_ψ ≈ norm(store.grad)
     end
 end
 
