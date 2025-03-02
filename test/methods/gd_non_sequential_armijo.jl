@@ -873,36 +873,30 @@ end
     end
 
     # should exit on iteration about 26, so we stop one iteration short 
-    exit_iteration = 26
     let x0=copy(x0), δ0=δ0, δ_upper=δ_upper, ρ=ρ, threshold=threshold, 
-        max_iterations=exit_iteration
+        max_iterations=max_iterations 
 
         #Specify Problem 
         progData = OptimizationMethods.LeastSquares(Float64, nvar=dim)
 
         # Specify optimization method for exit_iteration - 1
         optData = NonsequentialArmijoGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
-            ρ=ρ, threshold=threshold, max_iterations=exit_iteration-1)
+            ρ=ρ, threshold=threshold, max_iterations=max_iterations)
+        
+        x = nonsequential_armijo_gd(optData, progData)
+        g = OptimizationMethods.grad(progData, x)
+        
+        stop_iteration = optData.stop_iteration 
 
-        # Run method for exit_iteration - 1
-        xkm1 = nonsequential_armijo_gd(optData, progData)
-        gkm1 = OptimizationMethods.grad(progData, xkm1)
+        @test optData.iter_hist[stop_iteration+1] == x
+        @test optData.grad_val_hist[stop_iteration+1] ≈ norm(g)
 
-        @test optData.stop_iteration == exit_iteration-1
-        @test optData.iter_hist[exit_iteration] == xkm1
-        @test optData.grad_val_hist[exit_iteration] ≈ norm(gkm1)
+        # Since last iteration is accepted the following must be true 
+        @test optData.iter_hist[stop_iteration] != 
+            optData.iter_hist[stop_iteration+1]
+        @test optData.grad_val_hist[stop_iteration] != 
+            optData.grad_val_hist[stop_iteration+1]
 
-        # Specify optimization method for exist_iteration 
-        optData = NonsequentialArmijoGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
-            ρ=ρ, threshold=threshold, max_iterations=exit_iteration)
-
-        # Run method for exit iteration, past acceptance must be true 
-        xk = nonsequential_armijo_gd(optData, progData)
-        gk = OptimizationMethods.grad(progData, xk)
-
-        @test optData.stop_iteration == exit_iteration 
-        @test optData.iter_hist[exit_iteration+1] == xk 
-        @test optData.grad_val_hist[exit_iteration+1] ≈ norm(gk)
     end
 end
 
