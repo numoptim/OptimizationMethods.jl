@@ -728,7 +728,7 @@ end
         @test optData.norm_∇F_ψ == norm(store.grad)
     end
 
-    # Test random iteration; past_acceptance=false
+    # Test random iteration; past_acceptance=true
     let ψjk=copy(x0), θk=copy(x0), optData=optData, progData=progData,
         store=store, past_acceptance=true, k=1
 
@@ -812,6 +812,98 @@ end
 end
 
 @testset "Method -- Gradient Descent with Nonsequential Armijo: method" begin
+    
+    # Default Parameters 
+    dim = 50
+    x0 = randn(dim)
+    δ0 = abs(randn())
+    δ_upper = abs(randn()) + 2 
+    ρ = abs(randn()) * 1e-3
+    threshold = 1e-3
+    max_iterations = 100 
+
+    # Should exit on iteration 0 because max_iterations is 0
+    let x0=copy(x0), δ0=δ0, δ_upper=δ_upper, ρ=ρ, threshold=threshold, 
+        max_iterations=0
+
+        # Specify optimization method and problem
+        optData = NonsequentialArmijoGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
+            ρ=ρ, threshold=threshold, max_iterations=max_iterations)
+        progData = OptimizationMethods.LeastSquares(Float64, nvar=dim)
+
+        # Run method
+        x = nonsequential_armijo_gd(optData, progData)
+
+        
+        @test optData.stop_iteration == 0
+        @test progData.counters.neval_obj == 1 
+        @test progData.counters.neval_grad == 1
+        @test x == x0
+        
+        grd = OptimizationMethods.grad(progData, x0)
+        grd_norm = norm(grd)
+        @test optData.grad_val_hist ≈ [norm(grd)]
+        @test optData.τ_lower ≈ norm(grd) / sqrt(2)
+        @test optData.τ_upper ≈ norm(grd) * sqrt(10)
+    end
+
+    # should exit on iteration 0 because threshold is larger than gradient 
+    let x0=copy(x0), δ0=δ0, δ_upper=δ_upper, ρ=ρ, threshold=1e4, 
+        max_iterations=max_iterations
+
+        # Specify optimization method and problem
+        optData = NonsequentialArmijoGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
+            ρ=ρ, threshold=threshold, max_iterations=max_iterations)
+        progData = OptimizationMethods.LeastSquares(Float64, nvar=dim)
+
+        # Run method
+        x = nonsequential_armijo_gd(optData, progData)
+
+        
+        @test optData.stop_iteration == 0
+        @test progData.counters.neval_obj == 1 
+        @test progData.counters.neval_grad == 1
+        @test x == x0
+        
+        grd = OptimizationMethods.grad(progData, x0)
+        grd_norm = norm(grd)
+        @test optData.grad_val_hist[1] ≈ norm(grd)
+        @test optData.τ_lower ≈ norm(grd) / sqrt(2)
+        @test optData.τ_upper ≈ norm(grd) * sqrt(10)
+    end
+
+    # should exit on iteration about 26, so we stop one iteration short 
+    exit_iteration = 26
+    let x0=copy(x0), δ0=δ0, δ_upper=δ_upper, ρ=ρ, threshold=threshold, 
+        max_iterations=exit_iteration
+
+        #Specify Problem 
+        progData = OptimizationMethods.LeastSquares(Float64, nvar=dim)
+
+        # Specify optimization method for exit_iteration - 1
+        optData = NonsequentialArmijoGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
+            ρ=ρ, threshold=threshold, max_iterations=exit_iteration-1)
+
+        # Run method for exit_iteration - 1
+        xkm1 = nonsequential_armijo_gd(optData, progData)
+        gkm1 = OptimizationMethods.grad(progData, xkm1)
+
+        @test optData.stop_iteration == exit_iteration-1
+        @test optData.iter_hist[exit_iteration] == xkm1
+        @test optData.grad_val_hist[exit_iteration] ≈ norm(gkm1)
+
+        # Specify optimization method for exist_iteration 
+        optData = NonsequentialArmijoGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
+            ρ=ρ, threshold=threshold, max_iterations=exit_iteration)
+
+        # Run method for exit iteration, past acceptance must be true 
+        xk = nonsequential_armijo_gd(optData, progData)
+        gk = OptimizationMethods.grad(progData, xk)
+
+        @test optData.stop_iteration == exit_iteration 
+        @test optData.iter_hist[exit_iteration+1] == xk 
+        @test optData.grad_val_hist[exit_iteration+1] ≈ norm(gk)
+    end
 end
 
 end
