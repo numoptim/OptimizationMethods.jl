@@ -29,6 +29,8 @@ where ``p \\in \\mathbb{R}``, ``c \\in \\mathbb{R}``, ``d \\in \\mathbb{R}``.
 
 !!! note
     This function is only differentiable everywhere when ``p > .5``.
+    For the function to be positive everywhere (a requirement to
+    be a valid variance function), ``d > 0``.
 
 Let ``n`` be the number of rows in ``A``, then the quasi-likelihood objective is
 ```math
@@ -68,7 +70,7 @@ Let ``n`` be the number of rows in ``A``, then the quasi-likelihood objective is
 ## Inner Constructors
 
     QLLogisticCenteredLog{T, S}(meta::NLPModelMeta{T, S}, counters::Counters,
-        design::Matrix{T}, response::Vector{T}, p::T, c::T)
+        design::Matrix{T}, response::Vector{T}, p::T, c::T, d::T)
     
 Initializes the data structure for a quasi-likelihood estimation problem with 
     a [logistic link function](@ref OptimizationMethods.logistic) and 
@@ -77,7 +79,7 @@ Initializes the data structure for a quasi-likelihood estimation problem with
 ## Outer Constructors
 
     QLLogisticCenteredLog(::Type{T}; nobs::Int64 = 1000,
-        nvar::Int64 = 50, p::T = T(1), c::T = T(1)) where {T}
+        nvar::Int64 = 50, p::T = T(1), c::T = T(1), d::T = T(1)) where {T}
 
 Construct a quasi-likelihood estimation problem with 
     a [logistic link function](@ref OptimizationMethods.logistic); 
@@ -92,7 +94,7 @@ Construct a quasi-likelihood estimation problem with
  
     QLLogisticCenteredLog(design::Matrix{T}, response::Vector{T}, 
         x0::Vector{T} = zeros(T, size(design)[2]), p::T = T(1),
-        c::T = T(1)) where {T}
+        c::T = T(1), d::T = T(1)) where {T}
 
 Constructs a quasi-likelihood estimation problem with 
     a [logistic link function](@ref OptimizationMethods.logistic); 
