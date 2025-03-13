@@ -82,23 +82,23 @@ function BacktrackingGD(
     ρ::T,
     line_search_max_iteration::Int64,
     threshold::T,
-    max_iteration::Int64,
+    max_iterations::Int64,
 ) where {T}
 
     d = length(x0)
 
     # initialization iterate history
     iter_hist = Vector{T}[Vector{T}(undef, d) for i in 
-        1:max_iteration + 1]
+        1:max_iterations + 1]
     iter_hist[1] = x0
 
     # initialization of gradient and dummy value for stop_iteration
-    grad_val_hist = Vector{T}(undef, max_iteration + 1)
+    grad_val_hist = Vector{T}(undef, max_iterations + 1)
     stop_iteration = -1
 
     return BacktrackingGD("Gradient Descent with Backtracking",
         α, δ, ρ, line_search_max_iteration, threshold, 
-        max_iteration, iter_hist, grad_val_hist, stop_iteration)
+        max_iterations, iter_hist, grad_val_hist, stop_iteration)
 end
 
 """
