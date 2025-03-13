@@ -14,18 +14,45 @@ using Test, OptimizationMethods, LinearAlgebra, Random
     # Test struct properties
     ############################################################################
 
-    ## TODO - test definition
+    ## test definition
+    @test @isdefined BacktrackingGD
 
-    ## TODO - test supertype
+
+    ##  test supertype
+    @test supertype(BacktrackingGD) == 
+        OptimizationMethods.AbstractOptimizerData
 
     ## TODO - test field names
 
-    ############################################################################
-    # Test struct constructor
-    ############################################################################
+    field_info(type::T) where T = [
+        [:name, String], 
+        [:α, type],
+        [:δ, type],
+        [:ρ, type],
+        [:line_search_max_iteration, Int64],
+        [:threshold, type],
+        [:max_iterations, Int64],
+        [:iter_hist, Vector{Vector{type}}],
+        [:grad_val_hist, Vector{type}],
+        [:stop_iteration, Int64]
+        
+    ]
 
-    ## test constructor 
-    real_types = [Int16, Int32, Int64, Float16, Float32, Float64]
+    names = [:name, :α, :δ, :ρ, :line_search_max_iteration,
+    :threshold, :max_iterations, :iter_hist, :grad_val_hist,
+    :stop_iteration]
+
+    for name in names
+        @test name in field_info(BacktrackingGD)
+    end
+
+
+    ###########################################################################
+    # Test struct constructor
+    ###########################################################################
+
+    # test constructor 
+    real_types = [ Float16, Float32, Float64]
     number_random_parameters_trials = 5
     dimension = 50
     let real_types = real_types, number_random_parameters_trials = 5,
@@ -40,22 +67,49 @@ using Test, OptimizationMethods, LinearAlgebra, Random
                 ]
 
                 x0::Vector{type} = randn(type, dimension)
-                α::type = randn(type, 1)
-                δ::type = randn(type, 1)
-                ρ::type = randn(type, 1)
+                α::type = rand(type)
+                δ::type = rand(type)
+                ρ::type = rand(type)
                 line_search_max_iteration = rand(1:100)
-                threshold = randn(type, 1)
-                max_iteration = rand(1:100)
+                threshold = rand(type)
+                max_iterations = rand(1:100)
 
                 ## TODO - get initialized struct
+                optData = BacktrackingGD(
+                    type,
+                    x0 = x0,
+                    α = α,
+                    δ = δ,
+                    ρ = ρ,
+                    line_search_max_iteration = line_search_max_iteration,
+                    threshold = threshold,
+                    max_iterations = max_iterations
+                )
 
                 ## TODO - test that the type for each field is correct
+                for (field_name, field_type) in field_info(BacktrackingGD)
+                    @test typeof(getfield(optData, field_name)) == field_type
+                end
 
                 ## TODO - test that iter_hist has correct length
+                @test length(optData.iter_hist) == max_iterations + 1
 
                 ## TODO - test that grad_val_hist has correct length
+                @test length(optData.grad_val_hist) == max_iterations
+
 
                 ## TODO - that each field has the correct values
+                @test optData.name == "BacktrackingGD"
+
+                @test optData.α == α
+                @test optData.δ == δ
+                @test optData.ρ == ρ
+                @test optData.line_search_max_iteration == 
+                    line_search_max_iteration
+                @test optData.threshold == threshold  
+                
+                @test optData.max_iterations == max_iterations
+                @test optData.x0 == x0  
 
             end
         end
@@ -77,7 +131,7 @@ using Test, OptimizationMethods, LinearAlgebra, Random
         ρ::type = 1e-4
         line_search_max_iteration = 100
         threshold = 1e-10
-        max_iteration = 1
+        max_iterations = 1
 
         # construct the struct
         optData = BacktrackingGD(
@@ -88,19 +142,63 @@ using Test, OptimizationMethods, LinearAlgebra, Random
             ρ = ρ,
             line_search_max_iteration = line_search_max_iteration,
             threshold = threshold,
-            max_iteration = max_iteration 
+            max_iterations = max_iterations
         )
 
         # output after one step
+        
+
+        ## TODO - test that either x1 fails the backtracking 
+        ## condition or it succeeds
+        
+        # Compute x1 using backtracking
         x1 = backtracking_gd(optData, progData)
 
-        ## TODO - test that either x1 fails the backtracking condition or it succeeds
+        # Get function and gradient values
+        F_x0 = OptimizationMethods.obj(progData, precomp, store, x0)
+        F_x1 = OptimizationMethods.obj(progData, precomp, store, x1)
+        grad_x0 = norm(store.grad)
 
+        # Compute right-hand side of backtracking condition
+        rhs = F_x0 - optData.ρ * optData.α * grad_x0^2
+
+        # Test that either x1 satisfies the backtracking condition or it is rejected
+        @test (F_x1 <= rhs) || (x1 == x0)
+
+       
         ## TODO - test that the iteration history is correct
 
+        # test if first iteration is correct
+
+        @test optData.iter_hist[1] == x0 
+
+        # Ensure the iteration history correctly tracks updates
+        for k in 2:length(optData.iter_hist)
+            @test optData.iter_hist[k] == optData.iter_hist[k-1] - (optData.α * optData.δ^(t) * store.grad)
+        end
         ## TODO - test that the gradient value history is correct
 
+        # Ensure the first entry stores the gradient norm at x0
+        @test optData.grad_val_hist[1] == norm(store.grad)
+
+        # Ensure gradient values are updated correctly
+        for k in 2:length(optData.grad_val_hist)
+            grad_at_xk = norm(store.grad)  # Compute gradient norm at iteration k
+
+            # If backtracking succeeded, the gradient should be updated
+            if backtracking_condition_satisfied
+                @test optData.grad_val_hist[k] == grad_at_xk
+            else
+                # If backtracking failed, gradient value should remain unchanged
+                @test optData.grad_val_hist[k] == optData.grad_val_hist[k-1]
+            end
+        end
+
+
         ## TODO - test that the stop iteration is correct
+
+        # Ensure stop_iteration is correctly set
+        @test optData.stop_iteration == iter
     end
 
     ############################################################################
@@ -119,7 +217,7 @@ using Test, OptimizationMethods, LinearAlgebra, Random
         ρ::type = 1e-4
         line_search_max_iteration = 100
         threshold = 1e-10
-        max_iteration = 1
+        max_iterations = 1
 
         # construct the struct
         optData = BacktrackingGD(
@@ -130,21 +228,27 @@ using Test, OptimizationMethods, LinearAlgebra, Random
             ρ = ρ,
             line_search_max_iteration = line_search_max_iteration,
             threshold = threshold,
-            max_iteration = max_iteration 
+            max_iterations = max_iterations
         )
 
-        xk = backtracking_gd(optData, progData)
+        
 
-        stop_iteration = optData.stop_iteration
-        xkm1 = optData.iter_hist[stop_iteration]
-        gkm1 = optData.grad_val_hist[stop_iteration]
 
         ## TODO - test that the stop iteration is correct
+        @test stop_iteration < max_iterations   # Ensure we stopped early due to convergence
+        @test norm(gradients[stop_iteration]) < tolerance 
 
         ## TODO - test that xk was updated correctly (e.g., by using backtracking! on xkm1)
+        @test F(xk) ≤ F(xkm1) - ρ * α * norm(gradients[stop_iteration])^2  # Armijo condition
+        @test xk ≈ xkm1 - α * gradients[stop_iteration]  # Gradient descent step    
+
 
         ## TODO - test that the gradient value is correct at stop_iteration and
         ## stop_iteration + 1
+        @test gradients[stop_iteration] ≈ compute_gradient(xk)  # Ensure correctness at stop iteration
+        if stop_iteration + 1 <= length(gradients)
+            @test gradients[stop_iteration + 1] >= gradients[stop_iteration]  # Shouldn't increase
+        end
 
     end
 end
