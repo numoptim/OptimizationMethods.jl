@@ -3,16 +3,6 @@
 # Purpose: Implementation of gradient descent with novel gradient descent
 # non-sequential Armijo condition
 
-################################################################################
-# Implementation Notes (for a v2 of this method):
-#   
-#   1) Ideally, the inner loop code is replaced with a function that is a field
-#   in the struct. This function should return a iterate, and it should
-#   carry out any of the gradient methods we have implemented so far.
-#
-#   2) The method should potentially seperate out the non-sequential armijo
-#   condition into a function to follow the other implementations of line search
-################################################################################ 
 
 """
     NonsequentialArmijoGD{T} <: AbstractOptimizerData{T}
@@ -37,8 +27,8 @@ A mutable struct that represents gradient descent with non-sequential armijo
 - `ρ::T`, parameter used in the non-sequential Armijo condition. Larger
     numbers indicate stricter descent conditions. Smaller numbers indicate
     less strict descent conditions.
-- `τ_lower::T`, lower bound on the gradient interval.
-- `τ_upper::T`, upper bound on the gradient interval.
+- `τ_lower::T`, lower bound on the gradient interval triggering event.
+- `τ_upper::T`, upper bound on the gradient interval triggering event.
 - `local_lipschitz_estimate::T`, local Lipshitz approximation.
 - `threshold::T`, norm gradient tolerance condition. Induces stopping when norm 
     is at most `threshold`.
@@ -116,8 +106,6 @@ function NonsequentialArmijoGD(
     # name for recording purposes
     name::String = "Gradient Descent with Triggering Events and Nonsequential Armijo"
 
-    d = length(x0)
-
     # initialize buffer for history keeping
     d = length(x0)
     iter_hist::Vector{Vector{T}} = Vector{Vector{T}}([
@@ -129,18 +117,18 @@ function NonsequentialArmijoGD(
     stop_iteration::Int64 = -1 # dummy value
 
     return NonsequentialArmijoGD(
-        name,
-        zeros(T, d),
-        T(0),
-        zeros(T, d),
-        T(0),
-        T(0),
-        δ0,
-        δ_upper,
-        ρ,
-        T(-1),
-        T(-1),
-        T(1.0),
+        name,                       # name
+        zeros(T, d),                # ∇F_θk
+        T(0),                       # norm_∇F_ψ
+        zeros(T, d),                # prev_∇F_ψ
+        T(0),                       # prev_norm_step    
+        T(0),                       # α0k
+        δ0,                         # δk
+        δ_upper,                    # δ_upper
+        ρ,                          # ρ
+        T(-1),                      # τ_lower
+        T(-1),                      # τ_upper
+        T(1.0),                     # local_lipschitz_estimate
         threshold,
         max_iterations,
         iter_hist,
