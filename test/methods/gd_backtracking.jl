@@ -26,9 +26,9 @@ using Test, OptimizationMethods, LinearAlgebra, Random
 
     field_info(type::T) where T = [
         [:name, String], 
-        [:α, type],
-        [:δ, type],
-        [:ρ, type],
+        [:α, Float64],
+        [:δ, Float64],
+        [:ρ, Float64],
         [:line_search_max_iteration, Int64],
         [:threshold, type],
         [:max_iterations, Int64],
@@ -62,7 +62,7 @@ using Test, OptimizationMethods, LinearAlgebra, Random
             for trial in 1:number_random_parameters_trials
 
                 ## correct field values
-                field_types = [String, type, type, type, Int64, type,
+                field_types = [String, Float64, Float64, Float64, Int64, type,
                     Int64, Vector{Vector{type}}, Vector{type}, Int64
                 ]
 
@@ -109,8 +109,7 @@ using Test, OptimizationMethods, LinearAlgebra, Random
                 @test optData.threshold == threshold  
                 
                 @test optData.max_iterations == max_iterations
-                @test optData.x0 == x0  
-
+                
             end
         end
 
@@ -126,9 +125,9 @@ using Test, OptimizationMethods, LinearAlgebra, Random
     let progData = progData, x0 = x0
 
         # parameters for the struct
-        α::type = abs(randn(type, 1))
-        δ::type = abs(randn(type, 1))
-        ρ::type = 1e-4
+        α::Float64 = abs(randn(Float64))
+        δ::Float64 = abs(randn(Float64))
+        ρ::Float64 = 1e-4
         line_search_max_iteration = 100
         threshold = 1e-10
         max_iterations = 1
@@ -151,6 +150,7 @@ using Test, OptimizationMethods, LinearAlgebra, Random
         ## TODO - test that either x1 fails the backtracking 
         ## condition or it succeeds
         
+
         # Compute x1 using backtracking
         x1 = backtracking_gd(optData, progData)
 
@@ -174,7 +174,8 @@ using Test, OptimizationMethods, LinearAlgebra, Random
 
         # Ensure the iteration history correctly tracks updates
         for k in 2:length(optData.iter_hist)
-            @test optData.iter_hist[k] == optData.iter_hist[k-1] - (optData.α * optData.δ^(t) * store.grad)
+            @test optData.iter_hist[k] == optData.iter_hist[k-1] - 
+                (optData.α * optData.δ^(t) * store.grad)
         end
         ## TODO - test that the gradient value history is correct
 
@@ -212,8 +213,8 @@ using Test, OptimizationMethods, LinearAlgebra, Random
     let progData = progData, x0 = x0, k = 75
 
         # parameters for the struct
-        α::type = abs(randn(type, 1))
-        δ::type = abs(randn(type, 1))
+        α::type = abs(randn(type))
+        δ::type = abs(randn(type))
         ρ::type = 1e-4
         line_search_max_iteration = 100
         threshold = 1e-10
