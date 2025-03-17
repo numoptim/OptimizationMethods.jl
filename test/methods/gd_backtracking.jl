@@ -155,12 +155,13 @@ using Test, OptimizationMethods, LinearAlgebra, Random
         x1 = backtracking_gd(optData, progData)
 
         # Get function and gradient values
-        F_x0 = OptimizationMethods.obj(progData, precomp, store, x0)
-        F_x1 = OptimizationMethods.obj(progData, precomp, store, x1)
-        grad_x0 = norm(store.grad)
+
+        F_x0 = OptimizationMethods.obj(progData, optData.iter_hist[1])
+        F_x1 = OptimizationMethods.obj(progData, optData.iter_hist[2])
+        grad_x0 = OptimizationMethods.grad(progData, x0)
 
         # Compute right-hand side of backtracking condition
-        rhs = F_x0 - optData.ρ * optData.α * grad_x0^2
+        rhs = F_x0 - optData.ρ * optData.α * norm(grad_x0)^2
 
         # Test that either x1 satisfies the backtracking condition or it is rejected
         @test (F_x1 <= rhs) || (x1 == x0)
@@ -174,21 +175,33 @@ using Test, OptimizationMethods, LinearAlgebra, Random
 
         # Ensure the iteration history correctly tracks updates
         for k in 2:length(optData.iter_hist)
+            grad_xk = OptimizationMethods.grad(progData, optData.iter_hist[k-1])  
+            # Compute gradient at x_k-1
             @test optData.iter_hist[k] == optData.iter_hist[k-1] - 
-                (optData.α * optData.δ^(t) * store.grad)
+                (optData.α * optData.δ^(k-1) * grad_xk)
         end
         ## TODO - test that the gradient value history is correct
 
         # Ensure the first entry stores the gradient norm at x0
-        @test optData.grad_val_hist[1] == norm(store.grad)
+        @test optData.grad_val_hist[1] == norm(
+            OptimizationMethods.grad(progData, optData.iter_hist[1]))
 
         # Ensure gradient values are updated correctly
         for k in 2:length(optData.grad_val_hist)
-            grad_at_xk = norm(store.grad)  # Compute gradient norm at iteration k
+            grad_xk = OptimizationMethods.grad(progData, optData.iter_hist[k-1])
 
+            F_x0 = OptimizationMethods.obj(progData, optData.iter_hist[k-1])  # Function value at previous step
+            F_xk = OptimizationMethods.obj(progData, optData.iter_hist[k])    # Function value at current step
+            grad_x0 = OptimizationMethods.grad(progData, optData.iter_hist[k-1]) # Gradient at previous step
+
+            # Compute the right-hand side of the Armijo condition
+            rhs = F_x0 - optData.ρ * optData.α * norm(grad_x0)^2
+
+            # Check if backtracking condition is satisfied
+            backtracking_condition_satisfied = (F_xk <= rhs)
             # If backtracking succeeded, the gradient should be updated
             if backtracking_condition_satisfied
-                @test optData.grad_val_hist[k] == grad_at_xk
+                @test optData.grad_val_hist[k] == grad_xk
             else
                 # If backtracking failed, gradient value should remain unchanged
                 @test optData.grad_val_hist[k] == optData.grad_val_hist[k-1]
@@ -199,7 +212,7 @@ using Test, OptimizationMethods, LinearAlgebra, Random
         ## TODO - test that the stop iteration is correct
 
         # Ensure stop_iteration is correctly set
-        @test optData.stop_iteration == iter
+        @test optData.stop_iteration == max_iterations
     end
 
     ############################################################################
@@ -213,9 +226,9 @@ using Test, OptimizationMethods, LinearAlgebra, Random
     let progData = progData, x0 = x0, k = 75
 
         # parameters for the struct
-        α::type = abs(randn(type))
-        δ::type = abs(randn(type))
-        ρ::type = 1e-4
+        α::Float64 = abs(randn(Float64))
+        δ::Float64 = abs(randn(Float64))
+        ρ::Float64 = 1e-4
         line_search_max_iteration = 100
         threshold = 1e-10
         max_iterations = 1
@@ -236,19 +249,26 @@ using Test, OptimizationMethods, LinearAlgebra, Random
 
 
         ## TODO - test that the stop iteration is correct
-        @test stop_iteration < max_iterations   # Ensure we stopped early due to convergence
-        @test norm(gradients[stop_iteration]) < tolerance 
+        @test optData.stop_iteration <
+            max_iterations   # Ensure we stopped early due to convergence
+
 
         ## TODO - test that xk was updated correctly (e.g., by using backtracking! on xkm1)
-        @test F(xk) ≤ F(xkm1) - ρ * α * norm(gradients[stop_iteration])^2  # Armijo condition
-        @test xk ≈ xkm1 - α * gradients[stop_iteration]  # Gradient descent step    
+        @test OptimizationMethods.obj(progData, optData.iter_hist[k]) <= 
+            OptimizationMethods.obj(progData, iter_hist[k-1]) 
+                - ρ * α * norm(grad_val_hist[k-1])^2  # Armijo condition
+
+        
+        @test xk ≈ xkm1 - α * grad_val_hist[stop_iteration]  # Gradient descent step    
 
 
         ## TODO - test that the gradient value is correct at stop_iteration and
         ## stop_iteration + 1
-        @test gradients[stop_iteration] ≈ compute_gradient(xk)  # Ensure correctness at stop iteration
-        if stop_iteration + 1 <= length(gradients)
-            @test gradients[stop_iteration + 1] >= gradients[stop_iteration]  # Shouldn't increase
+        @test grad_val_hist[stop_iteration] ≈ 
+            compute_gradient(xk)  # Ensure correctness at stop iteration
+        if stop_iteration + 1 <= length(grad_val_hist)
+            @test grad_val_hist[stop_iteration + 1] >= 
+                grad_val_hist[stop_iteration]  # Shouldn't increase
         end
 
     end
