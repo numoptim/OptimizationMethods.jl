@@ -200,11 +200,12 @@ function gradient_logistic_centered_log(
 
     p = progData.p
     c = progData.c
+    d = progData.d
 
     η = progData.design * x
     μ = 1 ./ (1 .+ exp.(-η))
     dμ = μ .* (1 .- μ)
-    V = log.(abs.(μ.-c).^(2p).+1)
+    V = log.(abs.(μ.-c).^(2p).+1) .+ d
 
     return -progData.design' * (dμ .* (progData.response .- μ) ./ V)
 end

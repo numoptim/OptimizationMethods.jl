@@ -61,6 +61,33 @@ OptimizationMethods.inverse_log2k_step_size
 OptimizationMethods.stepdown_100_step_size
 ```
 
+# Gradient Descent with Non-sequential Armijo Line Search
+```@docs
+NonsequentialArmijoGD
+
+nonsequential_armijo_gd
+```
+
+The method above requires several utility functions. These are listed
+below.
+
+```@docs
+OptimizationMethods.update_local_lipschitz_approximation
+
+OptimizationMethods.compute_step_size
+
+OptimizationMethods.inner_loop!
+
+OptimizationMethods.update_algorithm_parameters!
+```
+
+# Line search Helper Functions
+
+## Non-sequential Armijo
+```@docs
+OptimizationMethods.non_sequential_armijo_condition
+```
+
 # Index 
 ```@index
 ```
