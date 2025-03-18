@@ -3,16 +3,6 @@
 # Purpose: Implementation of gradient descent with novel gradient descent
 # non-sequential Armijo condition
 
-################################################################################
-# Implementation Notes (for a v2 of this method):
-#   
-#   1) Ideally, the inner loop code is replaced with a function that is a field
-#   in the struct. This function should return a iterate, and it should
-#   carry out any of the gradient methods we have implemented so far.
-#
-#   2) The method should potentially seperate out the non-sequential armijo
-#   condition into a function to follow the other implementations of line search
-################################################################################ 
 
 """
     NonsequentialArmijoGD{T} <: AbstractOptimizerData{T}
@@ -37,8 +27,8 @@ A mutable struct that represents gradient descent with non-sequential armijo
 - `ρ::T`, parameter used in the non-sequential Armijo condition. Larger
     numbers indicate stricter descent conditions. Smaller numbers indicate
     less strict descent conditions.
-- `τ_lower::T`, lower bound on the gradient interval.
-- `τ_upper::T`, upper bound on the gradient interval.
+- `τ_lower::T`, lower bound on the gradient interval triggering event.
+- `τ_upper::T`, upper bound on the gradient interval triggering event.
 - `local_lipschitz_estimate::T`, local Lipshitz approximation.
 - `threshold::T`, norm gradient tolerance condition. Induces stopping when norm 
     is at most `threshold`.
@@ -111,12 +101,10 @@ function NonsequentialArmijoGD(
     @assert 0 < δ0 "Initial scaling factor $(δ0) needs to be positive."
 
     @assert δ0 <= δ_upper "Initial scaling factor $(δ0) needs to be smaller"*
-    "than its upper bound $(δ_upper)."
+    " than its upper bound $(δ_upper)."
 
     # name for recording purposes
     name::String = "Gradient Descent with Triggering Events and Nonsequential Armijo"
-
-    d = length(x0)
 
     # initialize buffer for history keeping
     d = length(x0)
@@ -129,18 +117,18 @@ function NonsequentialArmijoGD(
     stop_iteration::Int64 = -1 # dummy value
 
     return NonsequentialArmijoGD(
-        name,
-        zeros(T, d),
-        T(0),
-        zeros(T, d),
-        T(0),
-        T(0),
-        δ0,
-        δ_upper,
-        ρ,
-        T(-1),
-        T(-1),
-        T(1.0),
+        name,                       # name
+        zeros(T, d),                # ∇F_θk
+        T(0),                       # norm_∇F_ψ
+        zeros(T, d),                # prev_∇F_ψ
+        T(0),                       # prev_norm_step    
+        T(0),                       # α0k
+        δ0,                         # δk
+        δ_upper,                    # δ_upper
+        ρ,                          # ρ
+        T(-1),                      # τ_lower
+        T(-1),                      # τ_upper
+        T(1.0),                     # local_lipschitz_estimate
         threshold,
         max_iterations,
         iter_hist,
@@ -214,7 +202,7 @@ The local Lipschitz approximation method is conducted as follows. Let ``j``
 
 # Return
 
-`estimate::T`, estimate of the local Lipschitz constant.
+- `estimate::T`, estimate of the local Lipschitz constant.
 """
 function update_local_lipschitz_approximation(j::Int64, k::Int64,
     norm_djk::T, curr_grad::S, prev_grad::S, prev_approximation::T, 
@@ -326,6 +314,10 @@ the fields `local_lipschitz_estimate`, `norm_∇F_ψ`, and `prev_∇F_ψ` are up
 - `max_iteration = 100`, maximum number of allowable iteration of the inner loop.
     Should be kept at `100` as that is what is specified in the paper, but
     is useful to change for testing.
+
+# Returns
+
+- `j::Int64`, the iteration for which a triggering event evaluated to true.
 """
 function inner_loop!(
     ψjk::S,
@@ -377,6 +369,8 @@ function inner_loop!(
     optData.local_lipschitz_estimate = update_local_lipschitz_approximation(
             j, k, optData.prev_norm_step, store.grad,
             optData.prev_∇F_ψ, optData.local_lipschitz_estimate, past_acceptance)
+
+    return j
 end
 
 """
@@ -399,6 +393,11 @@ Given that the non-sequential Armijo condition is checked, update the parameters
     descent condition was achieved.
 - `iter::Int64`, the current iteration of the method. The outer loop iteration.
     This is requried as it is used to overwrite `θkp1` with the previous iterate.
+
+# Returns
+
+- A boolean flag equal to `achieved_descent` to indicate whether `θkp1` is 
+    modified in-place.
 """
 function update_algorithm_parameters!(θkp1::S, optData::NonsequentialArmijoGD{T},
     achieved_descent::Bool, iter::Int64) where {T, S}
