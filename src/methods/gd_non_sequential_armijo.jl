@@ -202,7 +202,7 @@ The local Lipschitz approximation method is conducted as follows. Let ``j``
 
 # Return
 
-`estimate::T`, estimate of the local Lipschitz constant.
+- `estimate::T`, estimate of the local Lipschitz constant.
 """
 function update_local_lipschitz_approximation(j::Int64, k::Int64,
     norm_djk::T, curr_grad::S, prev_grad::S, prev_approximation::T, 
@@ -314,6 +314,10 @@ the fields `local_lipschitz_estimate`, `norm_∇F_ψ`, and `prev_∇F_ψ` are up
 - `max_iteration = 100`, maximum number of allowable iteration of the inner loop.
     Should be kept at `100` as that is what is specified in the paper, but
     is useful to change for testing.
+
+# Returns
+
+- `j::Int64`, the iteration for which a triggering event evaluated to true.
 """
 function inner_loop!(
     ψjk::S,
@@ -389,6 +393,11 @@ Given that the non-sequential Armijo condition is checked, update the parameters
     descent condition was achieved.
 - `iter::Int64`, the current iteration of the method. The outer loop iteration.
     This is requried as it is used to overwrite `θkp1` with the previous iterate.
+
+# Returns
+
+- A boolean flag equal to `achieved_descent` to indicate whether `θkp1` is 
+    modified in-place.
 """
 function update_algorithm_parameters!(θkp1::S, optData::NonsequentialArmijoGD{T},
     achieved_descent::Bool, iter::Int64) where {T, S}
