@@ -918,17 +918,13 @@ end
 
             # create optdata for k - 1 and k
             optDatakm1 = NonsequentialArmijoGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
-                ρ=ρ, threshold=threshold, max_iterations=k-1)
-            optDatak = NonsequentialArmijoGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
-                ρ=ρ, threshold=threshold, max_iterations=k)
+                ρ=ρ, threshold=threshold, max_iterations=k-1) ## return x_{k-1}
 
-            # generate k - 1 and k
+            optDatak = NonsequentialArmijoGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
+                ρ=ρ, threshold=threshold, max_iterations=k) ## return x_k
+
+            # generate k - 1 
             xkm1 = nonsequential_armijo_gd(optDatakm1, progData)  
-            xk = nonsequential_armijo_gd(optDatak, progData)
-            
-            # Sanity check
-            @test xkm1 == optData.iter_hist[k]
-            @test xk == optData.iter_hist[k + 1]
             
             # Setting up for test - output of inner loop for iteration k
             x = copy(xkm1) 
@@ -942,13 +938,22 @@ end
                 norm(OptimizationMethods.grad(progData, xkm1)), 
                 optDatakm1.ρ, optDatakm1.δk, optDatakm1.α0k)
 
-            # test value in optDatak
+            # Generate x_k and test the optDatak 
+            xk = nonsequential_armijo_gd(optDatak, progData)
+
+            ## check gradient quantities
+            @test isapprox(optDatak.∇F_θk, 
+                OptimizationMethods.grad(progData, xkm1))
+
+            ## Check that that the algorithm updated the parameters correctly
             @test optDatak.δk == (optDatakm1.δk * .5)
-            @test optDatak.∇F_θk ≈ OptimizationMethods.grad(progData, xkm1)
             @test xk == xkm1
 
-            OptimizationMethods.grad!(progData, precomp, store, x0) 
-            @test store.grad ≈ optDatak.∇F_θk 
+            ## test field values at time k
+            @test optDatak.iter_hist[k+1] == xk
+            @test optDatak.grad_val_hist[k+1] == optDatak.grad_val_hist[k]
+            @test optDatak.grad_val_hist[k+1] ≈ 
+                norm(OptimizationMethods.grad(progData, xkm1))
         end 
 
         # Test values are correctly updated for acceptance
@@ -964,14 +969,6 @@ end
         # generate k - 1 and k
         xkm1 = nonsequential_armijo_gd(optDatakm1, progData)  
         xk = nonsequential_armijo_gd(optDatak, progData)
-        
-        # Sanity check
-        @test xkm1 == optData.iter_hist[iter + 1]
-        @test xkm1 == optDatak.iter_hist[iter + 1]
-        @test xk == optData.iter_hist[iter + 2]
-        @test xk != xkm1
-
-        @test optDatak.grad_val_hist[iter + 1] == optDatakm1.grad_val_hist[iter + 1]
 
         # Setting up for test - output of inner loop for iteration k
         x = copy(xkm1) 
@@ -985,9 +982,11 @@ end
             optDatakm1.ρ, optDatakm1.δk, optDatakm1.α0k)
         @test achieved_descent
         
+        # Update the parameters in optDatakm1
         flag = OptimizationMethods.update_algorithm_parameters!(x, optDatakm1, 
             achieved_descent, iter + 1)
         
+        # Check that optDatak matches optDatakm1
         @test flag
         @test optDatak.∇F_θk ≈ OptimizationMethods.grad(progData, xkm1)
         @test optDatak.grad_val_hist[iter + 2] == optDatakm1.norm_∇F_ψ
@@ -995,10 +994,110 @@ end
         @test optDatak.τ_lower == optDatakm1.τ_lower
         @test optDatak.τ_upper == optDatakm1.τ_upper
         @test xk == x
-        
-        # Find the last time we accept an iterate, stop 1 before it
-        # and verify that the inner loop is correct
 
+        ## test field values at time k
+        @test optDatak.iter_hist[iter+1] == xkm1
+        @test optDatak.iter_hist[iter+2] == xk
+        @test optDatak.grad_val_hist[iter+2] ≈ 
+            norm(OptimizationMethods.grad(progData, x))
+        
+        # Find window of non-accepted iterates for last accepted iterate
+        last_acceptance = stop_iteration - 1
+        while (1 < last_acceptance) && 
+                (optData.iter_hist[last_acceptance] == 
+                    optData.iter_hist[last_acceptance + 1])
+            last_acceptance -= 1
+        end
+        last_acceptance += 1
+
+        for k in last_acceptance:(stop_iteration-1)
+
+            # create optdata for k - 1 and k
+            optDatakm1 = NonsequentialArmijoGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
+                ρ=ρ, threshold=threshold, max_iterations=k-1) ## return x_{k-1}
+
+            optDatak = NonsequentialArmijoGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
+                ρ=ρ, threshold=threshold, max_iterations=k) ## return x_k
+
+            # generate k - 1 
+            xkm1 = nonsequential_armijo_gd(optDatakm1, progData)  
+            
+            # Setting up for test - output of inner loop for iteration k
+            x = copy(xkm1) 
+            OptimizationMethods.grad!(progData, precomp, store, x)
+            OptimizationMethods.inner_loop!(x, optDatakm1.iter_hist[k], 
+                optDatakm1, progData, precomp, store, (k == last_acceptance), k)
+            
+            # Test that the non sequential armijo condition is failed
+            @test !OptimizationMethods.non_sequential_armijo_condition(
+                F(x), F(xkm1), 
+                norm(OptimizationMethods.grad(progData, xkm1)), 
+                optDatakm1.ρ, optDatakm1.δk, optDatakm1.α0k)
+
+            # Generate x_k and test the optDatak 
+            xk = nonsequential_armijo_gd(optDatak, progData)
+
+            ## check gradient quantities
+            @test isapprox(optDatak.∇F_θk, 
+                OptimizationMethods.grad(progData, xkm1))
+
+            ## Check that that the algorithm updated the parameters correctly
+            @test optDatak.δk == (optDatakm1.δk * .5)
+            @test xk == xkm1
+
+            ## test field values at time k
+            @test optDatak.iter_hist[k+1] == xk
+            @test optDatak.grad_val_hist[k+1] == optDatak.grad_val_hist[k]
+            @test optDatak.grad_val_hist[k+1] ≈ 
+                norm(OptimizationMethods.grad(progData, xkm1))
+
+        end
+
+        # Test values are correctly updated for acceptance
+        iter = stop_iteration - 1
+
+        # create optdata for k - 1 and k
+        optDatakm1 = NonsequentialArmijoGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
+            ρ=ρ, threshold=threshold, max_iterations=iter) ## stop_iteration = iter
+
+        optDatak = NonsequentialArmijoGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
+            ρ=ρ, threshold=threshold, max_iterations=iter + 1) ## stop_iteration = iter + 1
+
+        # generate k - 1 and k
+        xkm1 = nonsequential_armijo_gd(optDatakm1, progData)  
+        xk = nonsequential_armijo_gd(optDatak, progData)
+
+        # Setting up for test - output of inner loop for iteration k
+        x = copy(xkm1) 
+        OptimizationMethods.grad!(progData, precomp, store, x)
+        OptimizationMethods.inner_loop!(x, optDatakm1.iter_hist[iter + 1], 
+            optDatakm1, progData, precomp, store, 
+            (stop_iteration-last_acceptance == 0), iter + 1)
+
+        # test that non sequential armijo condition is accepted  
+        achieved_descent = OptimizationMethods.non_sequential_armijo_condition(
+            F(x), F(xkm1), optDatakm1.grad_val_hist[iter + 1], 
+            optDatakm1.ρ, optDatakm1.δk, optDatakm1.α0k)
+        @test achieved_descent
+        
+        # Update the parameters in optDatakm1
+        flag = OptimizationMethods.update_algorithm_parameters!(x, optDatakm1, 
+            achieved_descent, iter + 1)
+        
+        # Check that optDatak matches optDatakm1
+        @test flag
+        @test optDatak.∇F_θk ≈ OptimizationMethods.grad(progData, xkm1)
+        @test optDatak.grad_val_hist[iter + 2] == optDatakm1.norm_∇F_ψ
+        @test optDatak.δk == optDatakm1.δk
+        @test optDatak.τ_lower == optDatakm1.τ_lower
+        @test optDatak.τ_upper == optDatakm1.τ_upper
+        @test xk == x
+
+        ## test field values at time k
+        @test optDatak.iter_hist[iter+1] == xkm1
+        @test optDatak.iter_hist[iter+2] == xk
+        @test optDatak.grad_val_hist[iter+2] ≈ 
+            norm(OptimizationMethods.grad(progData, x))
 
     end
 end
