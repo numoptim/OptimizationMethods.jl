@@ -5,7 +5,7 @@
 using OptimizationMethods
 
 progData = OptimizationMethods.LeastSquares(Float64);
-optData = OptimizationMethods.NonsequentialArmijoGD(
+optData = OptimizationMethods.NonsequentialArmijoAdaptiveGD(
     Float64;
     x0 = randn(50),
     δ0 = 1.0,

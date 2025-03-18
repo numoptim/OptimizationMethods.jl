@@ -84,7 +84,7 @@ export LipschitzApproxGD, lipschitz_approximation_gd
 export NesterovAcceleratedGD, nesterov_accelerated_gd
 export DiminishingStepGD, diminishing_step_gd
 export WeightedNormDampingGD, weighted_norm_damping_gd
-export NonsequentialArmijoGD, nonsequential_armijo_gd
+export NonsequentialArmijoAdaptiveGD, nonsequential_armijo_gd
 
 ## Helper functions for optimization methods
 include("methods/stepsize_helpers/diminishing_stepsizes.jl")
@@ -97,6 +97,7 @@ include("methods/gd_lipschitz_approximation.jl")
 include("methods/gd_nesterov_accelerated.jl")
 include("methods/gd_diminishing.jl")
 include("methods/gd_weighted_norm_damping.jl")
-include("methods/gd_non_sequential_armijo.jl")
+include("methods/gd_non_sequential_armijo_adaptive_gd.jl")
+include("methods/gd_non_sequential_armijo_fixed_gd.jl")
 
 end

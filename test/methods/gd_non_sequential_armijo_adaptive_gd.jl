@@ -156,14 +156,14 @@ end
     Random.seed!(1010)
 
     # test definition
-    @test isdefined(OptimizationMethods, :NonsequentialArmijoGD)
+    @test isdefined(OptimizationMethods, :NonsequentialArmijoAdaptiveGD)
 
     # test field values -- default names
     default_fields = [:name, :threshold, :max_iterations, :iter_hist,
         :grad_val_hist, :stop_iteration]
     let fields = default_fields
         for field_name in fields
-            @test field_name in fieldnames(NonsequentialArmijoGD)
+            @test field_name in fieldnames(NonsequentialArmijoAdaptiveGD)
         end
     end
 
@@ -172,7 +172,7 @@ end
         :α0k, :δk, :δ_upper, :ρ, :τ_lower, :τ_upper, :local_lipschitz_estimate]
     let fields = unique_fields
         for field_name in fields
-            @test field_name in fieldnames(NonsequentialArmijoGD)
+            @test field_name in fieldnames(NonsequentialArmijoAdaptiveGD)
         end
     end
 
@@ -212,7 +212,7 @@ end
             max_iterations = rand(1:100)
 
             ## build structure
-            optData = NonsequentialArmijoGD(real_type;
+            optData = NonsequentialArmijoAdaptiveGD(real_type;
                 x0 = x0,
                 δ0 = δ0,
                 δ_upper = δ_upper,
@@ -254,7 +254,7 @@ end
             δ_upper = real_type(0)
             
             ## error should occur since δ0 < 0
-            @test_throws AssertionError optData = NonsequentialArmijoGD(
+            @test_throws AssertionError optData = NonsequentialArmijoAdaptiveGD(
                 real_type;
                 x0 = x0,
                 δ0 = δ0,
@@ -267,7 +267,7 @@ end
             δ_upper = real_type(.5)
 
             ## error should occur since δ0 > δ_upper
-            @test_throws AssertionError optData = NonsequentialArmijoGD(
+            @test_throws AssertionError optData = NonsequentialArmijoAdaptiveGD(
                 real_type;
                 x0 = x0,
                 δ0 = δ0,
@@ -292,7 +292,7 @@ end
     max_iterations = rand(3:100)
 
     ## build structure
-    optData = NonsequentialArmijoGD(Float64;
+    optData = NonsequentialArmijoAdaptiveGD(Float64;
         x0 = x0,
         δ0 = δ0,
         δ_upper = δ_upper,
@@ -585,7 +585,7 @@ end
     max_iterations = rand(3:100)
 
     ## build structure
-    optData = NonsequentialArmijoGD(Float64;
+    optData = NonsequentialArmijoAdaptiveGD(Float64;
         x0 = x0,
         δ0 = δ0,
         δ_upper = δ_upper,
@@ -832,7 +832,7 @@ end
         max_iterations=0
 
         # Specify optimization method and problem
-        optData = NonsequentialArmijoGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
+        optData = NonsequentialArmijoAdaptiveGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
             ρ=ρ, threshold=threshold, max_iterations=max_iterations)
         progData = OptimizationMethods.LeastSquares(Float64, nvar=dim)
 
@@ -857,7 +857,7 @@ end
         max_iterations=max_iterations
 
         # Specify optimization method and problem
-        optData = NonsequentialArmijoGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
+        optData = NonsequentialArmijoAdaptiveGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
             ρ=ρ, threshold=threshold, max_iterations=max_iterations)
         progData = OptimizationMethods.LeastSquares(Float64, nvar=dim)
 
@@ -885,7 +885,7 @@ end
         progData = OptimizationMethods.LeastSquares(Float64, nvar=dim)
 
         # Specify optimization method for exit_iteration - 1
-        optData = NonsequentialArmijoGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
+        optData = NonsequentialArmijoAdaptiveGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
             ρ=ρ, threshold=threshold, max_iterations=max_iterations)
         
         x = nonsequential_armijo_gd(optData, progData)
@@ -917,10 +917,10 @@ end
         for k in 1:(first_acceptance-1)
 
             # create optdata for k - 1 and k
-            optDatakm1 = NonsequentialArmijoGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
+            optDatakm1 = NonsequentialArmijoAdaptiveGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
                 ρ=ρ, threshold=threshold, max_iterations=k-1) ## return x_{k-1}
 
-            optDatak = NonsequentialArmijoGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
+            optDatak = NonsequentialArmijoAdaptiveGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
                 ρ=ρ, threshold=threshold, max_iterations=k) ## return x_k
 
             # generate k - 1 
@@ -960,10 +960,10 @@ end
         iter = first_acceptance - 1
 
         # create optdata for k - 1 and k
-        optDatakm1 = NonsequentialArmijoGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
+        optDatakm1 = NonsequentialArmijoAdaptiveGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
             ρ=ρ, threshold=threshold, max_iterations=iter) ## stop_iteration = iter
 
-        optDatak = NonsequentialArmijoGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
+        optDatak = NonsequentialArmijoAdaptiveGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
             ρ=ρ, threshold=threshold, max_iterations=iter + 1) ## stop_iteration = iter + 1
 
         # generate k - 1 and k
@@ -1013,10 +1013,10 @@ end
         for k in last_acceptance:(stop_iteration-1)
 
             # create optdata for k - 1 and k
-            optDatakm1 = NonsequentialArmijoGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
+            optDatakm1 = NonsequentialArmijoAdaptiveGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
                 ρ=ρ, threshold=threshold, max_iterations=k-1) ## return x_{k-1}
 
-            optDatak = NonsequentialArmijoGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
+            optDatak = NonsequentialArmijoAdaptiveGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
                 ρ=ρ, threshold=threshold, max_iterations=k) ## return x_k
 
             # generate k - 1 
@@ -1057,10 +1057,10 @@ end
         iter = stop_iteration - 1
 
         # create optdata for k - 1 and k
-        optDatakm1 = NonsequentialArmijoGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
+        optDatakm1 = NonsequentialArmijoAdaptiveGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
             ρ=ρ, threshold=threshold, max_iterations=iter) ## stop_iteration = iter
 
-        optDatak = NonsequentialArmijoGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
+        optDatak = NonsequentialArmijoAdaptiveGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
             ρ=ρ, threshold=threshold, max_iterations=iter + 1) ## stop_iteration = iter + 1
 
         # generate k - 1 and k

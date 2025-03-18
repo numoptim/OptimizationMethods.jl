@@ -33,7 +33,7 @@ This function implements checking the inequality, where `F_ψjk` corresponds to
     `norm_grad_θk` to ``||\\dot F(\\psi_0^k)||_2``, `ρ` to ``\\rho``, 
     `δk` to ``\\delta_k``, and `α0k` to ``\\alpha_0^k``. To see more 
     about how this method is used read the documentation for 
-    [gradient descent with non-sequential armijo](@ref NonsequentialArmijoGD)
+    [gradient descent with non-sequential armijo](@ref NonsequentialArmijoAdaptiveGD)
 
 # Arguments
 
@@ -51,7 +51,7 @@ This function implements checking the inequality, where `F_ψjk` corresponds to
     conditions, and lower value indicate looser conditions.
 - `δk::T`, numeric value that corresponds to a scaling factor for the step size.
 - `α0k::T`, numeric value. In the context of 
-    [non-sequential armijo gradient descent](@ref NonsequentialArmijoGD)
+    [non-sequential armijo gradient descent](@ref NonsequentialArmijoAdaptiveGD)
     this is the first step size used in an inner loop.
 
 # Return
@@ -63,4 +63,51 @@ function non_sequential_armijo_condition(F_ψjk::T, reference_value::T,
     norm_grad_θk::T, ρ::T, δk::T, α0k::T) where {T}
 
     return (F_ψjk < reference_value - ρ * δk * α0k * (norm_grad_θk ^ 2))
+end
+
+"""
+    update_algorithm_parameters!(θkp1::S, optData::AbstractOptimizerData{T},
+        achieved_descent::Bool, iter::Int64) where {T, S}
+
+Given that the non-sequential Armijo condition is checked, update the parameters
+    the optimization method. The method updates the following variables in place.
+    
+- `θkp1` is updated to be the next outer loop iterate.
+- `optData` has (potentially) the following fields updated: `δk`, `τ_lower`,
+    `τ_upper`.
+
+# Arguments
+
+- `θkp1::S`, buffer array for the storage of the next iterate.
+- `optData::AbstractOptimizerData{T}`, `struct` that specifies the optimization
+    algorithm. 
+- `achieved_descent::Bool`, boolean flag indicating whether or not the
+    descent condition was achieved.
+- `iter::Int64`, the current iteration of the method. The outer loop iteration.
+    This is requried as it is used to overwrite `θkp1` with the previous iterate.
+
+# Returns
+
+- A boolean flag equal to `achieved_descent` to indicate whether `θkp1` is 
+    modified in-place.
+"""
+function update_algorithm_parameters!(θkp1::S, optData::AbstractOptimizerData{T},
+    achieved_descent::Bool, iter::Int64) where {T, S}
+    if !achieved_descent
+        θkp1 .= optData.iter_hist[iter]
+        optData.δk *= .5
+        return false 
+    elseif optData.norm_∇F_ψ <= optData.τ_lower
+        optData.τ_lower = optData.norm_∇F_ψ/sqrt(2) 
+        optData.τ_upper = sqrt(10) * optData.norm_∇F_ψ
+        return true
+    elseif optData.norm_∇F_ψ >= optData.τ_upper
+        optData.δk = min(1.5 * optData.δk, optData.δ_upper)
+        optData.τ_lower = optData.norm_∇F_ψ/sqrt(2) 
+        optData.τ_upper = sqrt(10) * optData.norm_∇F_ψ
+        return true
+    else
+        optData.δk = min(1.5 * optData.δk, optData.δ_upper)
+        return true
+    end 
 end

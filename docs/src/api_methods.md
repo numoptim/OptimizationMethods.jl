@@ -63,7 +63,7 @@ OptimizationMethods.stepdown_100_step_size
 
 # Gradient Descent with Non-sequential Armijo Line Search
 ```@docs
-NonsequentialArmijoGD
+NonsequentialArmijoAdaptiveGD
 
 nonsequential_armijo_gd
 ```
