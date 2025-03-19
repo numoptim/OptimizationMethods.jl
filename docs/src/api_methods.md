@@ -61,11 +61,15 @@ OptimizationMethods.inverse_log2k_step_size
 OptimizationMethods.stepdown_100_step_size
 ```
 
-# Gradient Descent with Non-sequential Armijo Line Search
+# Gradient Descent with Non-sequential Armijo Line Search 
 ```@docs
 NonsequentialArmijoAdaptiveGD
 
 nonsequential_armijo_adaptive_gd
+
+NonsequentialArmijoFixedGD
+
+nonsequential_armijo_fixed_gd
 ```
 
 The method above requires several utility functions. These are listed
@@ -86,6 +90,13 @@ OptimizationMethods.update_algorithm_parameters!
 ## Non-sequential Armijo
 ```@docs
 OptimizationMethods.non_sequential_armijo_condition
+```
+
+## Objective Cache and Maximum Value Utility
+```@docs
+OptimizationMethods.shift_left!
+
+OptimizationMethods.update_maximum
 ```
 
 # Index 

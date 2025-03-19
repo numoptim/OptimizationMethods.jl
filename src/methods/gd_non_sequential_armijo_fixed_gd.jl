@@ -21,9 +21,10 @@ A mutable struct that represents gradient descent with non-sequential armijo
 - `ρ::T`, parameter used in the non-sequential Armijo condition. Larger
     numbers indicate stricter descent conditions. Smaller numbers indicate
     less strict descent conditions.
-- `objective_hist::Vector{T}`, 
-- `reference_value::T`,
-- `reference_value_index::T`
+- `objective_hist::Vector{T}`, vector of previous accepted objective value
+    for non-monotone cache update.
+- `reference_value::T`, the maximum objective value in `objective_hist`.
+- `reference_value_index::T`, the index of the maximum value in `objective_hist`.
 - `τ_lower::T`, lower bound on the gradient interval triggering event.
 - `τ_upper::T`, upper bound on the gradient interval triggering event.
 - `threshold::T`, norm gradient tolerance condition. Induces stopping when norm 
