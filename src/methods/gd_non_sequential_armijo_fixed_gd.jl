@@ -22,6 +22,8 @@ A mutable struct that represents gradient descent with non-sequential armijo
     numbers indicate stricter descent conditions. Smaller numbers indicate
     less strict descent conditions.
 - `objective_hist::Vector{T}`, 
+- `reference_value::T`,
+- `reference_value_index::T`
 - `τ_lower::T`, lower bound on the gradient interval triggering event.
 - `τ_upper::T`, upper bound on the gradient interval triggering event.
 - `threshold::T`, norm gradient tolerance condition. Induces stopping when norm 
@@ -71,6 +73,8 @@ mutable struct NonsequentialArmijoFixedGD{T} <: AbstractOptimizerData{T}
     δ_upper::T
     ρ::T
     objective_hist::Vector{T}
+    reference_value::T
+    reference_value_index::T
     τ_lower::T
     τ_upper::T
     threshold::T
@@ -320,7 +324,8 @@ function nonsequential_armijo_gd(
     # Initialize the objective history
     M = length(optData.objective_hist)
     optData.objective_hist[M] = F(optData.iter_hist[1]) 
-    reference_value, reference_value_index = optData.objective_hist[M], M 
+    optData.reference_value, optData.reference_value_index = 
+        optData.objective_hist[M], M 
 
     while (iter < optData.max_iterations) && 
         (optData.grad_val_hist[iter + 1] > optData.threshold)
@@ -336,7 +341,7 @@ function nonsequential_armijo_gd(
         # check non-sequential armijo condition
         Fx = F(x)
         achieved_descent = 
-        OptimizationMethods.non_sequential_armijo_condition(Fx, reference_value, 
+        OptimizationMethods.non_sequential_armijo_condition(Fx, optData.reference_value, 
             optData.grad_val_hist[iter], optData.ρ, optData.δk, optData.α)
         
         # update the algorithm parameters and current iterate
@@ -348,8 +353,8 @@ function nonsequential_armijo_gd(
             # accepted case
             shift_left!(optData.objective_hist, M)
             optData.objective_hist[M] = Fx
-            reference_value, reference_value_index = 
-                update_maximum(optData.objective_hist, reference_value_index-1, M)
+            optData.reference_value, optData.reference_value_index = 
+                update_maximum(optData.objective_hist, optData.reference_value_index-1, M)
 
             optData.grad_val_hist[iter + 1] = optData.norm_∇F_ψ
         else
