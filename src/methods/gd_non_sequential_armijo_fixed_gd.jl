@@ -232,7 +232,7 @@ function inner_loop!(
 end
 
 """
-    nonsequential_armijo_gd(optData::NonsequentialArmijoFixedGD{T},
+    nonsequential_armijo_adaptive_gd(optData::NonsequentialArmijoFixedGD{T},
         progData::P where P <: AbstractNLPModel{T, S}) where {T, S}
 
 Implementation of gradient descent with non-sequential armijo and triggering
@@ -302,7 +302,7 @@ When this condition is satisfied, the following quantities are updated.
 
 - `x::S`, final iterate of the optimization algorithm.
 """
-function nonsequential_armijo_gd(
+function nonsequential_armijo_fixed_gd(
     optData::NonsequentialArmijoFixedGD{T},
     progData::P where P <: AbstractNLPModel{T, S}
 ) where {T, S}

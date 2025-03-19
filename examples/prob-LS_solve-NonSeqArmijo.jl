@@ -15,7 +15,7 @@ optData = OptimizationMethods.NonsequentialArmijoAdaptiveGD(
     max_iterations = 100
 )
 
-x = OptimizationMethods.nonsequential_armijo_gd(optData, progData);
+x = OptimizationMethods.nonsequential_armijo_adaptive_gd(optData, progData);
 
 # Compute objective and residual evals during optimization 
 obj_evals = progData.counters.neval_obj

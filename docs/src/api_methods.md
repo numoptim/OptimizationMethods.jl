@@ -65,7 +65,7 @@ OptimizationMethods.stepdown_100_step_size
 ```@docs
 NonsequentialArmijoAdaptiveGD
 
-nonsequential_armijo_gd
+nonsequential_armijo_adaptive_gd
 ```
 
 The method above requires several utility functions. These are listed

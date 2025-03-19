@@ -837,7 +837,7 @@ end
         progData = OptimizationMethods.LeastSquares(Float64, nvar=dim)
 
         # Run method
-        x = nonsequential_armijo_gd(optData, progData)
+        x = nonsequential_armijo_adaptive_gd(optData, progData)
 
         
         @test optData.stop_iteration == 0
@@ -862,7 +862,7 @@ end
         progData = OptimizationMethods.LeastSquares(Float64, nvar=dim)
 
         # Run method
-        x = nonsequential_armijo_gd(optData, progData)
+        x = nonsequential_armijo_adaptive_gd(optData, progData)
 
         @test optData.stop_iteration == 0
         @test progData.counters.neval_obj == 1 
@@ -888,7 +888,7 @@ end
         optData = NonsequentialArmijoAdaptiveGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
             ρ=ρ, threshold=threshold, max_iterations=max_iterations)
         
-        x = nonsequential_armijo_gd(optData, progData)
+        x = nonsequential_armijo_adaptive_gd(optData, progData)
         g = OptimizationMethods.grad(progData, x)
         
         stop_iteration = optData.stop_iteration 
@@ -924,7 +924,7 @@ end
                 ρ=ρ, threshold=threshold, max_iterations=k) ## return x_k
 
             # generate k - 1 
-            xkm1 = nonsequential_armijo_gd(optDatakm1, progData)  
+            xkm1 = nonsequential_armijo_adaptive_gd(optDatakm1, progData)  
             
             # Setting up for test - output of inner loop for iteration k
             x = copy(xkm1) 
@@ -939,7 +939,7 @@ end
                 optDatakm1.ρ, optDatakm1.δk, optDatakm1.α0k)
 
             # Generate x_k and test the optDatak 
-            xk = nonsequential_armijo_gd(optDatak, progData)
+            xk = nonsequential_armijo_adaptive_gd(optDatak, progData)
 
             ## check gradient quantities
             @test isapprox(optDatak.∇F_θk, 
@@ -967,8 +967,8 @@ end
             ρ=ρ, threshold=threshold, max_iterations=iter + 1) ## stop_iteration = iter + 1
 
         # generate k - 1 and k
-        xkm1 = nonsequential_armijo_gd(optDatakm1, progData)  
-        xk = nonsequential_armijo_gd(optDatak, progData)
+        xkm1 = nonsequential_armijo_adaptive_gd(optDatakm1, progData)  
+        xk = nonsequential_armijo_adaptive_gd(optDatak, progData)
 
         # Setting up for test - output of inner loop for iteration k
         x = copy(xkm1) 
@@ -1020,7 +1020,7 @@ end
                 ρ=ρ, threshold=threshold, max_iterations=k) ## return x_k
 
             # generate k - 1 
-            xkm1 = nonsequential_armijo_gd(optDatakm1, progData)  
+            xkm1 = nonsequential_armijo_adaptive_gd(optDatakm1, progData)  
             
             # Setting up for test - output of inner loop for iteration k
             x = copy(xkm1) 
@@ -1035,7 +1035,7 @@ end
                 optDatakm1.ρ, optDatakm1.δk, optDatakm1.α0k)
 
             # Generate x_k and test the optDatak 
-            xk = nonsequential_armijo_gd(optDatak, progData)
+            xk = nonsequential_armijo_adaptive_gd(optDatak, progData)
 
             ## check gradient quantities
             @test isapprox(optDatak.∇F_θk, 
@@ -1064,8 +1064,8 @@ end
             ρ=ρ, threshold=threshold, max_iterations=iter + 1) ## stop_iteration = iter + 1
 
         # generate k - 1 and k
-        xkm1 = nonsequential_armijo_gd(optDatakm1, progData)  
-        xk = nonsequential_armijo_gd(optDatak, progData)
+        xkm1 = nonsequential_armijo_adaptive_gd(optDatakm1, progData)  
+        xk = nonsequential_armijo_adaptive_gd(optDatak, progData)
 
         # Setting up for test - output of inner loop for iteration k
         x = copy(xkm1) 
