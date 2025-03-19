@@ -122,13 +122,13 @@ function NonsequentialArmijoFixedGD(
         name,                       # name
         zeros(T, d),                # ∇F_θk
         T(0),                       # norm_∇F_ψ  
-        α,                          # αk
+        α,                          # α
         δ0,                         # δk
         δ_upper,                    # δ_upper
         ρ,                          # ρ
         zeros(T, M),                # objective_hist
         T(-1),                      # reference value
-        -1,                         # index
+        -1,                         # reference value index
         T(-1),                      # τ_lower
         T(-1),                      # τ_upper
         threshold,
