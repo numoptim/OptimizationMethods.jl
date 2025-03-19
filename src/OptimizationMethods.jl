@@ -90,6 +90,7 @@ export NonsequentialArmijoFixedGD, nonsequential_armijo_fixed_gd
 ## Helper functions for optimization methods
 include("methods/stepsize_helpers/diminishing_stepsizes.jl")
 include("methods/line_search_helpers/non_sequential_armijo.jl")
+include("methods/line_search_helpers/nls_cache_util.jl")
 
 ## Source Code 
 include("methods/gd_barzilai_borwein.jl")
@@ -98,7 +99,7 @@ include("methods/gd_lipschitz_approximation.jl")
 include("methods/gd_nesterov_accelerated.jl")
 include("methods/gd_diminishing.jl")
 include("methods/gd_weighted_norm_damping.jl")
-include("methods/gd_non_sequential_armijo_adaptive_gd.jl")
-include("methods/gd_non_sequential_armijo_fixed_gd.jl")
+include("methods/gd_non_sequential_armijo_adaptive.jl")
+include("methods/gd_non_sequential_armijo_fixed.jl")
 
 end

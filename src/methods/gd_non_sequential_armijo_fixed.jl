@@ -75,7 +75,7 @@ mutable struct NonsequentialArmijoFixedGD{T} <: AbstractOptimizerData{T}
     ρ::T
     objective_hist::Vector{T}
     reference_value::T
-    reference_value_index::T
+    reference_value_index::Int64
     τ_lower::T
     τ_upper::T
     threshold::T
@@ -91,7 +91,7 @@ function NonsequentialArmijoFixedGD(
     δ0::T,
     δ_upper::T,
     ρ::T,
-    M::T,
+    M::Int64,
     threshold::T,
     max_iterations::Int64
 ) where {T}
@@ -118,7 +118,7 @@ function NonsequentialArmijoFixedGD(
     grad_val_hist::Vector{T} = Vector{T}(undef, max_iterations + 1)
     stop_iteration::Int64 = -1 # dummy value
 
-    return NonsequentialArmijoFixedGD(
+    return NonsequentialArmijoFixedGD{T}(
         name,                       # name
         zeros(T, d),                # ∇F_θk
         T(0),                       # norm_∇F_ψ  
@@ -127,6 +127,8 @@ function NonsequentialArmijoFixedGD(
         δ_upper,                    # δ_upper
         ρ,                          # ρ
         zeros(T, M),                # objective_hist
+        T(-1),                      # reference value
+        -1,                         # index
         T(-1),                      # τ_lower
         T(-1),                      # τ_upper
         threshold,
