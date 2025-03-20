@@ -27,7 +27,8 @@ Nothing
 """
 function update_algorithm_parameters_test_cases(optData::P 
     where P <: OptimizationMethods.AbstractOptimizerData{T}, dim::Int64,
-    max_iterations::Int64) where {T}
+    max_iterations::Int64; constant_fields::Vector{Symbol} = Vector{Symbol}()
+    ) where {T}
     
     ############################################################################
     # Case 1: Did not satisfy armijo condition
@@ -40,6 +41,12 @@ function update_algorithm_parameters_test_cases(optData::P
         optData.τ_upper = 1.0
         optData.δk = 1.0
 
+        ## get constant field values
+        constant_field_values = Vector{Any}()
+        for symbol in constant_fields
+            push!(constant_field_values, getfield(optData, symbol))
+        end
+
         params_update_flag = OptimizationMethods.update_algorithm_parameters!(xp1, 
             optData, achieved_descent, iter)
 
@@ -48,6 +55,18 @@ function update_algorithm_parameters_test_cases(optData::P
         @test optData.τ_upper == 1.0
         @test optData.δk == 0.5
         @test !params_update_flag
+        
+        ## test constant fields
+        i = 1
+        for symbol in constant_fields
+            if typeof(constant_field_values[i]) == String
+                @test constant_field_values[i] == getfield(optData, symbol)
+            else
+                @test constant_field_values[i] ≈ getfield(optData, symbol) 
+            end
+            i += 1
+        end
+
     end
 
     let optData = optData, achieved_descent = false, dim = dim,
@@ -59,8 +78,25 @@ function update_algorithm_parameters_test_cases(optData::P
         optData.τ_upper = 1.0 
         optData.δk = 1.0 
 
+        ## get constant field values
+        constant_field_values = Vector{Any}()
+        for symbol in constant_fields
+            push!(constant_field_values, getfield(optData, symbol))
+        end
+
         params_update_flag = OptimizationMethods.update_algorithm_parameters!(xp1, 
             optData, achieved_descent, iter)
+
+        ## test constant fields
+        i = 1
+        for symbol in constant_fields
+            if typeof(constant_field_values[i]) == String
+                @test constant_field_values[i] == getfield(optData, symbol)
+            else
+                @test constant_field_values[i] ≈ getfield(optData, symbol) 
+            end
+            i += 1
+        end
 
         @test xp1 == optData.iter_hist[iter]
         @test optData.τ_lower == 0.0 
@@ -83,8 +119,25 @@ function update_algorithm_parameters_test_cases(optData::P
         optData.norm_∇F_ψ = 0.5
         optData.δk = 1.0
 
+        ## get constant field values
+        constant_field_values = Vector{Any}()
+        for symbol in constant_fields
+            push!(constant_field_values, getfield(optData, symbol))
+        end
+
         params_update_flag = OptimizationMethods.update_algorithm_parameters!(xp1, 
             optData, achieved_descent, iter)
+
+        ## test constant fields
+        i = 1
+        for symbol in constant_fields
+            if typeof(constant_field_values[i]) == String
+                @test constant_field_values[i] == getfield(optData, symbol)
+            else
+                @test constant_field_values[i] ≈ getfield(optData, symbol) 
+            end
+            i += 1
+        end
 
         @test xp1 != optData.iter_hist[iter]
         @test xp1 == xp1_init
@@ -105,8 +158,25 @@ function update_algorithm_parameters_test_cases(optData::P
         optData.norm_∇F_ψ = 0.5
         optData.δk = 1.0 
 
+        ## get constant field values
+        constant_field_values = Vector{Any}()
+        for symbol in constant_fields
+            push!(constant_field_values, getfield(optData, symbol))
+        end
+
         params_update_flag = OptimizationMethods.update_algorithm_parameters!(xp1, 
             optData, achieved_descent, iter)
+        
+        ## test constant fields
+        i = 1
+        for symbol in constant_fields
+            if typeof(constant_field_values[i]) == String
+                @test constant_field_values[i] == getfield(optData, symbol)
+            else
+                @test constant_field_values[i] ≈ getfield(optData, symbol) 
+            end
+            i += 1
+        end
 
         @test xp1 != optData.iter_hist[iter]
         @test xp1 == xp1_init
@@ -130,8 +200,25 @@ function update_algorithm_parameters_test_cases(optData::P
         optData.δk = 1.0
         optData.δ_upper = 2.0
 
+        ## get constant field values
+        constant_field_values = Vector{Any}()
+        for symbol in constant_fields
+            push!(constant_field_values, getfield(optData, symbol))
+        end
+
         params_update_flag = OptimizationMethods.update_algorithm_parameters!(xp1, 
             optData, achieved_descent, iter)
+
+        ## test constant fields
+        i = 1
+        for symbol in constant_fields
+            if typeof(constant_field_values[i]) == String
+                @test constant_field_values[i] == getfield(optData, symbol)
+            else
+                @test constant_field_values[i] ≈ getfield(optData, symbol) 
+            end
+            i += 1
+        end
 
         @test xp1 != optData.iter_hist[iter]
         @test xp1 == xp1_init
@@ -152,8 +239,25 @@ function update_algorithm_parameters_test_cases(optData::P
         optData.δk = 1.0
         optData.δ_upper = 1.2
 
+        ## get constant field values
+        constant_field_values = Vector{Any}()
+        for symbol in constant_fields
+            push!(constant_field_values, getfield(optData, symbol))
+        end
+
         params_update_flag = OptimizationMethods.update_algorithm_parameters!(xp1, 
             optData, achieved_descent, iter)
+
+        ## test constant fields
+        i = 1
+        for symbol in constant_fields
+            if typeof(constant_field_values[i]) == String
+                @test constant_field_values[i] == getfield(optData, symbol)
+            else
+                @test constant_field_values[i] ≈ getfield(optData, symbol) 
+            end
+            i += 1
+        end
 
         @test xp1 != optData.iter_hist[iter]
         @test xp1 == xp1_init
@@ -175,8 +279,25 @@ function update_algorithm_parameters_test_cases(optData::P
         optData.δk = 1.0 
         optData.δ_upper = 2.0
 
+        ## get constant field values
+        constant_field_values = Vector{Any}()
+        for symbol in constant_fields
+            push!(constant_field_values, getfield(optData, symbol))
+        end
+
         params_update_flag = OptimizationMethods.update_algorithm_parameters!(xp1, 
             optData, achieved_descent, iter)
+
+        ## test constant fields
+        i = 1
+        for symbol in constant_fields
+            if typeof(constant_field_values[i]) == String
+                @test constant_field_values[i] == getfield(optData, symbol)
+            else
+                @test constant_field_values[i] ≈ getfield(optData, symbol) 
+            end
+            i += 1
+        end
 
         @test xp1 != optData.iter_hist[iter]
         @test xp1 == xp1_init
@@ -198,8 +319,25 @@ function update_algorithm_parameters_test_cases(optData::P
         optData.δk = 1.0 
         optData.δ_upper = 1.2
 
+        ## get constant field values
+        constant_field_values = Vector{Any}()
+        for symbol in constant_fields
+            push!(constant_field_values, getfield(optData, symbol))
+        end
+
         params_update_flag = OptimizationMethods.update_algorithm_parameters!(xp1, 
             optData, achieved_descent, iter)
+
+        ## test constant fields
+        i = 1
+        for symbol in constant_fields
+            if typeof(constant_field_values[i]) == String
+                @test constant_field_values[i] == getfield(optData, symbol)
+            else
+                @test constant_field_values[i] ≈ getfield(optData, symbol) 
+            end
+            i += 1
+        end
 
         @test xp1 != optData.iter_hist[iter]
         @test xp1 == xp1_init
@@ -223,8 +361,25 @@ function update_algorithm_parameters_test_cases(optData::P
         optData.δk = 1.0
         optData.δ_upper = 1.2
 
+        ## get constant field values
+        constant_field_values = Vector{Any}()
+        for symbol in constant_fields
+            push!(constant_field_values, getfield(optData, symbol))
+        end
+
         params_update_flag = OptimizationMethods.update_algorithm_parameters!(xp1, 
             optData, achieved_descent, iter)
+
+        ## test constant fields
+        i = 1
+        for symbol in constant_fields
+            if typeof(constant_field_values[i]) == String
+                @test constant_field_values[i] == getfield(optData, symbol)
+            else
+                @test constant_field_values[i] ≈ getfield(optData, symbol) 
+            end
+            i += 1
+        end
 
         @test xp1 != optData.iter_hist[iter]
         @test xp1 == xp1_init
@@ -245,8 +400,25 @@ function update_algorithm_parameters_test_cases(optData::P
         optData.δk = 1.0
         optData.δ_upper = 2.0
 
+        ## get constant field values
+        constant_field_values = Vector{Any}()
+        for symbol in constant_fields
+            push!(constant_field_values, getfield(optData, symbol))
+        end
+
         params_update_flag = OptimizationMethods.update_algorithm_parameters!(xp1, 
             optData, achieved_descent, iter)
+
+        ## test constant fields
+        i = 1
+        for symbol in constant_fields
+            if typeof(constant_field_values[i]) == String
+                @test constant_field_values[i] == getfield(optData, symbol)
+            else
+                @test constant_field_values[i] ≈ getfield(optData, symbol) 
+            end
+            i += 1
+        end
 
         @test xp1 != optData.iter_hist[iter]
         @test xp1 == xp1_init
@@ -268,8 +440,25 @@ function update_algorithm_parameters_test_cases(optData::P
         optData.δk = 1.0 
         optData.δ_upper = 1.2
 
+        ## get constant field values
+        constant_field_values = Vector{Any}()
+        for symbol in constant_fields
+            push!(constant_field_values, getfield(optData, symbol))
+        end
+
         params_update_flag = OptimizationMethods.update_algorithm_parameters!(xp1, 
             optData, achieved_descent, iter)
+
+        ## test constant fields
+        i = 1
+        for symbol in constant_fields
+            if typeof(constant_field_values[i]) == String
+                @test constant_field_values[i] == getfield(optData, symbol)
+            else
+                @test constant_field_values[i] ≈ getfield(optData, symbol) 
+            end
+            i += 1
+        end
 
         @test xp1 != optData.iter_hist[iter]
         @test xp1 == xp1_init
@@ -291,8 +480,25 @@ function update_algorithm_parameters_test_cases(optData::P
         optData.δk = 1.0 
         optData.δ_upper = 2.0
 
+        ## get constant field values
+        constant_field_values = Vector{Any}()
+        for symbol in constant_fields
+            push!(constant_field_values, getfield(optData, symbol))
+        end
+
         params_update_flag = OptimizationMethods.update_algorithm_parameters!(xp1, 
             optData, achieved_descent, iter)
+
+        ## test constant fields
+        i = 1
+        for symbol in constant_fields
+            if typeof(constant_field_values[i]) == String
+                @test constant_field_values[i] == getfield(optData, symbol)
+            else
+                @test constant_field_values[i] ≈ getfield(optData, symbol) 
+            end
+            i += 1
+        end
 
         @test xp1 != optData.iter_hist[iter]
         @test xp1 == xp1_init

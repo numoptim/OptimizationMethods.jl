@@ -210,7 +210,9 @@ end # end of testset
         max_iterations = max_iterations)
     
     ## Conduct test cases
-    update_algorithm_parameters_test_cases(optData, dim, max_iterations)
+    update_algorithm_parameters_test_cases(optData, dim, max_iterations;
+        constant_fields = [:name, :∇F_θk, :norm_∇F_ψ, :α, :δ_upper,
+        :ρ, :objective_hist, :reference_value, :reference_value_index])
 end
 
 @testset "Utility -- Inner Loop" begin
@@ -514,7 +516,7 @@ end
             
             # Test that the non sequential armijo condition is failed
             @test !OptimizationMethods.non_sequential_armijo_condition(
-                F(x), F(xkm1), 
+                F(x), optDatakm1.reference_value, 
                 norm(OptimizationMethods.grad(progData, xkm1)), 
                 optDatakm1.ρ, optDatakm1.δk, optDatakm1.α)
 
@@ -530,6 +532,9 @@ end
             @test xk == xkm1
 
             ## test field values at time k
+            @test optDatak.reference_value == maximum(optDatak.objective_hist)
+            @test optDatak.objective_hist[optDatak.reference_value_index] ==
+                optDatak.reference_value
             @test optDatak.iter_hist[k+1] == xk
             @test optDatak.grad_val_hist[k+1] == optDatak.grad_val_hist[k]
             @test optDatak.grad_val_hist[k+1] ≈ 
@@ -560,13 +565,20 @@ end
 
         # test that non sequential armijo condition is accepted  
         achieved_descent = OptimizationMethods.non_sequential_armijo_condition(
-            F(x), F(xkm1), optDatakm1.grad_val_hist[iter + 1], 
+            F(x),  optDatakm1.reference_value, optDatakm1.grad_val_hist[iter + 1], 
             optDatakm1.ρ, optDatakm1.δk, optDatakm1.α)
         @test achieved_descent
         
         # Update the parameters in optDatakm1
         flag = OptimizationMethods.update_algorithm_parameters!(x, optDatakm1, 
             achieved_descent, iter + 1)
+        
+        # update the cache at time k - 1
+        OptimizationMethods.shift_left!(optDatakm1.objective_hist, M)
+        optDatakm1.objective_hist[M] = F(x)
+        optDatakm1.reference_value, optDatakm1.reference_value_index =
+            OptimizationMethods.update_maximum(optDatakm1.objective_hist, 
+            optDatakm1.reference_value_index - 1, M)
         
         # Check that optDatak matches optDatakm1
         @test flag
@@ -578,6 +590,11 @@ end
         @test xk == x
 
         ## test field values at time k
+        @test optDatak.reference_value == maximum(optDatak.objective_hist)
+        @test optDatak.objective_hist[optDatak.reference_value_index] ==
+            optDatak.reference_value
+        @test optDatak.reference_value == optDatakm1.reference_value
+        @test optDatak.reference_value_index == optDatakm1.reference_value_index
         @test optDatak.iter_hist[iter+1] == xkm1
         @test optDatak.iter_hist[iter+2] == xk
         @test optDatak.grad_val_hist[iter+2] ≈ 
@@ -614,7 +631,7 @@ end
             
             # Test that the non sequential armijo condition is failed
             @test !OptimizationMethods.non_sequential_armijo_condition(
-                F(x), F(xkm1), 
+                F(x), optDatakm1.reference_value, 
                 norm(OptimizationMethods.grad(progData, xkm1)), 
                 optDatakm1.ρ, optDatakm1.δk, optDatakm1.α)
 
@@ -630,6 +647,9 @@ end
             @test xk == xkm1
 
             ## test field values at time k
+            @test optDatak.reference_value == maximum(optDatak.objective_hist)
+            @test optDatak.objective_hist[optDatak.reference_value_index] ==
+                optDatak.reference_value
             @test optDatak.iter_hist[k+1] == xk
             @test optDatak.grad_val_hist[k+1] == optDatak.grad_val_hist[k]
             @test optDatak.grad_val_hist[k+1] ≈ 
@@ -661,13 +681,20 @@ end
 
         # test that non sequential armijo condition is accepted  
         achieved_descent = OptimizationMethods.non_sequential_armijo_condition(
-            F(x), F(xkm1), optDatakm1.grad_val_hist[iter + 1], 
+            F(x), optDatakm1.reference_value, optDatakm1.grad_val_hist[iter + 1], 
             optDatakm1.ρ, optDatakm1.δk, optDatakm1.α)
         @test achieved_descent
         
         # Update the parameters in optDatakm1
         flag = OptimizationMethods.update_algorithm_parameters!(x, optDatakm1, 
             achieved_descent, iter + 1)
+
+        # update the cache at time k - 1
+        OptimizationMethods.shift_left!(optDatakm1.objective_hist, M)
+        optDatakm1.objective_hist[M] = F(x)
+        optDatakm1.reference_value, optDatakm1.reference_value_index =
+            OptimizationMethods.update_maximum(optDatakm1.objective_hist, 
+            optDatakm1.reference_value_index - 1, M)
         
         # Check that optDatak matches optDatakm1
         @test flag
@@ -679,6 +706,11 @@ end
         @test xk == x
 
         ## test field values at time k
+        @test optDatak.reference_value == maximum(optDatak.objective_hist)
+        @test optDatak.objective_hist[optDatak.reference_value_index] ==
+            optDatak.reference_value
+        @test optDatak.reference_value == optDatakm1.reference_value
+        @test optDatak.reference_value_index == optDatakm1.reference_value_index
         @test optDatak.iter_hist[iter+1] == xkm1
         @test optDatak.iter_hist[iter+2] == xk
         @test optDatak.grad_val_hist[iter+2] ≈ 
