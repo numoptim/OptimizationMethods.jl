@@ -8,8 +8,9 @@
     NonsequentialArmijoAdaptiveGD{T} <: AbstractOptimizerData{T}
 
 A mutable struct that represents gradient descent with non-sequential armijo
-    line search and triggering events. It stores the specification for the
-    method and records values during iteration.
+    line search and triggering events. The inner loop carries uses an
+    adaptive step size and negative gradient steps. This struct stores the 
+    specification for the method and records values during iteration.
 
 # Fields
 
@@ -285,7 +286,8 @@ end
         progData::P1 where P1 <: AbstractNLPModel{T, S}, 
         precomp::P2 where P2 <: AbstractPrecompute{T}, 
         store::P3 where P3 <: AbstractProblemAllocate{T}, 
-        past_acceptance::Bool, k::Int64; max_iteration = 100) where {T, S}
+        past_acceptance::Bool, k::Int64; 
+        radius = 10, max_iteration = 100) where {T, S}
 
 Conduct the inner loop iteration, modifying `ψjk`, `optData`, and
 `store` in place. `ψjk` gets updated to be the terminal iterate of the inner loop;
@@ -299,7 +301,6 @@ Let ``\\theta_{k}`` for ``k + 1 \\in\\mathbb{N}`` be the ``k^{th}`` iterate
 of the optimization algorithm. Let ``\\delta_{k}, 
 \\tau_{\\mathrm{grad},\\mathrm{lower}}^k, \\tau_{\\mathrm{grad},\\mathrm{upper}}^k``
 be the ``k^{th}`` parameters for the optimization method. 
-The ``k+1^{th}`` iterate and parameters are produced by the following procedure. 
 
 Let ``\\psi_0^k = \\theta_k``, then this method computes
 ```math
@@ -335,6 +336,8 @@ by `compute_step_size(...)`.
 
 ## Optional Keyword Arguments
 
+- `radius = 10`, the radius of the bounding ball event. Should be kept at `10`,
+    however we allow it to be a parameter for future purposes.
 - `max_iteration = 100`, maximum number of allowable iteration of the inner loop.
     Should be kept at `100` as that is what is specified in the paper, but
     is useful to change for testing.

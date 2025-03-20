@@ -87,7 +87,7 @@ OptimizationMethods.update_algorithm_parameters!
 
 # Line search Helper Functions
 
-## Non-sequential Armijo
+## Non-sequential Armijo Line Search
 ```@docs
 OptimizationMethods.non_sequential_armijo_condition
 ```
