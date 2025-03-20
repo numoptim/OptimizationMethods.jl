@@ -41,8 +41,8 @@ A mutable struct that represents gradient descent with non-sequential armijo
 
 # Constructors
 
-    NonsequentialArmijoFixedGD(::Type{T}; x0::Vector{T}, δ0::T, δ_upper::T, ρ::T,
-        threshold::T, max_iterations::Int64) where {T}
+    NonsequentialArmijoFixedGD(::Type{T}; x0::Vector{T}, α::T, δ0::T, δ_upper::T,
+        ρ::T, M::Int64, threshold::T, max_iterations::Int64) where {T}
 
 Constructs an instance of type `NonsequentialArmijoFixedGD{T}`.
 
@@ -60,6 +60,8 @@ Constructs an instance of type `NonsequentialArmijoFixedGD{T}`.
 - `ρ::T`, parameter used in the non-sequential Armijo condition. Larger
     numbers indicate stricter descent conditions. Smaller numbers indicate
     less strict descent conditions.
+- `M::Int64`, number of objective function values from accepted iterates utilized
+    in the non-monotone cache.
 - `threshold::T`, norm gradient tolerance condition. Induces stopping when norm 
     at most `threshold`.
 - `max_iterations::Int64`, max number of iterates that are produced, not 
@@ -148,10 +150,11 @@ end
         progData::P1 where P1 <: AbstractNLPModel{T, S}, 
         precomp::P2 where P2 <: AbstractPrecompute{T}, 
         store::P3 where P3 <: AbstractProblemAllocate{T}, 
-        k::Int64; max_iteration = 100) where {T, S}
+        k::Int64; radius = 10, max_iteration = 100) where {T, S}
 
 Conduct the inner loop iteration, modifying `ψjk`, `optData`, and
 `store` in place. `ψjk` gets updated to be the terminal iterate of the inner loop.
+This inner loop function uses a constant step size and negative gradient steps.
 
 # Method
 
@@ -161,7 +164,6 @@ of the optimization algorithm. Let ``\\delta_{k},
 \\tau_{\\mathrm{grad},\\mathrm{lower}}^k, \\tau_{\\mathrm{grad},\\mathrm{upper}}^k``
 be the ``k^{th}`` parameters for the optimization method. Let ``\\alpha`` be 
 a user defined step size that remains fixed.
-The ``k+1^{th}`` iterate and parameters are produced by the following procedure. 
 
 Let ``\\psi_0^k = \\theta_k``, then this method returns
 ```math
