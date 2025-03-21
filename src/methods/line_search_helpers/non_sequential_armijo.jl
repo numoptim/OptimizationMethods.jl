@@ -32,7 +32,10 @@ is a reference value (e.g., ``\\mathcal{O}_k = F(\\theta_k)``).
 This function implements checking the inequality, where `F_ψjk` corresponds to
     ``F(\\psi_j^k)``, `reference_value` corresponds to ``\\mathcal{O}_k``,
     `norm_grad_θk` to ``||\\dot F(\\psi_0^k)||_2``, `ρ` to ``\\rho``, 
-    `δk` to ``\\delta_k``, and `α0k` to ``\\alpha_0^k``. 
+    `δk` to ``\\delta_k``, and `α0k` to ``\\alpha_0^k``.
+    
+To see a list of methods that use this function check out
+    [Non-sequential Armijo Line Search with Event Triggered Objective Evaluations](@ref)
 
 # Arguments
 

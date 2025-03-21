@@ -42,9 +42,9 @@ NesterovAcceleratedGD
 
 # Gradient Descent with Diminishing Step Size
 ```@docs
-DiminishingStepGD
-
 diminishing_step_gd
+
+DiminishingStepGD
 ```
 
 Below is a list of step size functions that are in the library.
@@ -65,13 +65,13 @@ OptimizationMethods.stepdown_100_step_size
 
 ## First Order Methods
 ```@docs
-NonsequentialArmijoAdaptiveGD
-
 nonsequential_armijo_adaptive_gd
 
-NonsequentialArmijoFixedGD
+NonsequentialArmijoAdaptiveGD
 
 nonsequential_armijo_fixed_gd
+
+NonsequentialArmijoFixedGD
 ```
 
 The methods above require several utility functions. These are listed
