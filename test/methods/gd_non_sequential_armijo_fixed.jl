@@ -584,7 +584,7 @@ end
                 OptimizationMethods.shift_left!(optDatakm1.objective_hist, M)
                 optDatakm1.objective_hist[M] = F(x)
                 optDatakm1.reference_value, optDatakm1.reference_value_index =
-                    OptimizationMethods.update_maximum(optDatakm1.objective_hist, 
+                    OptimizationMethods.update_maximum_of_shifted_array(optDatakm1.objective_hist, 
                     optDatakm1.reference_value_index - 1, M)
                 
                 # Check that optDatak matches optDatakm1
@@ -700,7 +700,7 @@ end
                 OptimizationMethods.shift_left!(optDatakm1.objective_hist, M)
                 optDatakm1.objective_hist[M] = F(x)
                 optDatakm1.reference_value, optDatakm1.reference_value_index =
-                    OptimizationMethods.update_maximum(optDatakm1.objective_hist, 
+                    OptimizationMethods.update_maximum_of_shifted_array(optDatakm1.objective_hist, 
                     optDatakm1.reference_value_index - 1, M)
                 
                 # Check that optDatak matches optDatakm1

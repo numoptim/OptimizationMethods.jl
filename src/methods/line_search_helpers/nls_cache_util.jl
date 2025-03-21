@@ -38,19 +38,20 @@ function shift_left!(array::Vector{T}, sz::Int) where {T}
 end
 
 """
-    update_maximum(array::Vector{T}, previous_max_index::Int64,
+    update_maximum_of_shifted_array(array::Vector{T}, previous_max_index::Int64,
         sz::Int) where {T}
 
 Given `array`, find the maximum value given that the elements of `array`
-where shifted left and a new element was added at `sz`. The previous maximum 
-should have position `previous_max_index` in `array`; however, this could be
-an invalid index for `array`.
+where shifted left and a new element was added at `sz`. The argument
+`previous_max_index` is the position of the maximum before the elements
+where shifted left minus one. For example, if the maximum was in position
+`1` before the shift operation, then `previous_max_index == 0`. 
 
 # Arguments
 
 - `array::Vector{T}`, vector of values of type `T`.
-- `previous_max_index::Int64`, index of the maximum value given that
-    the elements were shifted left to add a new element at `sz`
+- `previous_max_index::Int64`, index of the maximum value before the shift
+    operation minus one.
 - `sz::Int`, size of `array`.
 
 # Return
@@ -58,7 +59,7 @@ an invalid index for `array`.
 - `value::T`, value of the maximum of the array.
 - `index::Int64`, index of the maximum of the array.
 """
-function update_maximum(
+function update_maximum_of_shifted_array(
     array::Vector{T},
     previous_max_index::Int64,
     sz::Int

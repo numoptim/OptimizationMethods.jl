@@ -8,7 +8,8 @@ using OptimizationMethods, Test
 """
     update_algorithm_parameters_test_cases(optData::P 
         where P <: OptimizationMethods.AbstractOptimizerData{T}, dim::Int64,
-        max_iterations::Int64) where {T}
+        max_iterations::Int64; constant_fields::Vector{Symbol} = 
+        Vector{Symbol}()) where {T}
 
 Test cases for updating the parameters of a nonsequential armijo method.
 
@@ -20,6 +21,12 @@ Test cases for updating the parameters of a nonsequential armijo method.
     the `struct` `optData`. Used for testing.
 - `max_iterations::Int64`, value that was used to initialize the `struct` `optData`.
     Used for testing.
+
+## Keyword Arguments
+
+- `constant_fields::Vector{Symbol} = Vector{Symbol}()`, the fields that should
+    remain constant after this operation, and that need to be tested for such
+    property.
 
 # Returns
 

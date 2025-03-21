@@ -32,11 +32,11 @@ let dimensions = dim
 end
 
 ################################################################################
-# Test cases for update_maximum(...)
+# Test cases for update_maximum_of_shifted_array(...)
 ################################################################################
 
 # test definition
-@test isdefined(OptimizationMethods, :update_maximum)
+@test isdefined(OptimizationMethods, :update_maximum_of_shifted_array)
 
 dim = [1, 10, 100]
 let dimensions = dim
@@ -52,7 +52,8 @@ let dimensions = dim
         array[dim] = new_value
 
         # find the new maximum
-        output = OptimizationMethods.update_maximum(array, max_index - 1, dim)
+        output = OptimizationMethods.update_maximum_of_shifted_array(array, 
+            max_index - 1, dim)
 
         # test cases
         @test length(output) == 2

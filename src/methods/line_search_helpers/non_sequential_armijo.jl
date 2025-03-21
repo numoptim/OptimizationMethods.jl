@@ -21,19 +21,18 @@ for some ``T \\in \\mathbb{N}``, recursively define
     \\psi_j^k = \\psi_0^k - \\sum_{t = 0}^{j-1} \\delta_k \\alpha_t^k \\dot F(\\psi_t^k).
 ```
 
-Then, the (monotone) non-sequential armijo condition requires that
+Then, the non-sequential armijo condition requires that
 
 ```math
-    F(\\psi_j^k) < F(\\psi_0^k) - \\rho \\delta_k \\alpha_0^k ||\\dot F(\\psi_0^k)||_2^2,
+    F(\\psi_j^k) < \\mathcal{O}_k - \\rho \\delta_k \\alpha_0^k ||\\dot F(\\psi_0^k)||_2^2,
 ```
-where ``||\\cdot||_2`` is the L2-norm and ``\\rho \\in (0, 1)``.
+where ``||\\cdot||_2`` is the L2-norm, ``\\rho \\in (0, 1)``, and ``\\mathcal{O}_k``
+is a reference value (e.g., ``\\mathcal{O}_k = F(\\theta_k)``).
 
 This function implements checking the inequality, where `F_ψjk` corresponds to
-    ``F(\\psi_j^k)``, `reference_value` corresponds to ``F(\\psi_0^k)``,
+    ``F(\\psi_j^k)``, `reference_value` corresponds to ``\\mathcal{O}_k``,
     `norm_grad_θk` to ``||\\dot F(\\psi_0^k)||_2``, `ρ` to ``\\rho``, 
-    `δk` to ``\\delta_k``, and `α0k` to ``\\alpha_0^k``. To see more 
-    about how this method is used read the documentation for 
-    [gradient descent with non-sequential armijo](@ref NonsequentialArmijoAdaptiveGD)
+    `δk` to ``\\delta_k``, and `α0k` to ``\\alpha_0^k``. 
 
 # Arguments
 
@@ -69,8 +68,10 @@ end
     update_algorithm_parameters!(θkp1::S, optData::AbstractOptimizerData{T},
         achieved_descent::Bool, iter::Int64) where {T, S}
 
-Given that the non-sequential Armijo condition is checked, update the parameters
-    the optimization method. The method updates the following variables in place.
+Update the parameters of a non-sequential Armijo with event driven 
+    objective function evaluations after checking the non-sequential Armijo
+    descent condition. To see a list of compatible methods, check
+    [Non-sequential Armijo Line Search with Event Triggered Objective Evaluations](@ref)
     
 - `θkp1` is updated to be the next outer loop iterate.
 - `optData` has (potentially) the following fields updated: `δk`, `τ_lower`,

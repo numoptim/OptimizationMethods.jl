@@ -241,8 +241,9 @@ end
         progData::P where P <: AbstractNLPModel{T, S}) where {T, S}
 
 Implementation of gradient descent with non-sequential armijo and triggering
-    events. The optimization algorithm is specified through `optData`, and
-    applied to the problem `progData`.
+    events. The inner loop is composed of a constant step size and negative
+    gradient directions. The optimization algorithm is specified through 
+    `optData`, and applied to the problem `progData`.
 
 # Method
 
@@ -360,7 +361,8 @@ function nonsequential_armijo_fixed_gd(
             shift_left!(optData.objective_hist, M)
             optData.objective_hist[M] = Fx
             optData.reference_value, optData.reference_value_index = 
-                update_maximum(optData.objective_hist, optData.reference_value_index-1, M)
+                update_maximum_of_shifted_array(optData.objective_hist, 
+                    optData.reference_value_index-1, M)
 
             optData.grad_val_hist[iter + 1] = optData.norm_∇F_ψ
         else
