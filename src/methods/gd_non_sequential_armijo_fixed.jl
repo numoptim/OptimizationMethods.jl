@@ -237,7 +237,7 @@ function inner_loop!(
 end
 
 """
-    nonsequential_armijo_adaptive_gd(optData::NonsequentialArmijoFixedGD{T},
+    nonsequential_armijo_fixed_gd(optData::NonsequentialArmijoFixedGD{T},
         progData::P where P <: AbstractNLPModel{T, S}) where {T, S}
 
 Implementation of gradient descent with non-sequential armijo and triggering
@@ -250,7 +250,8 @@ In what follows, we let ``||\\cdot||_2`` denote the L2-norm.
 Let ``\\theta_{k}`` for ``k + 1 \\in\\mathbb{N}`` be the ``k^{th}`` iterate
 of the optimization algorithm. Let ``\\delta_{k}, 
 \\tau_{\\mathrm{grad},\\mathrm{lower}}^k, \\tau_{\\mathrm{grad},\\mathrm{upper}}^k``
-be the ``k^{th}`` parameters for the optimization method. 
+be the ``k^{th}`` parameters for the optimization method. Let ``\\alpha`` be
+a user selected constant step size.
 The ``k+1^{th}`` iterate and parameters are produced by the following procedure. 
 
 Let ``\\psi_0^k = \\theta_k``, and recursively define
@@ -293,7 +294,7 @@ When this condition is satisfied, the following quantities are updated.
 
 # Arguments
 
-- `optData::NesterovAcceleratedGD{T}`, the specification for the optimization 
+- `optData::NonsequentialArmijoFixedGD{T}`, the specification for the optimization 
     method.
 - `progData<:AbstractNLPModel{T,S}`, the specification for the optimization
     problem.

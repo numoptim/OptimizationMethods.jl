@@ -460,7 +460,7 @@ When this condition is satisfied, the following quantities are updated.
 
 # Arguments
 
-- `optData::NesterovAcceleratedGD{T}`, the specification for the optimization 
+- `optData::NonsequentialArmijoAdaptiveGD{T}`, the specification for the optimization 
     method.
 - `progData<:AbstractNLPModel{T,S}`, the specification for the optimization
     problem.
