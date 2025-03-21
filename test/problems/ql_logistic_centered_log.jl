@@ -29,29 +29,31 @@ using Test, OptimizationMethods, Random
 
     # Test Custom Field Names 
     for name in [:mean, :mean_first_derivative, :mean_second_derivative,
-        :variance, :variance_first_derivative, :weighted_residual]
+        :variance, :variance_first_derivative, :weighted_residual, :p, :c, :d]
         @test name in fieldnames(OptimizationMethods.QLLogisticCenteredLog)
     end
 
     # Test Simulated Data Constructor
     let real_types = [Float16, Float32, Float64], nobs_default = 1000,
-        nvar_default = 50, p_default = 2, c_default = 2
+        nvar_default = 50, p_default = 2, c_default = 2, d_default = 2
 
         for real_type in real_types 
             # Check Assertion
             @test_throws AssertionError OptimizationMethods.QLLogisticCenteredLog(
                 real_type, nobs=-1, nvar=nvar_default,
                 p = real_type(p_default),
-                c = real_type(c_default))
+                c = real_type(c_default),
+                d = real_type(d_default))
             @test_throws AssertionError OptimizationMethods.QLLogisticCenteredLog(
                 real_type, nobs=nobs_default, nvar=-1,
                 p = real_type(p_default),
-                c = real_type(c_default))
+                c = real_type(c_default),
+                d = real_type(d_default))
 
             #Generate Random Problem 
             progData = OptimizationMethods.QLLogisticCenteredLog(real_type, nobs=nobs_default, 
                 nvar=nvar_default, p = real_type(p_default), 
-                c = real_type(c_default))
+                c = real_type(c_default), d = real_type(d_default))
 
             # Check design type and dimensions 
             @test typeof(progData.design) == Matrix{real_type}
@@ -72,6 +74,10 @@ using Test, OptimizationMethods, Random
             # Check c
             @test typeof(progData.c) == real_type
             @test progData.c == c_default
+
+            # Check d
+            @test typeof(progData.d) == real_type
+            @test progData.d == d_default
         end
     end
 

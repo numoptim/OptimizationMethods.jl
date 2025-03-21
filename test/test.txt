@@ -12,14 +12,12 @@ methods/gd_lipschitz_approximation.jl
 methods/gd_weighted_norm_damping.jl
 methods/gd_nesterov_accelerated.jl
 methods/gd_diminishing.jl
+methods/gd_non_sequential_armijo.jl
 problems/regression_helpers/link_functions.jl
 problems/regression_helpers/link_function_derivatives.jl
 problems/regression_helpers/variance_functions.jl
-<<<<<<< HEAD
+problems/regression_helpers/variance_function_derivatives.jl
 methods/stepsize_helpers/diminishing_stepsizes.jl
 methods/line_search_helpers/backtracking.jl
 methods/line_search_helpers/nls_cache_util.jl
-=======
-problems/regression_helpers/variance_function_derivatives.jl
-methods/stepsize_helpers/diminishing_stepsizes.jl
->>>>>>> main
+methods/line_search_helpers/non_sequential_armijo.jl

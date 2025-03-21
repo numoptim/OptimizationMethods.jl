@@ -77,6 +77,26 @@ fixed_step_nls_maxval_gd
 FixedStepNLSMaxValGD
 ```
 
+# Gradient Descent with Non-sequential Armijo Line Search
+```@docs
+NonsequentialArmijoGD
+
+nonsequential_armijo_gd
+```
+
+The method above requires several utility functions. These are listed
+below.
+
+```@docs
+OptimizationMethods.update_local_lipschitz_approximation
+
+OptimizationMethods.compute_step_size
+
+OptimizationMethods.inner_loop!
+
+OptimizationMethods.update_algorithm_parameters!
+```
+
 # Line search Helper Functions
 
 ## Backtracking
@@ -89,6 +109,11 @@ OptimizationMethods.backtracking!
 OptimizationMethods.shift_left!
 
 OptimizationMethods.update_maximum
+```
+
+## Non-sequential Armijo
+```@docs
+OptimizationMethods.non_sequential_armijo_condition
 ```
 
 # Index 
