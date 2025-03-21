@@ -103,7 +103,7 @@ include("methods/gd_nesterov_accelerated.jl")
 include("methods/gd_diminishing.jl")
 include("methods/gd_weighted_norm_damping.jl")
 include("methods/gd_backtracking.jl")
-include("methods/gd_fixed_nls_gd.jl")
+include("methods/gd_fixed_nls.jl")
 include("methods/gd_non_sequential_armijo.jl")
 
 end
