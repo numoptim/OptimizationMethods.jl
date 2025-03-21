@@ -2,6 +2,10 @@ problems/least_squares.jl
 problems/logistic_regression.jl
 problems/poisson_regression.jl
 problems/ql_logistic_sin.jl
+problems/ql_logistic_centered_exp.jl
+problems/ql_logistic_centered_log.jl
+problems/ql_logistic_monomial.jl
+problems/quasi_likelihood.jl
 methods/gd_fixed.jl
 methods/gd_barzilai_borwein.jl
 methods/gd_lipschitz_approximation.jl
@@ -11,6 +15,11 @@ methods/gd_diminishing.jl
 problems/regression_helpers/link_functions.jl
 problems/regression_helpers/link_function_derivatives.jl
 problems/regression_helpers/variance_functions.jl
+<<<<<<< HEAD
 methods/stepsize_helpers/diminishing_stepsizes.jl
 methods/line_search_helpers/backtracking.jl
 methods/line_search_helpers/nls_cache_util.jl
+=======
+problems/regression_helpers/variance_function_derivatives.jl
+methods/stepsize_helpers/diminishing_stepsizes.jl
+>>>>>>> main
