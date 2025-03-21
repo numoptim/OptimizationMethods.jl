@@ -401,7 +401,7 @@ end
             x0 = randn(dim)
             α = abs(randn())
             δ0 = abs(randn())
-            δ_upper = abs(randn()) + 2 
+            δ_upper = δ0 + 2 
             ρ = abs(randn()) * 1e-3
             threshold = 1e-3
             max_iterations = 100 
