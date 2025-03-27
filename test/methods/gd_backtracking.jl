@@ -141,6 +141,7 @@ using Test, OptimizationMethods, LinearAlgebra, Random
 
         # output after one step
         
+        backtracking_gd(optData, progData)
 
         ## TODO - test that either x1 fails the backtracking 
         ## condition or it succeeds
@@ -158,26 +159,28 @@ using Test, OptimizationMethods, LinearAlgebra, Random
         # Compute right-hand side of backtracking condition
         rhs = F_x0 - optData.ρ * optData.α * norm(grad_x0)^2
 
+
         # Test that either x1 satisfies the backtracking condition or it is rejected
+
+        
         @test (F_x1 <= rhs) || (x1 == x0)
 
        
         ## TODO - test that the iteration history is correct
+    
 
-        
+        @test optData.iter_hist[1] == x0
+       
 
-
-
-
+            
         ## TODO - test that the gradient value history is correct
 
-    
+        @test optData.grad_val_hist[1] ≈ norm(grad_x0)
 
 
         ## TODO - test that the stop iteration is correct
 
-        # Ensure stop_iteration is correctly set
-        @test optData.stop_iteration <= max_iterations
+        @test optData.stop_iteration < optData.max_iterations 
 
        
     end
@@ -213,14 +216,17 @@ using Test, OptimizationMethods, LinearAlgebra, Random
             max_iterations = max_iterations
         )
 
-
+        # Run the gradient descent with backtracking
+        backtracking_gd(optData, progData)
 
 
         ## TODO - test that the stop iteration is correct
+
         @test 0 < optData.stop_iteration <= max_iterations
 
 
         ## TODO - test that xk was updated correctly (e.g., by using backtracking! on xkm1)
+        
         xkm1 = optData.iter_hist[k]
         xk = optData.iter_hist[k+1]
         grad_xkm1 = OptimizationMethods.grad(progData, xkm1)
@@ -232,18 +238,20 @@ using Test, OptimizationMethods, LinearAlgebra, Random
         @test F_xk <= rhs || xk == xkm1
 
 
-
-
         ## TODO - test that the gradient value is correct at stop_iteration and
         ## stop_iteration + 1
 
         grad_xk = OptimizationMethods.grad(progData, xk)
-        @test optData.grad_val_hist[optData.stop_iteration + 1] ≈ norm(grad_xk) atol=1e-9
+
+        @test optData.grad_val_hist[optData.stop_iteration + 1] ≈ norm(grad_xk) 
+        atol=1e-9
+
         grad_xkm1 = OptimizationMethods.grad(progData, xkm1)
-        @test optData.grad_val_hist[optData.stop_iteration] ≈ norm(grad_xkm1) atol=1e-9
 
+        @test optData.grad_val_hist[optData.stop_iteration] ≈ norm(grad_xkm1) 
+        atol=1e-9
 
-   
+        
         
 
     end
