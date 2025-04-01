@@ -61,7 +61,9 @@ include("problems/least_squares.jl")
 include("problems/logistic_regression.jl")
 include("problems/poisson_regression.jl")
 include("problems/ql_logistic_sin.jl")
-
+include("problems/ql_logistic_centered_exp.jl")
+include("problems/ql_logistic_centered_log.jl")
+include("problems/ql_logistic_monomial.jl")
 
 ################################################################################
 # Optimization Methods 
@@ -83,10 +85,12 @@ export NesterovAcceleratedGD, nesterov_accelerated_gd
 export DiminishingStepGD, diminishing_step_gd
 export WeightedNormDampingGD, weighted_norm_damping_gd
 export BacktrackingGD, backtracking_gd
+export NonsequentialArmijoGD, nonsequential_armijo_gd
 
 ## Helper functions for optimization methods
 include("methods/stepsize_helpers/diminishing_stepsizes.jl")
 include("methods/line_search_helpers/backtracking.jl")
+include("methods/line_search_helpers/non_sequential_armijo.jl")
 
 ## Source Code 
 include("methods/gd_barzilai_borwein.jl")
@@ -96,5 +100,6 @@ include("methods/gd_nesterov_accelerated.jl")
 include("methods/gd_diminishing.jl")
 include("methods/gd_weighted_norm_damping.jl")
 include("methods/gd_backtracking.jl")
+include("methods/gd_non_sequential_armijo.jl")
 
 end
