@@ -4,11 +4,11 @@
 # with the barzilai borwein step size
 
 """
-    NonsequentialArmijoBBGD{T} <: AbstractOptimizerData{T}
+    NonsequentialArmijoSafeBBGD{T} <: AbstractOptimizerData{T}
 
 A mutable struct that represents gradient descent with non-sequential armijo
-    line search and triggering events. The inner loop is composed of a fixed
-    step size and negative gradient directions.
+    line search and triggering events. The inner loop is composed of negative
+    gradient directions, and a safe-guarded Barzilai-Borwein step size. 
 
 # Fields
 
@@ -16,19 +16,21 @@ A mutable struct that represents gradient descent with non-sequential armijo
 - `∇F_θk::Vector{T}`, buffer array for the gradient of the initial inner
     loop iterate.
 - `norm_∇F_ψ::T`, norm of the gradient of the current inner loop iterate.
-- `init_stepsize::T`, initial step size used to form Barzilai-Borwein
-    step size.
+- `init_stepsize::T`, initial step size used to start the Barzilai-Borwein
+    method.
 - `bb_step_size::Function`, Barzilai-Borwein step size function. See
-    [OptimizationMethods.bb_long_step_size](@ref) and
-    [OptimizationMethods.bb_short_step_size](@ref).
+    [the long step size function](@ref OptimizationMethods.bb_long_step_size) and
+    [the short step size function](@ref OptimizationMethods.bb_short_step_size).
+- `α0k::T`, initial step size used in the inner loop. Used in the non-monotone
+    non-sequential Armijo condition.
 - `α_lower::T`, lower bound on the step size.
 - `α_upper::T`, upper bound on the step size.
 - `iter_diff_checkpoint::Vector{T}`, buffer array for difference between
-    iterates before the inner loop. Values are saved because of 
+    iterates before the start of an inner loop. Values are saved because of 
     potential restarts.
 - `grad_diff_checkpoint::Vector{T}`, buffar array for difference between
-    gradients before the inner loop. Values are saved because of potential
-    restarts.
+    gradients before the start of an inner loop. Values are saved because of 
+    potential restarts.
 - `iter_diff::Vector{T}`, buffer array for difference between iterates 
     used to calculate the step size.
 - `grad_diff::Vector{T}`, buffer array for difference between gradients
@@ -38,13 +40,14 @@ A mutable struct that represents gradient descent with non-sequential armijo
 - `ρ::T`, parameter used in the non-sequential Armijo condition. Larger
     numbers indicate stricter descent conditions. Smaller numbers indicate
     less strict descent conditions.
-- `objective_hist::Vector{T}`, vector of previous accepted objective value
+- `objective_hist::Vector{T}`, vector of previous accepted objective values
     for non-monotone cache update.
 - `reference_value::T`, the maximum objective value in `objective_hist`.
 - `reference_value_index::T`, the index of the maximum value in `objective_hist`.
 - `τ_lower::T`, lower bound on the gradient interval triggering event.
 - `τ_upper::T`, upper bound on the gradient interval triggering event.
 - `second_acceptence_occurred::Bool`, if a second accepted iterate has occured.
+    Used to correctly compute the Barzilai-Borwein step size.
 - `threshold::T`, norm gradient tolerance condition. Induces stopping when norm 
     is at most `threshold`.
 - `max_iterations::Int64`, max number of iterates that are produced, not 
@@ -60,8 +63,8 @@ A mutable struct that represents gradient descent with non-sequential armijo
 # Constructors
 
     NonsequentialArmijoSafeBBGD(::Type{T}; x0::Vector{T}, init_stepsize::T,
-        long_stepsize::Bool, α_lower::T, α_upper::T, δ0::T, ρ::T, M::Int64,
-        threshold::T, max_iterations::Int64) where {T}
+        long_stepsize::Bool, α_lower::T, α_upper::T, δ0::T, δ_upper::T 
+        ρ::T, M::Int64, threshold::T, max_iterations::Int64) where {T}
 
 Constructs an instance of type `NonsequentialArmijoSafeBBGD`.
 
@@ -76,9 +79,9 @@ Constructs an instance of type `NonsequentialArmijoSafeBBGD`.
 - `init_stepsize::T`, initial step size used to form Barzilai-Borwein
     step size.
 - `long_stepsize::Bool`, if `true`, then 
-    [OptimizationMethods.bb_long_step_size](@ref) is used.
-    If `false`, then
-    [OptimizationMethods.bb_short_step_size](@ref). 
+    [the long step size function](@ref OptimizationMethods.bb_long_step_size) 
+    is used. If `false`, then
+    [the short step size function](@ref OptimizationMethods.bb_short_step_size). 
 - `α_lower::T`, lower bound on the step size.
 - `α_upper::T`, upper bound on the step size.
 - `δ0::T`, starting scaling factor.
@@ -210,7 +213,8 @@ end
 
 Conduct the inner loop iteration, modifying `ψjk`, `optData`, and
 `store` in place. `ψjk` gets updated to be the terminal iterate of the inner loop.
-This inner loop function uses a constant step size and negative gradient steps.
+This inner loop function uses negative gradient directions with a safe-guarded
+    Barzilai-Borwein step size.
 
 # Method
 
@@ -242,56 +246,39 @@ where ``\\max \\emptyset = 0``. Let ``\\bar{\\alpha} \\in \\mathbb{R}_{> 0}``
 and ``\\underline{\\alpha} \\in \\mathbb{R}_{> 0}``, such that
 ``\\bar{\\alpha} <= \\underline{\\alpha}``.
 
-Suppose that `long_stepsize = true` and let ``k + 1 \\in \\mathbb{N}``. 
+Suppose that `long_stepsize = true` and let ``k + 1 \\in \\mathbb{N}``. We
+now describe how the initial step size for each inner loop is calculated, and
+then subsequent step sizes.
 The initial step size, ``\\alpha_0^k``, depends on if ``L(k) = k`` and the value
-of ``k``. For ``k = 0`` or ``k > 0`` and ``L(k) = 0`` , 
-then ``\\alpha_0^k`` is `optData.init_stepsize` and
+of ``k``. For (case 1) ``k = 0`` or (case 2) ``k > 0`` and ``L(k) = 0``, 
+then ``\\alpha_0^k`` is `optData.init_stepsize`.
 
-```math
-    \\alpha_j^k = \\min(\\max(||\\psi_j^k - \\psi_{j-1}^k||_2^2 / 
-        (\\psi_j^k - \\psi_{j-1}^k)^\\intercal 
-        (\\nabla F(\\psi_j^k) - \\nabla F(\\psi_{j-1}^k)), \\underline{\\alpha}),
-        \\bar{\\alpha}).
-```
-
-For ``k > 0`` and ``0 < L(k) < k``
+For ``k > 0`` and ``0 < L(k) \\leq k``
 ```math
     \\alpha_0^k = 
-        \\min(\\max(
-        ||\\psi_{j_{L(k)-1}}^{L(k)-1} - \\psi_{j_{L(k)-1} - 1}^{L(k)-1}||_2^2 /
-        (\\psi_{j_{L(k)-1}}^{L(k)-1} - \\psi_{j_{L(k)-1} - 1}^{L(k)-1})^\\intercal 
-        (\\nabla F(\\psi_{j_{L(k)-1}}^{L(k)-1}) - 
-        \\nabla F(\\psi_{j_{L(k)-1} - 1}^{L(k)-1})), \\underline{\\alpha}),
-        \\bar{\\alpha}).
-```
-
-For ``k > 0`` and ``L(k) = k``
-
-```math
-    \\alpha_0^k = 
-        \\min(\\max( 
-        ||\\psi_{j_{k-1}}^{k-1} - \\psi_{j_{k-1} - 1}^{k-1}||_2^2 /
-        (\\psi_{j_{k-1}}^{k-1} - \\psi_{j_{k-1} - 1}^{k-1})^\\intercal 
-        (\\nabla F(\\psi_{j_{k-1}}^{k-1}) - \\nabla F(\\psi_{j_{k-1} - 1}^{k-1})),
-        \\underline{\\alpha}),
-        \\bar{\\alpha}). 
+        \\min\\left(\\max\\left(
+        \\frac{
+        ||\\psi_{j_{L(k)-1}}^{L(k)-1} - \\psi_{j_{L(k)-1} - 1}^{L(k)-1}||_2^2} 
+        {(\\psi_{j_{L(k)-1}}^{L(k)-1} - \\psi_{j_{L(k)-1} - 1}^{L(k)-1})^\\intercal 
+        (\\dot F(\\psi_{j_{L(k)-1}}^{L(k)-1}) - 
+        \\dot F(\\psi_{j_{L(k)-1} - 1}^{L(k)-1}))}, \\underline{\\alpha} \\right),
+        \\bar{\\alpha}\\right).
 ```
 
 In all cases, for ``j \\in \\mathbb{N}`` and ``k + 1 \\in \\mathbb{N}``
 ```math
     \\alpha_j^k = 
-        \\min(\\max(
-        ||\\psi_j^k - \\psi_{j-1}^k||_2^2 / 
+        \\min\\left(\\max\\left(
+        \\frac{
+        ||\\psi_j^k - \\psi_{j-1}^k||_2^2}{ 
         (\\psi_j^k - \\psi_{j-1}^k)^\\intercal 
-        (\\nabla F(\\psi_j^k) - \\nabla F(\\psi_{j-1}^k)),
-        \\underline{\\alpha}),
-        \\bar{\\alpha}),  
-        \\underline{\\alpha}),
-        \\bar{\\alpha}).
+        (\\dot F(\\psi_j^k) - \\dot F(\\psi_{j-1}^k))},
+        \\underline{\\alpha}\\right),
+        \\bar{\\alpha}\\right).
 ```
 
 When `long_stepsize = false`, the cases remain the same but the step size formula
-changes to the short form of the Barzilai-Borwein.
+changes to the short form of the Barzilai-Borwein step size.
 
 # Arguments
 
@@ -386,6 +373,13 @@ Implementation of the nonsequential armijo globalization framework with
 
 # Reference(s)
 
+[Barzilai and Borwein. "Two-Point Step Size Gradient Methods". IMA Journal of 
+    Numerical Analysis.](@cite barzilai1988Twopoint)
+
+[Marcos Raydan. "The Barzilai and Borwein Gradient Method for the Large
+    Scale Unconstrained Minimization Problem". 
+    SIAM Journal of Optimization.](@cite raydan1997The)
+
 # Method
 
 In what follows, we let ``||\\cdot||_2`` denote the L2-norm. 
@@ -401,7 +395,7 @@ Let ``\\psi_0^k = \\theta_k``, and recursively define
 ```
 To see how the inner loop steps are performed for this method,
 see documentation for [OptimizationMethods.inner_loop!](@ref) where 
-`optData::NonsequentialArmijoBBGD{T}`.
+`optData::NonsequentialArmijoSafeBBGD{T}`.
 
 Let ``j_k \\in \\mathbb{N}`` be the smallest iteration for which at least one of the
 conditions are satisfied: 
@@ -441,7 +435,7 @@ When this condition is satisfied, the following quantities are updated.
 
 - `optData::NonsequentialArmijoSafeBBGD{T}`, the specification for the optimization
     method.
-- `progData <: AbstractNLPModel{T, S}`, the specificaiton for the optimization
+- `progData <: AbstractNLPModel{T, S}`, the specification for the optimization
     problem.
 
 !!! warning
@@ -451,7 +445,7 @@ When this condition is satisfied, the following quantities are updated.
 
 # Return
 
-- `x::S`, final iterate of the optimization algorithm.
+- `x::Vector{T}`, final iterate of the optimization algorithm.
 """
 function nonsequential_armijo_safe_bb_gd(
     optData::NonsequentialArmijoSafeBBGD{T},
