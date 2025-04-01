@@ -102,6 +102,6 @@ include("methods/gd_diminishing.jl")
 include("methods/gd_weighted_norm_damping.jl")
 include("methods/gd_non_sequential_armijo_adaptive.jl")
 include("methods/gd_non_sequential_armijo_fixed.jl")
-include("methods/gd_non_sequential_armijo_bb.jl")
+include("methods/gd_non_sequential_armijo_safe_bb.jl")
 
 end
