@@ -3,7 +3,9 @@
 # Purpose: Test the non-monotone line search method
 # with fixed step size and negative gradient directions
 
-module TestFixedStepNLSMaxValGD{T} <: AbstractOptimizerData{T}
+module TestFixedStepNLSMaxValGD
+
+using Test, OptimizationMethods, LinearAlgebra, Random
 
 @testset "Test FixedStepNLSMaxValGD{T} -- Structure" begin
 
@@ -12,10 +14,19 @@ module TestFixedStepNLSMaxValGD{T} <: AbstractOptimizerData{T}
     ############################################################################
 
     # test that the structure is defined
+    @test isdefined(OptimizationMethods, :FixedStepNLSMaxValGD)
 
     # test optimizer agnostic fields are present
+    nonunique_fields = [:name, :threshold, :max_iterations, :iter_hist, 
+        :grad_val_hist, :stop_iteration]
 
     # test optimizer specific fields are present
+    unique_fields = [:α, :δ, :ρ, :window_size, :line_search_max_iteration, 
+        :objective_hist, :max_value, :max_index]
+
+    # test that no other fields are present
+    @test length(unique_fields) + length(nonunique_fields) ==
+        length(fieldnames(FixedStepNLSMaxValGD))
 
     ############################################################################
     # Test the constructor
@@ -36,25 +47,205 @@ module TestFixedStepNLSMaxValGD{T} <: AbstractOptimizerData{T}
         (:iter_hist, Vector{Vector{type}}),
         (:grad_val_hist, Vector{type}),
         (:stop_iteration, Int64)]
+    real_types = [Float16, Float32, Float64]
 
-    let field_types = field_types
+    let field_types = field_types, real_types = real_types
         
-        # sample random field values
+        for type in real_types
 
-        # test the field types returned by outer constructor
-    
+            # sample random field values
+            x0 = randn(type, 50)
+            α = abs(randn(type))
+            δ = abs(randn(type))
+            ρ = abs(randn(type))
+            window_size = rand(1:100)
+            line_search_max_iteration = rand(1:100)
+            threshold = abs(randn(type))
+            max_iterations = rand(1:100) 
+
+            # test the field types returned by outer constructor
+            optData = FixedStepNLSMaxValGD(type; x0 = x0, α = α, δ = δ, ρ = ρ,
+                window_size = window_size, 
+                line_search_max_iteration = line_search_max_iteration,
+                threshold = threshold,
+                max_iterations = max_iterations)
+            
+            for (field, fieldtype) in field_types(type)
+                @test fieldtype == typeof(getfield(optData, field))
+            end
+        end
     end
 
     # test that the outer constructor sets the values of field correctly
-    let field_types = field_types
+    let field_types = field_types, 
+        real_types = real_types
         
-        #
+        # for each real type
+        for type in real_types
+
+            # sample random field values
+            x0 = randn(type, 50)
+            α = abs(randn(type))
+            δ = abs(randn(type))
+            ρ = abs(randn(type))
+            window_size = rand(1:100)
+            line_search_max_iteration = rand(1:100)
+            threshold = abs(randn(type))
+            max_iterations = rand(1:100)             
+
+            # test the field values returned
+            optData = FixedStepNLSMaxValGD(type; x0 = x0, α = α, δ = δ, ρ = ρ,
+                window_size = window_size, 
+                line_search_max_iteration = line_search_max_iteration,
+                threshold = threshold,
+                max_iterations = max_iterations)
+
+            # test field values correct assigned
+            @test optData.α == α
+            @test optData.δ == δ
+            @test optData.ρ == ρ
+            @test optData.window_size == window_size
+            @test optData.line_search_max_iteration == line_search_max_iteration
+            @test optData.threshold == threshold
+            @test optData.max_iterations == max_iterations
+
+            # test values in iterate history
+            @test optData.iter_hist[1] == x0
+            @test length(optData.iter_hist) == max_iterations + 1
+
+            # test values in gradient history
+            @test length(optData.grad_val_hist) == max_iterations + 1
+            @test optData.stop_iteration == -1
+
+            # test values in objective cache
+            @test length(optData.objective_hist) == window_size
+            @test optData.max_value == 0
+            @test optData.max_index == -1
+        end
     
+    end
+
+    # test error are thrown
+    let field_types = field_types, 
+        real_types = real_types
+
+        # for each real type
+        for type in real_types
+
+            # Test 1: sample random field value
+            x0 = randn(type, 50)
+            α = abs(randn(type))
+            δ = abs(randn(type))
+            ρ = abs(randn(type))
+            line_search_max_iteration = rand(1:100)
+            threshold = abs(randn(type))
+            max_iterations = rand(1:100) 
+
+            # Test 1: incorrect window_size ( == 0)
+            window_size = 0
+
+            # Test 1: test error occurs
+            @test_throws AssertionError FixedStepNLSMaxValGD(
+                type; x0 = x0, α = α, δ = δ, ρ = ρ,
+                window_size = window_size, 
+                line_search_max_iteration = line_search_max_iteration,
+                threshold = threshold,
+                max_iterations = max_iterations) 
+
+            # Test 2: sample random field values
+            x0 = randn(type, 50)
+            α = abs(randn(type))
+            δ = abs(randn(type))
+            ρ = abs(randn(type))
+            line_search_max_iteration = rand(1:100)
+            threshold = abs(randn(type))
+            max_iterations = rand(1:100) 
+
+            # Test 2: incorrect window_size (< 0)
+            window_size = -1
+
+            # Test 2: test error occurs
+            @test_throws AssertionError FixedStepNLSMaxValGD(
+                type; x0 = x0, α = α, δ = δ, ρ = ρ,
+                window_size = window_size, 
+                line_search_max_iteration = line_search_max_iteration,
+                threshold = threshold,
+                max_iterations = max_iterations) 
+
+        end
+
     end
 
 end # end test set for structure
 
 @testset "Test FixedStepNLSMaxValGD{T} -- Method" begin
+
+    # initialize a random linear regression problem for testing
+    progData = OptimizationMethods.LeastSquares(Float64)
+
+    # sample random field values to for the optimization method
+    x0 = randn(50)
+    α = abs(randn())
+    δ = abs(randn())
+    ρ = abs(randn())
+    window_size = rand(1:100)
+    line_search_max_iteration = 100
+    threshold = 1e-10
+
+    max_iterations = 1
+
+    # Base case: test the first iteration of the method
+    let progData = progData, x0 = x0, α = α, δ = δ, ρ = ρ, 
+        window_size = window_size, 
+        line_search_max_iteration = line_search_max_iteration,
+        threshold = threshold, max_iterations = max_iterations
+
+        # initialize optimization data
+        optData = FixedStepNLSMaxValGD(Float64; x0 = x0, α = α, δ = δ,
+            ρ = ρ, window_size = window_size, 
+            line_search_max_iteration = line_search_max_iteration,
+            threshold = threshold,
+            max_iterations = max_iterations)
+
+        # run one iteration of the method
+        x1 = fixed_step_nls_maxval_gd(optData, progData)
+
+        # test that x1 is correct
+
+        # test that the values stored optData.iter_hist and grad_val_hist
+
+        # test the values in optData.objective_hist
+
+        # test the values of optData.max_value and optData.max_index
+
+    end
+
+    # "Inductive Step": test a random iteration of the method
+    max_iterations = rand(20:100)
+    let progData = progData, x0 = x0, α = α, δ = δ, ρ = ρ, 
+        window_size = window_size, 
+        line_search_max_iteration = line_search_max_iteration,
+        threshold = threshold, max_iterations = max_iterations
+
+        # initialize optimization data
+        optData = FixedStepNLSMaxValGD(Float64; x0 = x0, α = α, δ = δ,
+            ρ = ρ, window_size = window_size, 
+            line_search_max_iteration = line_search_max_iteration,
+            threshold = threshold,
+            max_iterations = max_iterations)
+
+        # run max_iterations (k) iteration of the method
+        xk = fixed_step_nls_maxval_gd(optData, progData)
+
+        # test that xk is correct
+
+        # test that the values stored optData.iter_hist and grad_val_hist
+
+        # test the values in optData.objective_hist
+
+        # test the values of optData.max_value and optData.max_index
+
+    end
 
 end # end test for for method
 

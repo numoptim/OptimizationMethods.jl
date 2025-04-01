@@ -134,6 +134,10 @@ function FixedStepNLSMaxValGD(
     max_iterations::Int64,
 ) where {T}
 
+    # error checking
+    @assert window_size > 0 "The number of objective values considered"*
+    " in the non-monotone line search has to be greater than zero."
+
     d = length(x0)
 
     # initialization iterate history
