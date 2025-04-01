@@ -99,6 +99,7 @@ mutable struct NonsequentialArmijoSafeBBGD{T} <: AbstractOptimizerData{T}
     norm_∇F_ψ::T
     init_stepsize::T
     bb_step_size::Function
+    α0k::T
     α_lower::T
     α_upper::T
     iter_diff_checkpoint::Vector{T}
@@ -127,6 +128,7 @@ function NonsequentialArmijoSafeBBGD(::Type{T};
     α_lower::T,
     α_upper::T,
     δ0::T,
+    δ_upper::T,
     ρ::T,
     M::Int64,
     threshold::T,
@@ -171,6 +173,7 @@ function NonsequentialArmijoSafeBBGD(::Type{T};
         T(0),           # norm_∇F_ψ
         init_stepsize,
         long_stepsize ? bb_long_step_size : bb_short_step_size,
+        T(0),           # α0k
         α_lower,
         α_upper,
         zeros(T, d),    # iter_diff_checkpoint
@@ -328,12 +331,20 @@ function inner_loop!(
     radius = 10,
     max_iteration = 100) where {T, S}
 
-    # inner loop
+    # inner loop iteration counter
     j::Int64 = 0
+
+    # step size initialization
     step_size::T = (optData.second_acceptence_occurred) ?
         optData.bb_step_size(optData.iter_diff, optData.grad_diff) : 
         optData.init_stepsize 
+    step_size = min(max(step_size, optData.α_lower), optData.α_upper)
+    optData.α0k = step_size
+    
+    # update the value of the norm gradient
     optData.norm_∇F_ψ = optData.grad_val_hist[k]
+    
+    # inner loop
     while ((norm(ψjk - θk) <= radius) &&
         (optData.τ_lower < optData.norm_∇F_ψ && optData.norm_∇F_ψ < optData.τ_upper) &&
         (j < max_iteration))
@@ -358,7 +369,7 @@ function inner_loop!(
 
         # compute step size for next iteration
         step_size = optData.bb_step_size(optData.iter_diff, optData.grad_diff)
-        step_size = min(max(step_size, α_lower), α_upper)
+        step_size = min(max(step_size, optData.α_lower), optData.α_upper)
     end
 
     return j
@@ -484,7 +495,7 @@ function nonsequential_armijo_safe_bb_gd(
         Fx = F(x)
         achieved_descent = 
         OptimizationMethods.non_sequential_armijo_condition(Fx, optData.reference_value, 
-            optData.grad_val_hist[iter], optData.ρ, optData.δk, optData.α)
+            optData.grad_val_hist[iter], optData.ρ, optData.δk, optData.α0k)
         
         # update the algorithm parameters and current iterate
         update_algorithm_parameters!(x, optData, achieved_descent, iter)
