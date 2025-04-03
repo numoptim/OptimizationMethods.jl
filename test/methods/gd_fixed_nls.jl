@@ -187,12 +187,16 @@ end # end test set for structure
     x0 = randn(50)
     α = abs(randn())
     δ = abs(randn())
-    ρ = abs(randn())
+    ρ = .5
     window_size = rand(5:10)
     line_search_max_iteration = 100
     threshold = 1e-10
 
     max_iterations = 1
+
+    ############################################################################
+    # Line search should be successful
+    ############################################################################
 
     # Base case: test the first iteration of the method
     let progData = progData, x0 = x0, α = α, δ = δ, ρ = ρ, 
@@ -270,7 +274,8 @@ end # end test set for structure
         xkm1 = copy(optData.iter_hist[max_iterations])
         gkm1 = OptimizationMethods.grad(progData, xkm1)
         rkm1 = max(F(xkm1), optData.max_value)
-        OptimizationMethods.backtracking!(xkm1, optData.iter_hist[max_iterations],
+        success = OptimizationMethods.backtracking!(xkm1, 
+            optData.iter_hist[max_iterations],
             F, gkm1, norm(gkm1) ^ 2, rkm1, α, δ, ρ;
             max_iteration = line_search_max_iteration)
         @test xkm1 ≈ xk
@@ -280,6 +285,13 @@ end # end test set for structure
         @test optData.grad_val_hist[max_iterations + 1] ≈
             norm(OptimizationMethods.grad(progData, xk))
     end
+
+    ############################################################################
+    # Line search is not successful
+    ############################################################################
+
+
+
 
 end # end test for for method
 

@@ -230,10 +230,16 @@ function fixed_step_nls_maxval_gd(
         iter += 1
 
         # backtracking
-        OptimizationMethods.backtracking!(x, optData.iter_hist[iter], 
+        success = OptimizationMethods.backtracking!(x, optData.iter_hist[iter], 
             F, store.grad, optData.grad_val_hist[iter] ^ 2, optData.max_value,
             optData.α, optData.δ, optData.ρ; 
             max_iteration = optData.line_search_max_iteration)
+
+        # if backtracking is not successful return the previous point
+        if !success
+            optData.stop_iteration = (iter - 1)
+            return optData.iter_hist[iter]
+        end
 
         # compute the next gradient value
         OptimizationMethods.grad!(progData, precomp, store, x)
