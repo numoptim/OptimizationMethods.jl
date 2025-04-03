@@ -188,7 +188,7 @@ end # end test set for structure
     α = abs(randn())
     δ = abs(randn())
     ρ = abs(randn())
-    window_size = rand(1:100)
+    window_size = rand(5:10)
     line_search_max_iteration = 100
     threshold = 1e-10
 
@@ -207,17 +207,32 @@ end # end test set for structure
             threshold = threshold,
             max_iterations = max_iterations)
 
+        # objective function for line search
+        F(θ) = OptimizationMethods.obj(progData, θ)
+
         # run one iteration of the method
         x1 = fixed_step_nls_maxval_gd(optData, progData)
 
         # test that x1 is correct
+        x0_copy = copy(x0)
+        g0 = OptimizationMethods.grad(progData, x0)
+        success = OptimizationMethods.backtracking!(x0_copy, x0, F, g0, norm(g0) ^ 2,
+            F(x0), α, δ, ρ; max_iteration = line_search_max_iteration)
+        @test x1 ≈ x0_copy
 
         # test that the values stored optData.iter_hist and grad_val_hist
+        @test optData.iter_hist[1] == x0
+        @test optData.iter_hist[2] == x1
+        @test optData.grad_val_hist[1] ≈ norm(g0)
+        @test optData.grad_val_hist[2] ≈ norm(OptimizationMethods.grad(progData, x1))
 
         # test the values in optData.objective_hist
+        @test optData.objective_hist[window_size - 1] == F(optData.iter_hist[1])
+        @test optData.objective_hist[window_size] == F(x1)
 
         # test the values of optData.max_value and optData.max_index
-
+        @test (optData.max_value == F(optData.iter_hist[1]) || !success)
+        @test (optData.max_index == window_size - 1 || !success)
     end
 
     # "Inductive Step": test a random iteration of the method
@@ -234,17 +249,36 @@ end # end test set for structure
             threshold = threshold,
             max_iterations = max_iterations)
 
+        # objective function for the non-monotone line search function
+        F(θ) = OptimizationMethods.obj(progData, θ)
+
         # run max_iterations (k) iteration of the method
         xk = fixed_step_nls_maxval_gd(optData, progData)
 
-        # test that xk is correct
-
-        # test that the values stored optData.iter_hist and grad_val_hist
-
-        # test the values in optData.objective_hist
+        # test the values of optData.objective_hist 
+        for i in 1:window_size
+            @test optData.objective_hist[i] ==
+                F(optData.iter_hist[max_iterations + 1 - window_size + i])
+        end
 
         # test the values of optData.max_value and optData.max_index
+        max_value, max_index = findmax(optData.objective_hist)
+        @test optData.max_value == max_value
+        @test optData.max_index == max_index
 
+        # test that xk is correct
+        xkm1 = copy(optData.iter_hist[max_iterations])
+        gkm1 = OptimizationMethods.grad(progData, xkm1)
+        rkm1 = max(F(xkm1), optData.max_value)
+        OptimizationMethods.backtracking!(xkm1, optData.iter_hist[max_iterations],
+            F, gkm1, norm(gkm1) ^ 2, rkm1, α, δ, ρ;
+            max_iteration = line_search_max_iteration)
+        @test xkm1 ≈ xk
+
+        # test that the values stored optData.iter_hist and grad_val_hist
+        @test optData.iter_hist[max_iterations + 1] == xk
+        @test optData.grad_val_hist[max_iterations + 1] ≈
+            norm(OptimizationMethods.grad(progData, xk))
     end
 
 end # end test for for method
