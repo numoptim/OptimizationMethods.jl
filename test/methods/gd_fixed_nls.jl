@@ -186,8 +186,8 @@ end # end test set for structure
     # sample random field values to for the optimization method
     x0 = randn(50)
     α = abs(randn())
-    δ = abs(randn())
-    ρ = .5
+    δ = rand()
+    ρ = rand()
     window_size = rand(5:10)
     line_search_max_iteration = 100
     threshold = 1e-10
@@ -222,6 +222,7 @@ end # end test set for structure
         g0 = OptimizationMethods.grad(progData, x0)
         success = OptimizationMethods.backtracking!(x0_copy, x0, F, g0, norm(g0) ^ 2,
             F(x0), α, δ, ρ; max_iteration = line_search_max_iteration)
+        @test success == true
         @test x1 ≈ x0_copy
 
         # test that the values stored optData.iter_hist and grad_val_hist
@@ -289,9 +290,45 @@ end # end test set for structure
     ############################################################################
     # Line search is not successful
     ############################################################################
+    max_iterations = 1
+    line_search_max_iteration = 0
+    let progData = progData, x0 = x0, α = α, δ = δ, ρ = ρ, 
+        window_size = window_size, 
+        line_search_max_iteration = line_search_max_iteration,
+        threshold = threshold, max_iterations = max_iterations
 
+        # initialize optimization data
+        optData = FixedStepNLSMaxValGD(Float64; x0 = x0, α = α, δ = δ,
+            ρ = ρ, window_size = window_size, 
+            line_search_max_iteration = line_search_max_iteration,
+            threshold = threshold,
+            max_iterations = max_iterations)
 
+        # objective function for line search
+        F(θ) = OptimizationMethods.obj(progData, θ)
 
+        # run one iteration of the method
+        x1 = fixed_step_nls_maxval_gd(optData, progData)
+
+        # test that x1 is correct
+        x0_copy = copy(x0)
+        g0 = OptimizationMethods.grad(progData, x0)
+        success = OptimizationMethods.backtracking!(x0_copy, x0, F, g0, norm(g0) ^ 2,
+            F(x0), α, δ, ρ; max_iteration = line_search_max_iteration)
+        @test success == false
+        @test x1 ≈ x0
+
+        # test that the values stored optData.iter_hist and grad_val_hist
+        @test optData.iter_hist[1] == x0
+        @test optData.grad_val_hist[1] ≈ norm(g0)
+
+        # test the values in optData.objective_hist
+        @test optData.objective_hist[window_size] == F(x1)
+
+        # test the values of optData.max_value and optData.max_index
+        @test optData.max_value == F(optData.iter_hist[1])
+        @test optData.max_index == window_size
+    end
 
 end # end test for for method
 
