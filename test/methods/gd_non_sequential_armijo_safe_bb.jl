@@ -415,6 +415,188 @@ end
 end
 
 @testset "Utility -- Inner Loop (GDNonseqArmijoBB)" begin
+
+    dim = 50
+    x0 = randn(dim)
+    long_stepsize = true
+    α_lower = abs(randn())
+    α_upper = α_lower + 1
+    init_stepsize = α_lower + .5
+    δ0 = abs(randn())
+    δ_upper = δ0 + 1
+    ρ = abs(randn())
+    M = rand(1:100)
+    threshold = abs(randn())
+    max_iterations = rand(1:100)
+
+    ## build structure
+    optData = NonsequentialArmijoSafeBBGD(Float64; 
+        x0 = x0,
+        init_stepsize = init_stepsize, 
+        long_stepsize = long_stepsize, 
+        α_lower = α_lower,
+        α_upper = α_upper,
+        δ0 = δ0,
+        δ_upper = δ_upper,
+        ρ = ρ, 
+        M = M,
+        threshold = threshold,
+        max_iterations = max_iterations)
+
+    progData = OptimizationMethods.LeastSquares(Float64, nvar=dim)
+    precomp, store = OptimizationMethods.initialize(progData)
+    ks = [1, max_iterations]
+
+    for k in ks
+        # Test first event trigger: radius violation
+        let ψjk=x0 .+ 11, θk=x0, optData=optData, progData=progData,
+            store=store, k=k
+
+            optData.grad_val_hist[k] = 1.5
+            optData.τ_lower = 1.0
+            optData.τ_upper = 2.0
+            
+            OptimizationMethods.inner_loop!(ψjk, θk, optData, progData, precomp, 
+                store, k, max_iteration=100)
+
+            @test ψjk == x0 .+ 11
+        end
+
+        # Test second event trigger: τ_lower 
+        let ψjk=copy(x0), θk=copy(x0), optData=optData, progData=progData,
+            store=store, k=k
+
+            optData.grad_val_hist[k] = 0.5 
+            optData.τ_lower = 1.0
+            optData.τ_upper = 2.0
+            
+            OptimizationMethods.inner_loop!(ψjk, θk, optData, progData, precomp, 
+                store, k, max_iteration=100)
+
+            @test ψjk == x0
+        end
+
+        # Test third event trigger: τ_upper 
+        let ψjk=copy(x0), θk=copy(x0), optData=optData, progData=progData,
+            store=store, k=k
+
+            optData.grad_val_hist[k] = 2.5 
+            optData.τ_lower = 1.0
+            optData.τ_upper = 2.0
+            
+            OptimizationMethods.inner_loop!(ψjk, θk, optData, progData, precomp, 
+                store, k, max_iteration=100)
+
+            @test ψjk == x0
+        end
+
+        # Test fourth event trigger: max_iteration
+        let ψjk=copy(x0), θk=copy(x0), optData=optData, progData=progData,
+            store=store, k=k
+
+            optData.grad_val_hist[k] = 1.5 
+            optData.τ_lower = 1.0
+            optData.τ_upper = 2.0
+            
+            OptimizationMethods.inner_loop!(ψjk, θk, optData, progData, precomp, 
+                store, k, max_iteration=0)
+
+            @test ψjk == x0
+        end
+
+        # TODO -- need to update this part!
+        # Test first iteration
+        let ψjk=copy(x0), θk=copy(x0), optData=optData, progData=progData,
+            store=store, k=k
+
+            j=1
+
+            OptimizationMethods.grad!(progData, precomp, store, θk)
+            optData.grad_val_hist[k] = norm(store.grad)
+            optData.norm_∇F_ψ = norm(store.grad)
+            optData.τ_lower = 0.5 * norm(store.grad) 
+            optData.τ_upper = 1.5 * norm(store.grad)
+
+            optData.δk = 1.5
+            α = optData.α
+
+            step = (optData.δk * α) .* store.grad 
+
+            OptimizationMethods.inner_loop!(ψjk, θk, optData, progData, precomp,
+                store, k, max_iteration = 1
+            )
+
+            @test ψjk == θk - step 
+            @test optData.α == α
+            @test store.grad ≈ OptimizationMethods.grad(progData, ψjk)
+            @test optData.norm_∇F_ψ == norm(store.grad)
+        end
+
+        # TODO -- need to update this part also!
+        # Test random iteration
+        let ψjk=copy(x0), θk=copy(x0), optData=optData, progData=progData,
+            store=store, k=k
+
+            #To do this test correctly, we would need to know at what iteration 
+            #j an inner loop exists.
+            max_iteration = rand(2:100)
+
+            # Reset 
+            OptimizationMethods.grad!(progData, precomp, store, θk)
+            optData.grad_val_hist[k] = norm(store.grad)
+            optData.norm_∇F_ψ = norm(store.grad)
+            optData.τ_lower = 0.5 * norm(store.grad) 
+            optData.τ_upper = 1.5 * norm(store.grad)
+            optData.δk = 1.5
+
+            #Get exit iteration j
+            j = OptimizationMethods.inner_loop!(ψjk, θk, optData, progData, precomp,
+                store, k, max_iteration = max_iteration
+            )
+
+            # Reset 
+            ψjk = copy(x0)
+            θk = copy(x0)
+
+            OptimizationMethods.grad!(progData, precomp, store, θk)
+            optData.grad_val_hist[k] = norm(store.grad)
+            optData.norm_∇F_ψ = norm(store.grad)
+            optData.τ_lower = 0.5 * norm(store.grad) 
+            optData.τ_upper = 1.5 * norm(store.grad)
+            optData.δk = 1.5
+
+            OptimizationMethods.inner_loop!(ψjk, θk, optData, progData, precomp,
+                store, k, max_iteration = j-1
+            )
+            α = optData.α
+
+            ψ_jm1_k = copy(ψjk)
+            grd = OptimizationMethods.grad(progData, ψ_jm1_k)
+            step = (optData.δk * α) * grd
+
+            # Reset 
+            ψjk = copy(x0)
+            θk = copy(x0)
+
+            OptimizationMethods.grad!(progData, precomp, store, θk)
+            optData.grad_val_hist[k] = norm(store.grad)
+            optData.norm_∇F_ψ = norm(store.grad)
+            optData.τ_lower = 0.5 * norm(store.grad) 
+            optData.τ_upper = 1.5 * norm(store.grad)
+            optData.δk = 1.5
+
+            #Get ψ_{j,k}
+            OptimizationMethods.inner_loop!(ψjk, θk, optData, progData, precomp,
+                store, k, max_iteration = max_iteration
+            )
+
+            @test ψjk ≈ ψ_jm1_k - step
+            @test store.grad ≈ OptimizationMethods.grad(progData, ψjk)
+            @test optData.norm_∇F_ψ ≈ norm(store.grad)
+            @test optData.α == α
+        end
+    end
+
 end
 
 @testset "Method -- GD with Nonsequential Armijo and BB Steps: method" begin
