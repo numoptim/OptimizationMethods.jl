@@ -144,9 +144,6 @@ function NonsequentialArmijoSafeBBGD(::Type{T};
     @assert δ0 <= δ_upper "Initial scaling factor $(δ0) needs to be smaller"*
     " than its upper bound $(δ_upper)."
 
-    @assert init_stepsize > 0 "The initial step size $(init_stepsize)"*
-    " needs to be positive."
-
     @assert 0 < α_lower "Step size lower bound $(α_lower) needs to be positive."
 
     @assert α_lower <= α_upper "Step size upper bound $(α_upper) needs to be"*
