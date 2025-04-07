@@ -65,8 +65,12 @@ function BacktrackingSafeBBGD(::Type{T};
 end
 
 """
+    backtracking_safe_bb_gd(optData::BacktrackingSafeBBGD{T},
+        progData::P where P <: AbstractNLPModel{T, S}) where {T, S}
 """
 function backtracking_safe_bb_gd(optData::BacktrackingSafeBBGD{T},
     progData::P where P <: AbstractNLPModel{T, S}) where {T, S}
+
+    # initialize the problem
 
 end
