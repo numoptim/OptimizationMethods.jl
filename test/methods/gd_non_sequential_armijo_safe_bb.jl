@@ -29,7 +29,7 @@ using Test, OptimizationMethods, LinearAlgebra, Random
         :α0k, :α_lower, :α_upper, :iter_diff_checkpoint, :grad_diff_checkpoint,
         :iter_diff, :grad_diff, :δk, :δ_upper, :ρ, :objective_hist,
         :reference_value, :reference_value_index, :τ_lower, :τ_upper,
-        :second_acceptence_occurred]
+        :second_acceptance_occurred]
     let field = unique_fields
         for field_name in field
             @test field_name in fieldnames(NonsequentialArmijoSafeBBGD)
@@ -58,7 +58,7 @@ using Test, OptimizationMethods, LinearAlgebra, Random
         [:reference_value_index, Int64],
         [:τ_lower, type],
         [:τ_upper, type],
-        [:second_acceptence_occurred, Bool],
+        [:second_acceptance_occurred, Bool],
         [:threshold, type],
         [:max_iterations, Int64],
         [:iter_hist, Vector{Vector{type}}],
@@ -221,6 +221,7 @@ using Test, OptimizationMethods, LinearAlgebra, Random
         @test length(optData.objective_hist) == M
         @test optData.threshold == threshold
         @test optData.max_iterations == max_iterations
+        @test optData.second_acceptance_occurred == false
 
     end 
 
@@ -416,6 +417,7 @@ end
 
 @testset "Utility -- Inner Loop (GDNonseqArmijoBB)" begin
 
+    ## Inner loop with long_stepsize = true
     dim = 50
     x0 = randn(dim)
     long_stepsize = true
@@ -504,8 +506,40 @@ end
             @test ψjk == x0
         end
 
-        # TODO -- need to update this part!
-        # Test first iteration
+        # Test first iteration -- second_acceptance_occurred = false
+        let ψjk=copy(x0), θk=copy(x0), optData=optData, progData=progData,
+            store=store, k=k
+
+            j=1
+
+            OptimizationMethods.grad!(progData, precomp, store, θk)
+            optData.grad_val_hist[k] = norm(store.grad)
+            optData.norm_∇F_ψ = norm(store.grad)
+            optData.τ_lower = 0.5 * norm(store.grad) 
+            optData.τ_upper = 1.5 * norm(store.grad)
+            optData.second_acceptance_occurred = false
+
+            optData.δk = 1.5
+
+            α = optData.init_stepsize
+            α = min(max(α, optData.α_lower), optData.α_upper)
+            step = (optData.δk * α) .* store.grad 
+
+            OptimizationMethods.inner_loop!(ψjk, θk, optData, progData, precomp,
+                store, k, max_iteration = 1
+            )
+
+            @test ψjk == θk - step
+            @test optData.iter_diff ≈ -step 
+            @test optData.grad_diff ≈ OptimizationMethods.grad(progData, ψjk) -
+                OptimizationMethods.grad(progData, θk)
+            @test optData.α0k == α
+            @test store.grad ≈ OptimizationMethods.grad(progData, ψjk)
+            @test optData.norm_∇F_ψ == norm(store.grad)
+            @test optData.second_acceptance_occurred == false
+        end
+
+        # Test first iteration -- second_acceptance_occurred = true
         let ψjk=copy(x0), θk=copy(x0), optData=optData, progData=progData,
             store=store, k=k
 
@@ -517,23 +551,31 @@ end
             optData.τ_lower = 0.5 * norm(store.grad) 
             optData.τ_upper = 1.5 * norm(store.grad)
 
-            optData.δk = 1.5
-            α = optData.α
+            # check to make sure α0k is the bb step size
+            optData.iter_diff = randn(length(x0))
+            optData.grad_diff = randn(length(x0))
+            optData.second_acceptance_occurred = true
 
+            optData.δk = 1.5
+
+            α = optData.bb_step_size(optData.iter_diff, optData.grad_diff)
+            α = min(max(α, optData.α_lower), optData.α_upper)
             step = (optData.δk * α) .* store.grad 
 
             OptimizationMethods.inner_loop!(ψjk, θk, optData, progData, precomp,
                 store, k, max_iteration = 1
             )
 
-            @test ψjk == θk - step 
-            @test optData.α == α
+            @test ψjk == θk - step
+            @test optData.iter_diff ≈ -step 
+            @test optData.grad_diff ≈ OptimizationMethods.grad(progData, ψjk) -
+                OptimizationMethods.grad(progData, θk) 
+            @test optData.α0k == α
             @test store.grad ≈ OptimizationMethods.grad(progData, ψjk)
             @test optData.norm_∇F_ψ == norm(store.grad)
         end
 
-        # TODO -- need to update this part also!
-        # Test random iteration
+        # Test random iteration -- second_acceptance_occurred = false
         let ψjk=copy(x0), θk=copy(x0), optData=optData, progData=progData,
             store=store, k=k
 
@@ -547,7 +589,8 @@ end
             optData.norm_∇F_ψ = norm(store.grad)
             optData.τ_lower = 0.5 * norm(store.grad) 
             optData.τ_upper = 1.5 * norm(store.grad)
-            optData.δk = 1.5
+            optData.δk = 1e-10
+            optData.second_acceptance_occurred = false
 
             #Get exit iteration j
             j = OptimizationMethods.inner_loop!(ψjk, θk, optData, progData, precomp,
@@ -563,12 +606,20 @@ end
             optData.norm_∇F_ψ = norm(store.grad)
             optData.τ_lower = 0.5 * norm(store.grad) 
             optData.τ_upper = 1.5 * norm(store.grad)
-            optData.δk = 1.5
+            optData.δk = 1e-10 
+            optData.second_acceptance_occurred = false
 
             OptimizationMethods.inner_loop!(ψjk, θk, optData, progData, precomp,
                 store, k, max_iteration = j-1
             )
-            α = optData.α
+            α = 0.0
+            if j == 1
+                α = optData.init_stepsize
+                α = min(max(α, optData.α_lower), optData.α_upper)
+            else
+                α = optData.bb_step_size(optData.iter_diff, optData.grad_diff)
+                α = min(max(α, optData.α_lower), optData.α_upper)
+            end
 
             ψ_jm1_k = copy(ψjk)
             grd = OptimizationMethods.grad(progData, ψ_jm1_k)
@@ -583,7 +634,8 @@ end
             optData.norm_∇F_ψ = norm(store.grad)
             optData.τ_lower = 0.5 * norm(store.grad) 
             optData.τ_upper = 1.5 * norm(store.grad)
-            optData.δk = 1.5
+            optData.δk = 1e-10
+            optData.second_acceptance_occurred = false
 
             #Get ψ_{j,k}
             OptimizationMethods.inner_loop!(ψjk, θk, optData, progData, precomp,
@@ -591,12 +643,96 @@ end
             )
 
             @test ψjk ≈ ψ_jm1_k - step
+            @test optData.iter_diff ≈ -step 
+            @test optData.grad_diff ≈ OptimizationMethods.grad(progData, ψjk) -
+                OptimizationMethods.grad(progData, ψ_jm1_k)
             @test store.grad ≈ OptimizationMethods.grad(progData, ψjk)
             @test optData.norm_∇F_ψ ≈ norm(store.grad)
-            @test optData.α == α
+            @test optData.α0k == min(max(optData.init_stepsize, 
+                optData.α_lower), optData.α_upper)
         end
-    end
 
+        # Test random iteration -- second_acceptance_occurred = false
+        let ψjk=copy(x0), θk=copy(x0), optData=optData, progData=progData,
+            store=store, k=k
+
+            #To do this test correctly, we would need to know at what iteration 
+            #j an inner loop exists.
+            max_iteration = rand(2:100)
+            iter_diff = randn(length(x0))
+            grad_diff = randn(length(x0))
+
+            # Reset 
+            OptimizationMethods.grad!(progData, precomp, store, θk)
+            optData.grad_val_hist[k] = norm(store.grad)
+            optData.norm_∇F_ψ = norm(store.grad)
+            optData.τ_lower = 0.5 * norm(store.grad) 
+            optData.τ_upper = 1.5 * norm(store.grad)
+            optData.δk = 1e-10
+            optData.iter_diff = iter_diff
+            optData.grad_diff = grad_diff
+            optData.second_acceptance_occurred = true
+
+            #Get exit iteration j
+            j = OptimizationMethods.inner_loop!(ψjk, θk, optData, progData, precomp,
+                store, k, max_iteration = max_iteration
+            )
+
+            # Reset 
+            ψjk = copy(x0)
+            θk = copy(x0)
+
+            OptimizationMethods.grad!(progData, precomp, store, θk)
+            optData.grad_val_hist[k] = norm(store.grad)
+            optData.norm_∇F_ψ = norm(store.grad)
+            optData.τ_lower = 0.5 * norm(store.grad) 
+            optData.τ_upper = 1.5 * norm(store.grad)
+            optData.δk = 1e-10 
+            optData.iter_diff = iter_diff
+            optData.grad_diff = grad_diff
+            optData.second_acceptance_occurred = true
+
+            OptimizationMethods.inner_loop!(ψjk, θk, optData, progData, precomp,
+                store, k, max_iteration = j-1
+            )
+            α = optData.bb_step_size(optData.iter_diff, optData.grad_diff)
+            α = min(max(α, optData.α_lower), optData.α_upper)
+
+            ψ_jm1_k = copy(ψjk)
+            grd = OptimizationMethods.grad(progData, ψ_jm1_k)
+            step = (optData.δk * α) * grd
+
+            # Reset 
+            ψjk = copy(x0)
+            θk = copy(x0)
+
+            OptimizationMethods.grad!(progData, precomp, store, θk)
+            optData.grad_val_hist[k] = norm(store.grad)
+            optData.norm_∇F_ψ = norm(store.grad)
+            optData.τ_lower = 0.5 * norm(store.grad) 
+            optData.τ_upper = 1.5 * norm(store.grad)
+            optData.δk = 1e-10
+            optData.iter_diff = iter_diff
+            optData.grad_diff = grad_diff
+            optData.second_acceptance_occurred = true
+
+            #Get ψ_{j,k}
+            OptimizationMethods.inner_loop!(ψjk, θk, optData, progData, precomp,
+                store, k, max_iteration = max_iteration
+            )
+
+            @test ψjk ≈ ψ_jm1_k - step
+            @test optData.iter_diff ≈ -step 
+            @test optData.grad_diff ≈ OptimizationMethods.grad(progData, ψjk) -
+                OptimizationMethods.grad(progData, ψ_jm1_k)
+            @test store.grad ≈ OptimizationMethods.grad(progData, ψjk)
+            @test optData.norm_∇F_ψ ≈ norm(store.grad)
+
+            α0k = optData.bb_step_size(iter_diff, grad_diff)
+            @test optData.α0k == min(max(α0k, optData.α_lower), optData.α_upper)
+        end
+
+    end
 end
 
 @testset "Method -- GD with Nonsequential Armijo and BB Steps: method" begin

@@ -46,7 +46,7 @@ A mutable struct that represents gradient descent with non-sequential armijo
 - `reference_value_index::T`, the index of the maximum value in `objective_hist`.
 - `τ_lower::T`, lower bound on the gradient interval triggering event.
 - `τ_upper::T`, upper bound on the gradient interval triggering event.
-- `second_acceptence_occurred::Bool`, if a second accepted iterate has occured.
+- `second_acceptance_occurred::Bool`, if a second accepted iterate has occured.
     Used to correctly compute the Barzilai-Borwein step size.
 - `threshold::T`, norm gradient tolerance condition. Induces stopping when norm 
     is at most `threshold`.
@@ -117,7 +117,7 @@ mutable struct NonsequentialArmijoSafeBBGD{T} <: AbstractOptimizerData{T}
     reference_value_index::Int64
     τ_lower::T
     τ_upper::T
-    second_acceptence_occurred::Bool
+    second_acceptance_occurred::Bool
     threshold::T
     max_iterations::Int64
     iter_hist::Vector{Vector{T}}
@@ -188,7 +188,7 @@ function NonsequentialArmijoSafeBBGD(::Type{T};
         -1,             # reference_value_index
         T(-1),          # τ_lower
         T(-1),          # τ_upper
-        false,          # second_acceptence_occurred
+        false,          # second_acceptance_occurred
         threshold,
         max_iterations,
         iter_hist,
@@ -319,7 +319,7 @@ function inner_loop!(
     j::Int64 = 0
 
     # step size initialization
-    step_size::T = (optData.second_acceptence_occurred) ?
+    step_size::T = (optData.second_acceptance_occurred) ?
         optData.bb_step_size(optData.iter_diff, optData.grad_diff) : 
         optData.init_stepsize 
     step_size = min(max(step_size, optData.α_lower), optData.α_upper)
@@ -504,7 +504,7 @@ function nonsequential_armijo_safe_bb_gd(
 
             ## update values for the next iteration
             optData.grad_val_hist[iter + 1] = optData.norm_∇F_ψ
-            optData.second_acceptence_occurred = true
+            optData.second_acceptance_occurred = true
         else
             # rejected case
             store.grad .= optData.∇F_θk
