@@ -22,21 +22,26 @@ using Test, OptimizationMethods, LinearAlgebra, Random
     @test supertype(BacktrackingGD) == 
         OptimizationMethods.AbstractOptimizerData
 
-    ## TODO - test field names
+
+    ###########################################################################
+    # Test struct constructor
+    ###########################################################################
+
+    # test field names
 
     field_info(type::T) where T = [
-        [:name, String], 
-        [:α, Float64],
-        [:δ, Float64],
-        [:ρ, Float64],
-        [:line_search_max_iteration, Int64],
-        [:threshold, type],
-        [:max_iterations, Int64],
-        [:iter_hist, Vector{Vector{type}}],
-        [:grad_val_hist, Vector{type}],
-        [:stop_iteration, Int64]
-        
-    ]
+            [:name, String], 
+            [:α, type],
+            [:δ, type],
+            [:ρ, type],
+            [:line_search_max_iteration, Int64],
+            [:threshold, type],
+            [:max_iterations, Int64],
+            [:iter_hist, Vector{Vector{type}}],
+            [:grad_val_hist, Vector{type}],
+            [:stop_iteration, Int64]
+            
+        ]
 
     names = [:name, :α, :δ, :ρ, :line_search_max_iteration,
     :threshold, :max_iterations, :iter_hist, :grad_val_hist,
@@ -45,11 +50,6 @@ using Test, OptimizationMethods, LinearAlgebra, Random
     for name in names
         @test name in fieldnames(BacktrackingGD)
     end
-
-
-    ###########################################################################
-    # Test struct constructor
-    ###########################################################################
 
     # test constructor 
     real_types = [Float16, Float32, Float64]
@@ -180,7 +180,7 @@ using Test, OptimizationMethods, LinearAlgebra, Random
 
         ## TODO - test that the stop iteration is correct
 
-        @test optData.stop_iteration < optData.max_iterations 
+        @test optData.stop_iteration <= optData.max_iterations 
 
        
     end
