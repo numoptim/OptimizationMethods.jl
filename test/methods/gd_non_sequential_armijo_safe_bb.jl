@@ -724,7 +724,7 @@ end
             @test ψjk ≈ ψ_jm1_k - step
             @test optData.iter_diff ≈ -step 
             @test optData.grad_diff ≈ OptimizationMethods.grad(progData, ψjk) -
-                OptimizationMethods.grad(progData, ψ_jm1_k)
+                OptimizationMethods.grad(progData, ψ_jm1_k) rtol = 1e-7
             @test store.grad ≈ OptimizationMethods.grad(progData, ψjk)
             @test optData.norm_∇F_ψ ≈ norm(store.grad)
 
@@ -735,7 +735,446 @@ end
     end
 end
 
-@testset "Method -- GD with Nonsequential Armijo and BB Steps: method" begin
+@testset "Method -- GD with Nonsequential Armijo and BB Steps: method (monotone)" begin
+
+    # Default Parameters
+    dim = 50
+    x0 = randn(dim)
+    long_stepsize = true
+    α_lower = 1e-16
+    α_upper = 1e16
+    init_stepsize = α_lower + .5
+    δ0 = abs(randn())
+    δ_upper = δ0 + 1
+    ρ = abs(randn())
+    M = 1 
+    threshold = abs(randn())
+    max_iterations = 100
+
+    # Should exit on iteration 0 because max_iterations is 0
+    let x0=copy(x0), δ0=δ0, δ_upper=δ_upper, ρ=ρ, threshold=threshold, 
+        max_iterations=0
+
+        # Specify optimization method and problem
+        optData = NonsequentialArmijoSafeBBGD(Float64; 
+            x0 = x0,
+            init_stepsize = init_stepsize, 
+            long_stepsize = long_stepsize, 
+            α_lower = α_lower,
+            α_upper = α_upper,
+            δ0 = δ0,
+            δ_upper = δ_upper,
+            ρ = ρ, 
+            M = M,
+            threshold = threshold,
+            max_iterations = max_iterations)
+        progData = OptimizationMethods.LeastSquares(Float64, nvar=dim)
+
+        # Run method
+        x = nonsequential_armijo_safe_bb_gd(optData, progData)
+
+        @test optData.stop_iteration == 0
+        @test progData.counters.neval_obj == 1 
+        @test progData.counters.neval_grad == 1
+        @test x == x0
+        
+        grd = OptimizationMethods.grad(progData, x0)
+        grd_norm = norm(grd)
+        @test optData.grad_val_hist ≈ [norm(grd)]
+        @test optData.τ_lower ≈ norm(grd) / sqrt(2)
+        @test optData.τ_upper ≈ norm(grd) * sqrt(10)
+    end
+
+    # should exit on iteration 0 because threshold is larger than gradient 
+    let x0=copy(x0), δ0=δ0, δ_upper=δ_upper, ρ=ρ, threshold=1e4, 
+        max_iterations=max_iterations
+
+        # Specify optimization method and problem
+        optData = NonsequentialArmijoSafeBBGD(Float64; 
+            x0 = x0,
+            init_stepsize = init_stepsize, 
+            long_stepsize = long_stepsize, 
+            α_lower = α_lower,
+            α_upper = α_upper,
+            δ0 = δ0,
+            δ_upper = δ_upper,
+            ρ = ρ, 
+            M = M,
+            threshold = threshold,
+            max_iterations = max_iterations)
+        progData = OptimizationMethods.LeastSquares(Float64, nvar=dim)
+
+        # Run method
+        x = nonsequential_armijo_safe_bb_gd(optData, progData)
+
+        @test optData.stop_iteration == 0
+        @test progData.counters.neval_obj == 1 
+        @test progData.counters.neval_grad == 1
+        @test x == x0
+        
+        grd = OptimizationMethods.grad(progData, x0)
+        grd_norm = norm(grd)
+        @test optData.grad_val_hist[1] ≈ norm(grd)
+        @test optData.τ_lower ≈ norm(grd) / sqrt(2)
+        @test optData.τ_upper ≈ norm(grd) * sqrt(10)
+    end
+    
+    # test beyond the first iteration 
+    factor = 1
+    let x0=copy(x0), δ0=factor * δ0, δ_upper=factor * δ_upper, ρ=ρ, threshold=threshold, 
+        max_iterations=100
+
+        #Specify Problem 
+        progData = OptimizationMethods.LeastSquares(Float64, nvar=dim)
+
+        # Specify optimization method for exit_iteration - 1
+        optData = NonsequentialArmijoSafeBBGD(Float64; 
+            x0 = x0,
+            init_stepsize = init_stepsize, 
+            long_stepsize = long_stepsize, 
+            α_lower = α_lower,
+            α_upper = α_upper,
+            δ0 = δ0,
+            δ_upper = δ_upper,
+            ρ = ρ, 
+            M = M,
+            threshold = threshold,
+            max_iterations = max_iterations)
+        
+        x = nonsequential_armijo_safe_bb_gd(optData, progData)
+        g = OptimizationMethods.grad(progData, x)
+        
+        stop_iteration = optData.stop_iteration 
+
+        @test optData.iter_hist[stop_iteration+1] == x
+        @test optData.grad_val_hist[stop_iteration+1] ≈ norm(g)
+
+        # Find the first time we accept an iterate, stop 1 before it
+        # and verify that the inner loop is correct
+        first_acceptance = 1
+        while (first_acceptance < stop_iteration) && 
+                (optData.iter_hist[first_acceptance] == 
+                    optData.iter_hist[first_acceptance + 1])
+            first_acceptance += 1
+        end
+
+        ## reset
+        precomp, store = OptimizationMethods.initialize(progData)
+        F(x) = OptimizationMethods.obj(progData, x)
+        for k in 1:(first_acceptance-1)
+
+            # create optdata for k - 1 and k
+            optDatakm1 = NonsequentialArmijoSafeBBGD(Float64; 
+                x0 = x0,
+                init_stepsize = init_stepsize, 
+                long_stepsize = long_stepsize, 
+                α_lower = α_lower,
+                α_upper = α_upper,
+                δ0 = δ0,
+                δ_upper = δ_upper,
+                ρ = ρ, 
+                M = M,
+                threshold = threshold,
+                max_iterations = k-1) ## return x_{k-1}
+
+            optDatak = NonsequentialArmijoSafeBBGD(Float64; 
+                x0 = x0,
+                init_stepsize = init_stepsize, 
+                long_stepsize = long_stepsize, 
+                α_lower = α_lower,
+                α_upper = α_upper,
+                δ0 = δ0,
+                δ_upper = δ_upper,
+                ρ = ρ, 
+                M = M,
+                threshold = threshold,
+                max_iterations = k) ## return x_k
+
+            # generate k - 1 
+            xkm1 = nonsequential_armijo_safe_bb_gd(optDatakm1, progData)  
+            
+            # Setting up for test - output of inner loop for iteration k
+            x = copy(xkm1) 
+            OptimizationMethods.grad!(progData, precomp, store, x)
+            OptimizationMethods.inner_loop!(x, optDatakm1.iter_hist[k], 
+                optDatakm1, progData, precomp, store, k)
+            
+            # Test that the non sequential armijo condition is failed
+            @test !OptimizationMethods.non_sequential_armijo_condition(
+                F(x), optDatakm1.reference_value, 
+                norm(OptimizationMethods.grad(progData, xkm1)), 
+                optDatakm1.ρ, optDatakm1.δk, optDatakm1.α0k)
+
+            # Generate x_k and test the optDatak 
+            xk = nonsequential_armijo_safe_bb_gd(optDatak, progData)
+
+            ## check gradient quantities
+            @test isapprox(optDatak.∇F_θk, 
+                OptimizationMethods.grad(progData, xkm1))
+
+            ## Check that that the algorithm updated the parameters correctly
+            @test optDatak.δk == (optDatakm1.δk * .5)
+            @test xk == xkm1
+
+            ## test field values at time k
+            @test optDatak.reference_value == maximum(optDatak.objective_hist)
+            @test optDatak.objective_hist[optDatak.reference_value_index] ==
+                optDatak.reference_value
+            @test optDatak.iter_hist[k+1] == xk
+            @test optDatak.grad_val_hist[k+1] == optDatak.grad_val_hist[k]
+            @test optDatak.grad_val_hist[k+1] ≈ 
+                norm(OptimizationMethods.grad(progData, xkm1))
+            @test optDatakm1.second_acceptance_occurred == false
+            @test optDatak.second_acceptance_occurred == false
+            @test optDatak.α0k == optDatak.init_stepsize
+            @test optDatak.iter_diff ≈ optDatakm1.iter_diff_checkpoint
+            @test optDatak.grad_diff ≈ optDatakm1.iter_diff_checkpoint
+        end 
+
+        # Test values are correctly updated for acceptance
+        iter = first_acceptance - 1
+
+        # create optdata for k - 1 and k
+        optDatakm1 = NonsequentialArmijoSafeBBGD(Float64; 
+            x0 = x0,
+            init_stepsize = init_stepsize, 
+            long_stepsize = long_stepsize, 
+            α_lower = α_lower,
+            α_upper = α_upper,
+            δ0 = δ0,
+            δ_upper = δ_upper,
+            ρ = ρ, 
+            M = M,
+            threshold = threshold,
+            max_iterations = iter) ## stop_iteration = iter
+
+        optDatak = NonsequentialArmijoSafeBBGD(Float64; 
+            x0 = x0,
+            init_stepsize = init_stepsize, 
+            long_stepsize = long_stepsize, 
+            α_lower = α_lower,
+            α_upper = α_upper,
+            δ0 = δ0,
+            δ_upper = δ_upper,
+            ρ = ρ, 
+            M = M,
+            threshold = threshold,
+            max_iterations = iter + 1) ## stop_iteration = iter + 1
+
+        # generate k - 1 and k
+        xkm1 = nonsequential_armijo_safe_bb_gd(optDatakm1, progData)  
+        xk = nonsequential_armijo_safe_bb_gd(optDatak, progData)
+
+        # Setting up for test - output of inner loop for iteration k
+        x = copy(xkm1) 
+        OptimizationMethods.grad!(progData, precomp, store, x)
+        OptimizationMethods.inner_loop!(x, optDatakm1.iter_hist[iter + 1], 
+            optDatakm1, progData, precomp, store, iter + 1)
+
+        # test that non sequential armijo condition is accepted  
+        achieved_descent = OptimizationMethods.non_sequential_armijo_condition(
+            F(x), optDatakm1.reference_value, optDatakm1.grad_val_hist[iter + 1], 
+            optDatakm1.ρ, optDatakm1.δk, optDatakm1.α0k)
+        @test achieved_descent
+        
+        # Update the parameters in optDatakm1
+        flag = OptimizationMethods.update_algorithm_parameters!(x, optDatakm1, 
+            achieved_descent, iter + 1)
+
+        # update the cache at time k - 1
+        OptimizationMethods.shift_left!(optDatakm1.objective_hist, M)
+        optDatakm1.objective_hist[M] = F(x)
+        optDatakm1.reference_value, optDatakm1.reference_value_index =
+            OptimizationMethods.update_maximum_of_shifted_array(optDatakm1.objective_hist, 
+            optDatakm1.reference_value_index - 1, M)
+        
+        # Check that optDatak matches optDatakm1
+        @test flag
+        @test optDatak.∇F_θk ≈ OptimizationMethods.grad(progData, xkm1)
+        @test optDatak.grad_val_hist[iter + 2] == optDatakm1.norm_∇F_ψ
+        @test optDatak.δk == optDatakm1.δk
+        @test optDatak.τ_lower == optDatakm1.τ_lower
+        @test optDatak.τ_upper == optDatakm1.τ_upper
+        @test xk == x
+
+        ## test field values at time k
+        @test optDatak.reference_value == maximum(optDatak.objective_hist)
+        @test optDatak.objective_hist[optDatak.reference_value_index] ==
+            optDatak.reference_value
+        @test optDatak.reference_value == optDatakm1.reference_value
+        @test optDatak.iter_hist[iter+1] == xkm1
+        @test optDatak.iter_hist[iter+2] == xk
+        @test optDatak.grad_val_hist[iter+2] ≈ 
+            norm(OptimizationMethods.grad(progData, x))
+        @test optDatak.second_acceptance_occurred == true
+        @test optDatak.α0k == optDatak.init_stepsize
+        @test optDatak.iter_diff ≈ optDatakm1.iter_diff
+        @test optDatak.grad_diff ≈ optDatakm1.grad_diff
+        
+        # Find window of non-accepted iterates for last accepted iterate
+        last_acceptance = stop_iteration - 1
+        while (1 < last_acceptance) && 
+                (optData.iter_hist[last_acceptance] == 
+                    optData.iter_hist[last_acceptance + 1])
+            last_acceptance -= 1
+        end
+        last_acceptance += 1
+
+        for k in last_acceptance:(stop_iteration-1)
+
+            # create optdata for k - 1 and k
+            optDatakm1 = NonsequentialArmijoSafeBBGD(Float64; 
+                x0 = x0,
+                init_stepsize = init_stepsize, 
+                long_stepsize = long_stepsize, 
+                α_lower = α_lower,
+                α_upper = α_upper,
+                δ0 = δ0,
+                δ_upper = δ_upper,
+                ρ = ρ, 
+                M = M,
+                threshold = threshold,
+                max_iterations = k-1) ## return x_{k-1}
+
+            optDatak = NonsequentialArmijoSafeBBGD(Float64; 
+                x0 = x0,
+                init_stepsize = init_stepsize, 
+                long_stepsize = long_stepsize, 
+                α_lower = α_lower,
+                α_upper = α_upper,
+                δ0 = δ0,
+                δ_upper = δ_upper,
+                ρ = ρ, 
+                M = M,
+                threshold = threshold,
+                max_iterations = k) ## return x_k
+
+            # generate k - 1 
+            xkm1 = nonsequential_armijo_safe_bb_gd(optDatakm1, progData)  
+            
+            # Setting up for test - output of inner loop for iteration k
+            x = copy(xkm1) 
+            OptimizationMethods.grad!(progData, precomp, store, x)
+            OptimizationMethods.inner_loop!(x, optDatakm1.iter_hist[k], 
+                optDatakm1, progData, precomp, store, k)
+            
+            # Test that the non sequential armijo condition is failed
+            @test !OptimizationMethods.non_sequential_armijo_condition(
+                F(x), optDatakm1.reference_value, 
+                norm(OptimizationMethods.grad(progData, xkm1)), 
+                optDatakm1.ρ, optDatakm1.δk, optDatakm1.α0k)
+
+            # Generate x_k and test the optDatak 
+            xk = nonsequential_armijo_safe_bb_gd(optDatak, progData)
+
+            ## check gradient quantities
+            @test isapprox(optDatak.∇F_θk, 
+                OptimizationMethods.grad(progData, xkm1))
+
+            ## Check that that the algorithm updated the parameters correctly
+            @test optDatak.δk == (optDatakm1.δk * .5)
+            @test xk == xkm1
+
+            ## test field values at time k
+            @test optDatak.reference_value == maximum(optDatak.objective_hist)
+            @test optDatak.objective_hist[optDatak.reference_value_index] ==
+                optDatak.reference_value
+            @test optDatak.iter_hist[k+1] == xk
+            @test optDatak.grad_val_hist[k+1] == optDatak.grad_val_hist[k]
+            @test optDatak.grad_val_hist[k+1] ≈ 
+                norm(OptimizationMethods.grad(progData, xkm1))
+            @test optDatak.second_acceptance_occurred == true
+            @test optDatak.α0k ≈
+                optDatak.bb_step_size(optDatak.iter_diff_checkpoint,
+                    optDatak.grad_diff_checkpoint)
+            @test optDatak.iter_diff ≈ optDatakm1.iter_diff_checkpoint
+            @test optDatak.grad_diff ≈ optDatakm1.grad_diff_checkpoint
+        end
+
+        # Test values are correctly updated for acceptance
+        iter = stop_iteration - 1
+
+        # create optdata for k - 1 and k
+        optDatakm1 = NonsequentialArmijoSafeBBGD(Float64; 
+            x0 = x0,
+            init_stepsize = init_stepsize, 
+            long_stepsize = long_stepsize, 
+            α_lower = α_lower,
+            α_upper = α_upper,
+            δ0 = δ0,
+            δ_upper = δ_upper,
+            ρ = ρ, 
+            M = M,
+            threshold = threshold,
+            max_iterations = iter) ## stop_iteration = iter
+
+        optDatak = NonsequentialArmijoSafeBBGD(Float64; 
+            x0 = x0,
+            init_stepsize = init_stepsize, 
+            long_stepsize = long_stepsize, 
+            α_lower = α_lower,
+            α_upper = α_upper,
+            δ0 = δ0,
+            δ_upper = δ_upper,
+            ρ = ρ, 
+            M = M,
+            threshold = threshold,
+            max_iterations = iter + 1) ## stop_iteration = iter + 1
+
+        # generate k - 1 and k
+        xkm1 = nonsequential_armijo_safe_bb_gd(optDatakm1, progData)  
+        xk = nonsequential_armijo_safe_bb_gd(optDatak, progData)
+
+        # Setting up for test - output of inner loop for iteration k
+        x = copy(xkm1) 
+        OptimizationMethods.grad!(progData, precomp, store, x)
+        OptimizationMethods.inner_loop!(x, optDatakm1.iter_hist[iter + 1], 
+            optDatakm1, progData, precomp, store, iter + 1)
+
+        # test that non sequential armijo condition is accepted  
+        achieved_descent = OptimizationMethods.non_sequential_armijo_condition(
+            F(x), F(xkm1), optDatakm1.grad_val_hist[iter + 1], 
+            optDatakm1.ρ, optDatakm1.δk, optDatakm1.α0k)
+        @test achieved_descent
+        
+        # Update the parameters in optDatakm1
+        flag = OptimizationMethods.update_algorithm_parameters!(x, optDatakm1, 
+            achieved_descent, iter + 1)
+
+        # update the cache at time k - 1
+        OptimizationMethods.shift_left!(optDatakm1.objective_hist, M)
+        optDatakm1.objective_hist[M] = F(x)
+        optDatakm1.reference_value, optDatakm1.reference_value_index =
+            OptimizationMethods.update_maximum_of_shifted_array(optDatakm1.objective_hist, 
+            optDatakm1.reference_value_index - 1, M)
+        
+        # Check that optDatak matches optDatakm1
+        @test flag
+        @test optDatak.∇F_θk ≈ OptimizationMethods.grad(progData, xkm1)
+        @test optDatak.grad_val_hist[iter + 2] == optDatakm1.norm_∇F_ψ
+        @test optDatak.δk == optDatakm1.δk
+        @test optDatak.τ_lower == optDatakm1.τ_lower
+        @test optDatak.τ_upper == optDatakm1.τ_upper
+        @test xk == x
+
+        ## test field values at time k
+        @test optDatak.reference_value == maximum(optDatak.objective_hist)
+        @test optDatak.objective_hist[optDatak.reference_value_index] ==
+            optDatak.reference_value
+        @test optDatak.reference_value == optDatakm1.reference_value
+        @test optDatak.iter_hist[iter+1] == xkm1
+        @test optDatak.iter_hist[iter+2] == xk
+        @test optDatak.grad_val_hist[iter+2] ≈ 
+            norm(OptimizationMethods.grad(progData, x))
+        @test optDatak.second_acceptance_occurred == true
+        @test optDatak.α0k ≈
+            optDatak.bb_step_size(optDatak.iter_diff_checkpoint,
+                optDatak.grad_diff_checkpoint)
+        @test optDatak.iter_diff ≈ optDatakm1.iter_diff
+        @test optDatak.grad_diff ≈ optDatakm1.grad_diff
+
+    end
+
 end
 
 end # End module
