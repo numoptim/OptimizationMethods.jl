@@ -56,8 +56,10 @@ using Test, OptimizationMethods, LinearAlgebra, Random
     number_random_parameters_trials = 5
     dimension = 50
 
-    let real_types = [Float16, Float32, Float64], number_random_parameters_trials = 5,
-        dimension = dimension  # Example dimension
+    let real_types = [Float16, Float32, Float64], 
+        number_random_parameters_trials = number_random_parameters_trials,
+        dimension = dimension,  # Example dimension
+        real_types = real_types
     
         for type in real_types
             for trial in 1:number_random_parameters_trials
@@ -125,7 +127,7 @@ using Test, OptimizationMethods, LinearAlgebra, Random
         ρ::Float64 = 1e-4
         line_search_max_iteration = 100
         threshold = 1e-10
-        max_iterations = 100
+        max_iterations = 1
 
         # construct the struct
         optData = BacktrackingGD(
@@ -141,20 +143,21 @@ using Test, OptimizationMethods, LinearAlgebra, Random
 
         # output after one step
         
-        backtracking_gd(optData, progData)
+        x1 = backtracking_gd(optData, progData)
 
         ## TODO - test that either x1 fails the backtracking 
         ## condition or it succeeds
         
 
         # Compute x1 using backtracking
-        x1 = backtracking_gd(optData, progData)
+        backtracking_gd!(optData, progData)
 
         # Get function and gradient values
 
-        F_x0 = OptimizationMethods.obj(progData, optData.iter_hist[1])
-        F_x1 = OptimizationMethods.obj(progData, optData.iter_hist[2])
+        F_x0 = OptimizationMethods.obj(progData, x0)
+        F_x1 = OptimizationMethods.obj(progData, x1)
         grad_x0 = OptimizationMethods.grad(progData, x0)
+        grad_x1 = OptimizationMethods.grad(progData, x1)
 
         # Compute right-hand side of backtracking condition
         rhs = F_x0 - optData.ρ * optData.α * norm(grad_x0)^2
@@ -170,18 +173,21 @@ using Test, OptimizationMethods, LinearAlgebra, Random
     
 
         @test optData.iter_hist[1] == x0
+        @test optData.iter_hist[2] == x1
        
 
             
         ## TODO - test that the gradient value history is correct
 
         @test optData.grad_val_hist[1] ≈ norm(grad_x0)
+        atol=1e-9
+        @test optData.grad_val_hist[2] ≈ norm(grad_x1)
+        atol=1e-9
 
 
         ## TODO - test that the stop iteration is correct
 
-        @test optData.stop_iteration <= optData.max_iterations 
-
+        @test optData.stop_iteration == 1
        
     end
 
