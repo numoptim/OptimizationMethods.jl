@@ -5,6 +5,85 @@
 
 """
     SafeBarzilaiBorweinNLSMaxValGD{T} <: AbstractOptimizerData{T}
+
+# Fields
+
+- `name::String`, name of the solver for reference. 
+- `δ::T`, backtracking decreasing factor applied to `α` when the line search
+    criterion is not satisfied
+- `ρ::T`, factor involved in the acceptance criterion in the line search
+    procedure. Larger values correspond to stricter descent conditions, and
+    smaller values correspond to looser descent conditions.
+- `line_search_max_iteration::Int64`, maximum number of iterations for
+    line search.
+- `window_size::Int64`, number of previous objective values that are used
+    to construct the reference objective value for the line search criterion.
+- `objective_hist::Vector{T}`, buffer array of size `window_size` that stores
+    `window_size` previous objective values.
+- `max_value::T`, maximum value of `objective_hist`. This is the reference 
+    objective value used in the line search procedure.
+- `max_index::Int64`, index of the maximum value that corresponds to the 
+    reference objective value.
+- `init_stepsize::T`, initial step size to start the method. 
+- `long_stepsize::Bool`, flag for step size; if true, use the long version of 
+    Barzilai-Borwein. If false, use the short version. 
+- `iter_diff::Vector{T}`, a buffer for storing differences between subsequent
+    iterate values that are used for computing the step size
+- `grad_diff::Vector{T}`, a buffer for storing differences between gradient 
+    values at adjacent iterates, which is used to compute the step size
+- `α_lower::T`, value that is used to safeguard too small and too large of an
+    initial step size produced by Barzilai-Borwein
+- `α_default::T`, if the step size produced by Barzilai-Borwein is outside
+    the safeguarded region, then the initial step size for line search is
+    set to this value.
+- `threshold::T`, gradient threshold. If the norm gradient is below this, then 
+    iteration stops.
+- `max_iterations::Int64`, max number of iterations (gradient steps) taken by 
+    the solver.
+- `iter_hist::Vector{Vector{T}}`, a history of the iterates. The first entry
+    corresponds to the initial iterate (i.e., at iteration `0`). The `k+1` entry
+    corresponds to the iterate at iteration `k`.
+- `grad_val_hist::Vector{T}`, a vector for storing `max_iterations+1` gradient
+    norm values. The first entry corresponds to iteration `0`. The `k+1` entry
+    correpsonds to the gradient norm at iteration `k`.
+- `stop_iteration::Int64`, the iteration number that the solver stopped on.
+    The terminal iterate is saved at `iter_hist[stop_iteration+1]`.
+
+# Constructors
+
+    SafeBarzilaiBorweinNLSMaxValGD(::Type{T}; x0::Vector{T}, δ::T, ρ::T,
+        window_size::Int64, line_search_max_iteration::Int64, init_stepsize::T,
+        long_stepsize::Bool, α_lower::T, α_default::T, threshold::T, 
+        max_iterations::Int64) where {T}
+
+## Arguments
+
+- `T::DataType`, specific data type used for calculations.
+
+## Keyword Arguments
+
+- `x0::Vector{T}`, initial point to start the solver at.
+- `δ::T`, backtracking decreasing factor applied to `α` when the line search
+    criterion is not satisfied
+- `ρ::T`, factor involved in the acceptance criterion in the line search
+    procedure. Larger values correpsond to stricter descetn conditions, and
+    smaller values correspond to looser descent conditions.
+- `window_size::Int64`, number of previous objective values that are used
+    to construct the reference value for the line search criterion.
+- `line_search_max_iteration::Int64`, maximum number of iterations for
+    line search.
+- `init_stepsize::T`, initial step size used for the first iteration. 
+- `long_stepsize::Bool`, flag for step size; if true, use the long version of
+    Barzilai-Borwein, if false, use the short version.
+- `α_lower::T`, value that is used to safeguard too small and too large of an
+    initial step size produced by Barzilai-Borwein
+- `α_default::T`, if the step size produced by Barzilai-Borwein is outside
+    the safeguarded region, then the initial step size for line search is
+    set to this value. 
+- `threshold::T`, gradient threshold. If the norm gradient is below this, 
+    then iteration is terminated. 
+- `max_iterations::Int`, max number of iterations (gradient steps) taken by 
+    the solver.
 """
 mutable struct SafeBarzilaiBorweinNLSMaxValGD{T} <: AbstractOptimizerData{T}
     name::String
@@ -69,7 +148,16 @@ end
     backtracking_safe_bb_gd(optData::SafeBarzilaiBorweinNLSMaxValGD{T},
         progData::P where P <: AbstractNLPModel{T, S}) where {T, S}
 
+Implementation of gradient descent with a non-monotone line search strategy
+using the maximum value of a fixed number of previous objective values
+on an optimization problem specified by `progData`. The method initializes
+the line search routine with a safeguarded version of the Barzilai-Borwein
+step size.
+
 # Reference(s)
+
+[Grippo, L and Lampariello, F and Lucidi, S. "A Nonmonotone Line Search
+    Technique for Newton's Method". SIAM. 1986.](@cite grippo1986Nonmonotone)
 
 [Raydan, Marcos. "The Barzilai and Borwein Gradient Method for the Large Scale
     Unconstrained Minimization Problem". SIAM Journal of Optimization. 
@@ -77,8 +165,52 @@ end
 
 # Method
 
+Let ``\\theta_{k-1}`` be the current iterate, and let 
+``\\alpha_{k-1} \\in \\mathbb{R}_{>0}``, ``\\delta \\in (0, 1)``, and
+``\\rho \\in (0, 1)``. The ``k^{th}`` iterate is generated as 
+``\\theta_k = \\theta_{k-1} - \\delta^t\\alpha \\dot F(\\theta_{k-1})`` 
+where ``t + 1 \\in \\mathbb{N}`` is the smallest such number satisfying
+
+```math
+    F(\\theta_k) \\leq \\max_{\\max(0, k-M) \\leq j < k} F(\\theta_{k-1}) - 
+    \\rho\\delta^t\\alpha||\\dot F(\\theta_{k-1})||_2^2,
+```
+
+where ``||\\cdot||_2`` is the L2-norm, and ``M \\in \\mathbb{N}_{>0}``. The
+initial step size ``\\alpha_{k-1}`` for line search is computed depending
+on the iteration number and `optData.long_stepsize`.
+
+## Long Step Size Version (if `optData.long_stepsize==true`)
+
+If ``k=0``, then ``\\alpha_0`` is set to `optData.init_stepsize`. For ``k>0``,
+let
+
+```math 
+\\beta_k = \\frac{ \\Vert x_k - x_{k-1} \\Vert_2^2}{(x_k - x_{k-1})^\\intercal 
+    (\\nabla f(x_k) - \\nabla f(x_{k-1}))},
+```
+
+then ``\\alpha_k = \\beta_k`` when ``\\beta_k \\in`` `[optData.α_lower, 
+1/optData.α_lower]`, otherwise ``\\alpha_k =`` `optData.α_default`.
+
+## Short Step Size Version (if `optData.long_stepsize==false`)
+
+If ``k=0``, then ``\\alpha_0`` is set to `optData.init_stepsize`. For ``k>0``,
+
+```math
+\\alpha_k = \\frac{(x_k - x_{k-1})^\\intercal (\\nabla f(x_k) - 
+    \\nabla f(x_{k-1}))}{\\Vert \\nabla f(x_k) - \\nabla f(x_{k-1})\\Vert_2^2},
+```
+
+then ``\\alpha_k = \\beta_k`` when ``\\beta_k \\in`` `[optData.α_lower, 
+1/optData.α_lower]`, otherwise ``\\alpha_k =`` `optData.α_default`.
+
 # Arguments
 
+- `optData::SafeBarzilaiBorweinNLSMaxValGD{T}`, the specification for the
+    optimization method.
+- `progData<:AbstractNLPModel{T, S}`, the sepcification for the optimization
+    problem.
 """
 function safe_barzilai_borwein_nls_maxval_gd(optData::SafeBarzilaiBorweinNLSMaxValGD{T},
     progData::P where P <: AbstractNLPModel{T, S}) where {T, S}

@@ -97,6 +97,14 @@ OptimizationMethods.inner_loop!
 OptimizationMethods.update_algorithm_parameters!
 ```
 
+# Safeguarded and Globalized Barzilai-Borwein Method
+
+```@docs
+safe_barzilai_borwein_nls_maxval_gd
+
+SafeBarzilaiBorweinNLSMaxValGD
+```
+
 # Line search Helper Functions
 
 ## Backtracking
