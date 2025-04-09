@@ -1,6 +1,7 @@
 module OptimizationMethods
 
 # Dependencies
+using CircularArrays
 using LinearAlgebra
 using NLPModels
 using Distributions

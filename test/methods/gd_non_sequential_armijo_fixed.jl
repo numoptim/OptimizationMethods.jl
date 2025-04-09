@@ -5,7 +5,7 @@
 
 module TestNonsequentialArmijoFixedGD
 
-using Test, OptimizationMethods, LinearAlgebra, Random
+using Test, OptimizationMethods, CircularArrays, LinearAlgebra, Random
 
 @testset "Method -- Gradient Descent with Nonsequential Armijo Fixed GD: struct" begin
 
@@ -26,7 +26,7 @@ using Test, OptimizationMethods, LinearAlgebra, Random
 
     # test field values -- unique names
     unique_fields = [:∇F_θk, :norm_∇F_ψ, :α, :δk, :δ_upper, :ρ, :objective_hist,
-    :reference_value, :reference_value_index, :τ_lower, :τ_upper]
+    :reference_value, :reference_value_index, :acceptance_cnt, :τ_lower, :τ_upper]
     let fields = unique_fields
         for field_name in fields
             @test field_name in fieldnames(NonsequentialArmijoFixedGD)
@@ -46,9 +46,10 @@ using Test, OptimizationMethods, LinearAlgebra, Random
         [:δk, type],
         [:δ_upper, type],
         [:ρ, type],
-        [:objective_hist, Vector{type}],
+        [:objective_hist, CircularVector{type, Vector{type}}],
         [:reference_value, type],
         [:reference_value_index, Int64],
+        [:acceptance_cnt, Int64],
         [:τ_lower, type],
         [:τ_upper, type],
         [:threshold, type],
@@ -430,9 +431,9 @@ end
                 @test optData.grad_val_hist ≈ [norm(grd)]
                 @test optData.τ_lower ≈ norm(grd) / sqrt(2)
                 @test optData.τ_upper ≈ norm(grd) * sqrt(10)
-                @test optData.objective_hist[M] == OptimizationMethods.obj(progData, x0)
+                @test optData.objective_hist[1] == OptimizationMethods.obj(progData, x0)
                 @test optData.reference_value == OptimizationMethods.obj(progData, x0)
-                @test optData.reference_value_index == M
+                @test optData.reference_value_index == 1
             end
 
             # should exit on iteration 0 because threshold is larger than gradient 
@@ -458,9 +459,9 @@ end
                 @test optData.grad_val_hist[1] ≈ norm(grd)
                 @test optData.τ_lower ≈ norm(grd) / sqrt(2)
                 @test optData.τ_upper ≈ norm(grd) * sqrt(10)
-                @test optData.objective_hist[M] == OptimizationMethods.obj(progData, x0)
+                @test optData.objective_hist[1] == OptimizationMethods.obj(progData, x0)
                 @test optData.reference_value == OptimizationMethods.obj(progData, x0)
-                @test optData.reference_value_index == M
+                @test optData.reference_value_index == 1
             end
         
             factor = 1000
@@ -581,11 +582,12 @@ end
                     achieved_descent, iter + 1)
                 
                 # update the cache at time k - 1
-                OptimizationMethods.shift_left!(optDatakm1.objective_hist, M)
-                optDatakm1.objective_hist[M] = F(x)
-                optDatakm1.reference_value, optDatakm1.reference_value_index =
-                    OptimizationMethods.update_maximum_of_shifted_array(optDatakm1.objective_hist, 
-                    optDatakm1.reference_value_index - 1, M)
+                optDatakm1.acceptance_cnt += 1
+                optDatakm1.objective_hist[optDatakm1.acceptance_cnt] = F(x)
+                if (optDatakm1.acceptance_cnt % M) + 1 == optDatakm1.reference_value_index
+                    optDatakm1.reference_value, optDatakm1.reference_value_index =
+                    findmax(optDatakm1.objective_hist)
+                end
                 
                 # Check that optDatak matches optDatakm1
                 @test flag
@@ -697,11 +699,13 @@ end
                     achieved_descent, iter + 1)
 
                 # update the cache at time k - 1
-                OptimizationMethods.shift_left!(optDatakm1.objective_hist, M)
-                optDatakm1.objective_hist[M] = F(x)
-                optDatakm1.reference_value, optDatakm1.reference_value_index =
-                    OptimizationMethods.update_maximum_of_shifted_array(optDatakm1.objective_hist, 
-                    optDatakm1.reference_value_index - 1, M)
+                optDatakm1.acceptance_cnt += 1
+                optDatakm1.objective_hist[optDatakm1.acceptance_cnt] = F(x)
+                if (optDatakm1.acceptance_cnt % M) + 1 == optDatakm1.reference_value_index
+                    optDatakm1.reference_value, optDatakm1.reference_value_index =
+                    findmax(optDatakm1.objective_hist)
+                end
+                
                 
                 # Check that optDatak matches optDatakm1
                 @test flag
