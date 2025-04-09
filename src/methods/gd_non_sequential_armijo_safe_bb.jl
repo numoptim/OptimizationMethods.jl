@@ -23,8 +23,9 @@ A mutable struct that represents gradient descent with non-sequential armijo
     [the short step size function](@ref OptimizationMethods.bb_short_step_size).
 - `α0k::T`, initial step size used in the inner loop. Used in the non-monotone
     non-sequential Armijo condition.
-- `α_lower::T`, lower bound on the step size.
-- `α_upper::T`, upper bound on the step size.
+- `α_lower::T`, used to compute a safeguard on the Barzilai-Borwein step size.
+- `α_default::T`, If the Barzilai-Borwein step size is smaller than `α_lower` or
+    larger than `1/α_lower`, then it is set to `α_default`.
 - `iter_diff_checkpoint::Vector{T}`, buffer array for difference between
     iterates before the start of an inner loop. Values are saved because of 
     potential restarts.
@@ -82,8 +83,9 @@ Constructs an instance of type `NonsequentialArmijoSafeBBGD`.
     [the long step size function](@ref OptimizationMethods.bb_long_step_size) 
     is used. If `false`, then
     [the short step size function](@ref OptimizationMethods.bb_short_step_size). 
-- `α_lower::T`, lower bound on the step size.
-- `α_upper::T`, upper bound on the step size.
+- `α_lower::T`, used to compute a safeguard on the Barzilai-Borwein step size.
+- `α_default::T`, If the Barzilai-Borwein step size is smaller than `α_lower` or
+    larger than `1/α_lower`, then it is set to `α_default`.
 - `δ0::T`, starting scaling factor.
 - `δ_upper::T`, upper limit imposed on the scaling factor when updating.
 - `ρ::T`, parameter used in the non-sequential Armijo condition. Larger
@@ -104,7 +106,7 @@ mutable struct NonsequentialArmijoSafeBBGD{T} <: AbstractOptimizerData{T}
     bb_step_size::Function
     α0k::T
     α_lower::T
-    α_upper::T
+    α_default::T
     iter_diff_checkpoint::Vector{T}
     grad_diff_checkpoint::Vector{T}
     iter_diff::Vector{T}
@@ -129,7 +131,7 @@ function NonsequentialArmijoSafeBBGD(::Type{T};
     init_stepsize::T,
     long_stepsize::Bool,
     α_lower::T,
-    α_upper::T,
+    α_default::T,
     δ0::T,
     δ_upper::T,
     ρ::T,
@@ -146,11 +148,10 @@ function NonsequentialArmijoSafeBBGD(::Type{T};
 
     @assert 0 < α_lower "Step size lower bound $(α_lower) needs to be positive."
 
-    @assert α_lower <= α_upper "Step size upper bound $(α_upper) needs to be"*
-    " at least the lower bound of $(α_lower)."
+    @assert 0 < α_default "Default step size $(α_default) needs to be positive."
 
-    @assert (α_lower <= init_stepsize && init_stepsize <= α_upper) "The initial"*
-    " step size $(init_stepsize) is not in the interval [$(α_lower), $(α_upper)]." 
+    @assert (α_lower <= init_stepsize && init_stepsize <= 1/α_lower) "The initial"*
+    " step size $(init_stepsize) is not in the interval [$(α_lower), $(1/α_lower)]." 
 
     # name for recording purposes
     name::String = "Gradient Descent with Triggering Events and Nonsequential"*
@@ -175,7 +176,7 @@ function NonsequentialArmijoSafeBBGD(::Type{T};
         long_stepsize ? bb_long_step_size : bb_short_step_size,
         T(0),           # α0k
         α_lower,
-        α_upper,
+        α_default,
         zeros(T, d),    # iter_diff_checkpoint
         zeros(T, d),    # grad_diff_checkpoint
         zeros(T, d),    # iter_diff
@@ -322,7 +323,9 @@ function inner_loop!(
     step_size::T = (optData.second_acceptance_occurred) ?
         optData.bb_step_size(optData.iter_diff, optData.grad_diff) : 
         optData.init_stepsize 
-    step_size = min(max(step_size, optData.α_lower), optData.α_upper)
+    if step_size < optData.α_lower || step_size > (1/optData.α_lower)
+        step_size = optData.α_default
+    end
     optData.α0k = step_size
     
     # update the value of the norm gradient
@@ -353,7 +356,9 @@ function inner_loop!(
 
         # compute step size for next iteration
         step_size = optData.bb_step_size(optData.iter_diff, optData.grad_diff)
-        step_size = min(max(step_size, optData.α_lower), optData.α_upper)
+        if step_size < optData.α_lower || step_size > (1/optData.α_lower)
+            step_size = optData.α_default
+        end
     end
 
     return j
