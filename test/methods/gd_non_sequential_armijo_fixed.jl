@@ -667,7 +667,7 @@ end
                 end
 
                 # Test values are correctly updated for acceptance
-                iter = stop_iteration - 1
+                iter = last_acceptance - 2
 
                 # create optdata for k - 1 and k
                 optDatakm1 = NonsequentialArmijoFixedGD(Float64; x0=x0, α = α, δ0=δ0, 
