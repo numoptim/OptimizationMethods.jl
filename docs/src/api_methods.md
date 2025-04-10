@@ -104,13 +104,6 @@ OptimizationMethods.update_algorithm_parameters!
 OptimizationMethods.backtracking!
 ```
 
-## Objective Cache and Maximum Value Utility
-```@docs
-OptimizationMethods.shift_left!
-
-OptimizationMethods.update_maximum
-```
-
 ## Non-sequential Armijo
 ```@docs
 OptimizationMethods.non_sequential_armijo_condition
