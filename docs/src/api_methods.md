@@ -106,13 +106,6 @@ OptimizationMethods.update_algorithm_parameters!
 OptimizationMethods.non_sequential_armijo_condition
 ```
 
-## Objective Cache and Maximum Value Utility
-```@docs
-OptimizationMethods.shift_left!
-
-OptimizationMethods.update_maximum_of_shifted_array
-```
-
 # Index 
 ```@index
 ```
