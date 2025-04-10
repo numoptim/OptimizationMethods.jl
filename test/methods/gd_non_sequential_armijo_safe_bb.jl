@@ -5,7 +5,7 @@
 
 module TestNonsequentialArmijoBBGD
 
-using Test, OptimizationMethods, LinearAlgebra, Random
+using Test, OptimizationMethods, CircularArrays, LinearAlgebra, Random
 
 @testset "Method -- GD with Nonsequential Armijo and BB Steps: struct" begin
 
@@ -28,8 +28,8 @@ using Test, OptimizationMethods, LinearAlgebra, Random
     unique_fields = [:∇F_θk, :norm_∇F_ψ, :init_stepsize, :bb_step_size,
         :α0k, :α_lower, :α_default, :iter_diff_checkpoint, :grad_diff_checkpoint,
         :iter_diff, :grad_diff, :δk, :δ_upper, :ρ, :objective_hist,
-        :reference_value, :reference_value_index, :τ_lower, :τ_upper,
-        :second_acceptance_occurred]
+        :reference_value, :reference_value_index, :acceptance_cnt,
+        :τ_lower, :τ_upper, :second_acceptance_occurred]
     let field = unique_fields
         for field_name in field
             @test field_name in fieldnames(NonsequentialArmijoSafeBBGD)
@@ -53,9 +53,10 @@ using Test, OptimizationMethods, LinearAlgebra, Random
         [:δk, type],
         [:δ_upper, type],
         [:ρ, type],
-        [:objective_hist, Vector{type}],
+        [:objective_hist, CircularVector{type, Vector{type}}],
         [:reference_value, type],
         [:reference_value_index, Int64],
+        [:acceptance_cnt, Int64],
         [:τ_lower, type],
         [:τ_upper, type],
         [:second_acceptance_occurred, Bool],
@@ -1025,11 +1026,12 @@ end
             achieved_descent, iter + 1)
 
         # update the cache at time k - 1
-        OptimizationMethods.shift_left!(optDatakm1.objective_hist, M)
-        optDatakm1.objective_hist[M] = F(x)
-        optDatakm1.reference_value, optDatakm1.reference_value_index =
-            OptimizationMethods.update_maximum_of_shifted_array(optDatakm1.objective_hist, 
-            optDatakm1.reference_value_index - 1, M)
+        optDatakm1.acceptance_cnt += 1
+        optDatakm1.objective_hist[optDatakm1.acceptance_cnt] = F(x)
+        if (optDatakm1.acceptance_cnt % M) + 1 == optDatakm1.reference_value_index
+            optDatakm1.reference_value, optDatakm1.reference_value_index =
+            findmax(optDatakm1.objective_hist)
+        end
         
         # Check that optDatak matches optDatakm1
         @test flag
@@ -1190,12 +1192,13 @@ end
             achieved_descent, iter + 1)
 
         # update the cache at time k - 1
-        OptimizationMethods.shift_left!(optDatakm1.objective_hist, M)
-        optDatakm1.objective_hist[M] = F(x)
-        optDatakm1.reference_value, optDatakm1.reference_value_index =
-            OptimizationMethods.update_maximum_of_shifted_array(optDatakm1.objective_hist, 
-            optDatakm1.reference_value_index - 1, M)
-        
+        optDatakm1.acceptance_cnt += 1
+        optDatakm1.objective_hist[optDatakm1.acceptance_cnt] = F(x)
+        if (optDatakm1.acceptance_cnt % M) + 1 == optDatakm1.reference_value_index
+            optDatakm1.reference_value, optDatakm1.reference_value_index =
+            findmax(optDatakm1.objective_hist)
+        end
+                
         # Check that optDatak matches optDatakm1
         @test flag
         @test optDatak.∇F_θk ≈ OptimizationMethods.grad(progData, xkm1)
@@ -1244,7 +1247,7 @@ end
     ρ = abs(randn())
     M = rand(50:100)
     threshold = abs(randn())
-    max_iterations = rand(20:100)
+    max_iterations = M + 1
 
     # Should exit on iteration 0 because max_iterations is 0
     let x0=copy(x0), δ0=δ0, δ_upper=δ_upper, ρ=ρ, threshold=threshold, 
@@ -1477,12 +1480,14 @@ end
             achieved_descent, iter + 1)
 
         # update the cache at time k - 1
-        OptimizationMethods.shift_left!(optDatakm1.objective_hist, M)
-        optDatakm1.objective_hist[M] = F(x)
-        optDatakm1.reference_value, optDatakm1.reference_value_index =
-            OptimizationMethods.update_maximum_of_shifted_array(optDatakm1.objective_hist, 
-            optDatakm1.reference_value_index - 1, M)
+        optDatakm1.acceptance_cnt += 1
+        optDatakm1.objective_hist[optDatakm1.acceptance_cnt] = F(x)
+        if (optDatakm1.acceptance_cnt % M) + 1 == optDatakm1.reference_value_index
+            optDatakm1.reference_value, optDatakm1.reference_value_index =
+            findmax(optDatakm1.objective_hist)
+        end
         
+
         # Check that optDatak matches optDatakm1
         @test flag
         @test optDatak.∇F_θk ≈ OptimizationMethods.grad(progData, xkm1)
@@ -1592,7 +1597,7 @@ end
         end
 
         # Test values are correctly updated for acceptance
-        iter = stop_iteration - 1
+        iter = last_acceptance - 2
 
         # create optdata for k - 1 and k
         optDatakm1 = NonsequentialArmijoSafeBBGD(Float64; 
@@ -1642,11 +1647,12 @@ end
             achieved_descent, iter + 1)
 
         # update the cache at time k - 1
-        OptimizationMethods.shift_left!(optDatakm1.objective_hist, M)
-        optDatakm1.objective_hist[M] = F(x)
-        optDatakm1.reference_value, optDatakm1.reference_value_index =
-            OptimizationMethods.update_maximum_of_shifted_array(optDatakm1.objective_hist, 
-            optDatakm1.reference_value_index - 1, M)
+        optDatakm1.acceptance_cnt += 1
+        optDatakm1.objective_hist[optDatakm1.acceptance_cnt] = F(x)
+        if (optDatakm1.acceptance_cnt % M) + 1 == optDatakm1.reference_value_index
+            optDatakm1.reference_value, optDatakm1.reference_value_index =
+            findmax(optDatakm1.objective_hist)
+        end
         
         # Check that optDatak matches optDatakm1
         @test flag

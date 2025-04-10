@@ -114,9 +114,10 @@ mutable struct NonsequentialArmijoSafeBBGD{T} <: AbstractOptimizerData{T}
     δk::T
     δ_upper::T
     ρ::T
-    objective_hist::Vector{T}
+    objective_hist::CircularVector{T, Vector{T}}
     reference_value::T
     reference_value_index::Int64
+    acceptance_cnt::Int64
     τ_lower::T
     τ_upper::T
     second_acceptance_occurred::Bool
@@ -184,9 +185,10 @@ function NonsequentialArmijoSafeBBGD(::Type{T};
         δ0,
         δ_upper,
         ρ,
-        zeros(T, M),    # objective_hist
+        CircularVector(zeros(T, M)),    # objective_hist
         T(-1),          # reference_value
         -1,             # reference_value_index
+        0,
         T(-1),          # τ_lower
         T(-1),          # τ_upper
         false,          # second_acceptance_occurred
@@ -470,9 +472,10 @@ function nonsequential_armijo_safe_bb_gd(
 
     # Initialize the objective history
     M = length(optData.objective_hist)
-    optData.objective_hist[M] = F(optData.iter_hist[1]) 
+    optData.acceptance_cnt += 1
+    optData.objective_hist[1] = F(optData.iter_hist[1]) 
     optData.reference_value, optData.reference_value_index = 
-        optData.objective_hist[M], M 
+        optData.objective_hist[1], 1
 
     while (iter < optData.max_iterations) && 
         (optData.grad_val_hist[iter + 1] > optData.threshold)
@@ -501,11 +504,12 @@ function nonsequential_armijo_safe_bb_gd(
         if achieved_descent
 
             ## update the objective cache
-            shift_left!(optData.objective_hist, M)
-            optData.objective_hist[M] = Fx
-            optData.reference_value, optData.reference_value_index = 
-                update_maximum_of_shifted_array(optData.objective_hist, 
-                    optData.reference_value_index-1, M)
+            optData.acceptance_cnt += 1
+            optData.objective_hist[optData.acceptance_cnt] = Fx
+            if (optData.acceptance_cnt % M) + 1 == optData.reference_value_index
+                optData.reference_value, optData.reference_value_index =
+                findmax(optData.objective_hist)
+            end
 
             ## update values for the next iteration
             optData.grad_val_hist[iter + 1] = optData.norm_∇F_ψ
