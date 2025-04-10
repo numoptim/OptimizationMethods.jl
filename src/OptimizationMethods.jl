@@ -87,10 +87,14 @@ export DiminishingStepGD, diminishing_step_gd
 export WeightedNormDampingGD, weighted_norm_damping_gd
 export NonsequentialArmijoAdaptiveGD, nonsequential_armijo_adaptive_gd
 export NonsequentialArmijoFixedGD, nonsequential_armijo_fixed_gd
+export NonsequentialArmijoFixedMNewtonGD, nonsequential_armijo_mnewton_fixed_gd
 
 ## Helper functions for optimization methods
 include("methods/stepsize_helpers/diminishing_stepsizes.jl")
 include("methods/line_search_helpers/non_sequential_armijo.jl")
+
+### Helper functions for second order optimization methods
+include("methods/second_order_helpers/modified_newton.jl")
 
 ## Source Code 
 include("methods/gd_barzilai_borwein.jl")
@@ -101,5 +105,6 @@ include("methods/gd_diminishing.jl")
 include("methods/gd_weighted_norm_damping.jl")
 include("methods/gd_non_sequential_armijo_adaptive.jl")
 include("methods/gd_non_sequential_armijo_fixed.jl")
+include("methods/gd_non_sequential_armijo_fixed_mnewton.jl")
 
 end
