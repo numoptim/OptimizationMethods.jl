@@ -1028,7 +1028,7 @@ end
         # update the cache at time k - 1
         optDatakm1.acceptance_cnt += 1
         optDatakm1.objective_hist[optDatakm1.acceptance_cnt] = F(x)
-        if (optDatakm1.acceptance_cnt % M) + 1 == optDatakm1.reference_value_index
+        if ((optDatakm1.acceptance_cnt - 1) % M) + 1 == optDatakm1.reference_value_index
             optDatakm1.reference_value, optDatakm1.reference_value_index =
             findmax(optDatakm1.objective_hist)
         end
@@ -1194,7 +1194,7 @@ end
         # update the cache at time k - 1
         optDatakm1.acceptance_cnt += 1
         optDatakm1.objective_hist[optDatakm1.acceptance_cnt] = F(x)
-        if (optDatakm1.acceptance_cnt % M) + 1 == optDatakm1.reference_value_index
+        if ((optDatakm1.acceptance_cnt-1) % M) + 1 == optDatakm1.reference_value_index
             optDatakm1.reference_value, optDatakm1.reference_value_index =
             findmax(optDatakm1.objective_hist)
         end
@@ -1482,7 +1482,7 @@ end
         # update the cache at time k - 1
         optDatakm1.acceptance_cnt += 1
         optDatakm1.objective_hist[optDatakm1.acceptance_cnt] = F(x)
-        if (optDatakm1.acceptance_cnt % M) + 1 == optDatakm1.reference_value_index
+        if ((optDatakm1.acceptance_cnt-1) % M) + 1 == optDatakm1.reference_value_index
             optDatakm1.reference_value, optDatakm1.reference_value_index =
             findmax(optDatakm1.objective_hist)
         end
@@ -1649,7 +1649,7 @@ end
         # update the cache at time k - 1
         optDatakm1.acceptance_cnt += 1
         optDatakm1.objective_hist[optDatakm1.acceptance_cnt] = F(x)
-        if (optDatakm1.acceptance_cnt % M) + 1 == optDatakm1.reference_value_index
+        if ((optDatakm1.acceptance_cnt-1) % M) + 1 == optDatakm1.reference_value_index
             optDatakm1.reference_value, optDatakm1.reference_value_index =
             findmax(optDatakm1.objective_hist)
         end
