@@ -211,9 +211,7 @@ end # end of testset
         max_iterations = max_iterations)
     
     ## Conduct test cases
-    update_algorithm_parameters_test_cases(optData, dim, max_iterations;
-        constant_fields = [:name, :∇F_θk, :norm_∇F_ψ, :α, :δ_upper,
-        :ρ, :objective_hist, :reference_value, :reference_value_index])
+    update_algorithm_parameters_test_cases(optData, dim, max_iterations)
 end
 
 @testset "Utility -- Inner Loop" begin
