@@ -242,9 +242,9 @@ Borwein method. To explain the step size computation, define
 ```math
     L(k) = \\max\\lbrace 0 < t \\leq k : \\theta_t \\not= \\theta_{t-1} \\rbrace,
 ```
-where ``\\max \\emptyset = 0``. Let ``\\bar{\\alpha} \\in \\mathbb{R}_{> 0}`` 
-and ``\\underline{\\alpha} \\in \\mathbb{R}_{> 0}``, such that
-``\\bar{\\alpha} <= \\underline{\\alpha}``.
+where ``\\max \\emptyset = 0``. Let 
+``\\underline{\\alpha} \\in \\mathbb{R},~\\underline{\\alpha} \\in (0, 1)``, 
+and ``\\alpha \\in \\mathbb{R}_{> 0}``.
 
 Suppose that `long_stepsize = true` and let ``k + 1 \\in \\mathbb{N}``. We
 now describe how the initial step size for each inner loop is calculated, and
@@ -253,29 +253,28 @@ The initial step size, ``\\alpha_0^k``, depends on if ``L(k) = k`` and the value
 of ``k``. For (case 1) ``k = 0`` or (case 2) ``k > 0`` and ``L(k) = 0``, 
 then ``\\alpha_0^k`` is `optData.init_stepsize`.
 
-For ``k > 0`` and ``0 < L(k) \\leq k``
+For ``k > 0`` and ``0 < L(k) \\leq k``, let
 ```math
-    \\alpha_0^k = 
-        \\min\\left(\\max\\left(
+    \\gamma_0^k = 
         \\frac{
         ||\\psi_{j_{L(k)-1}}^{L(k)-1} - \\psi_{j_{L(k)-1} - 1}^{L(k)-1}||_2^2} 
         {(\\psi_{j_{L(k)-1}}^{L(k)-1} - \\psi_{j_{L(k)-1} - 1}^{L(k)-1})^\\intercal 
         (\\dot F(\\psi_{j_{L(k)-1}}^{L(k)-1}) - 
-        \\dot F(\\psi_{j_{L(k)-1} - 1}^{L(k)-1}))}, \\underline{\\alpha} \\right),
-        \\bar{\\alpha}\\right).
+        \\dot F(\\psi_{j_{L(k)-1} - 1}^{L(k)-1}))},
 ```
+then if ``\\gamma_0^k \\in [\\underline{\\alpha}, 1/\\underline{\\alpha}]`` then
+``\\alpha_0^k = \\gamma_0^k``, otherwise ``\\alpha_0^k = \\alpha``.
 
 In all cases, for ``j \\in \\mathbb{N}`` and ``k + 1 \\in \\mathbb{N}``
 ```math
-    \\alpha_j^k = 
-        \\min\\left(\\max\\left(
+    \\gamma_j^k = 
         \\frac{
         ||\\psi_j^k - \\psi_{j-1}^k||_2^2}{ 
         (\\psi_j^k - \\psi_{j-1}^k)^\\intercal 
         (\\dot F(\\psi_j^k) - \\dot F(\\psi_{j-1}^k))},
-        \\underline{\\alpha}\\right),
-        \\bar{\\alpha}\\right).
 ```
+and if ``\\gamma_j^k \\in [\\underline{\\alpha}, 1/\\underline{\\alpha}]`` then
+``\\alpha_j^k = \\gamma_j^k``, otherwise ``\\alpha_0^k = \\alpha``.
 
 When `long_stepsize = false`, the cases remain the same but the step size formula
 changes to the short form of the Barzilai-Borwein step size.
