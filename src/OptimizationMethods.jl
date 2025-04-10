@@ -1,6 +1,7 @@
 module OptimizationMethods
 
 # Dependencies
+using CircularArrays
 using LinearAlgebra
 using NLPModels
 using Distributions
@@ -92,7 +93,6 @@ export NonsequentialArmijoGD, nonsequential_armijo_gd
 ## Helper functions for optimization methods
 include("methods/stepsize_helpers/diminishing_stepsizes.jl")
 include("methods/line_search_helpers/backtracking.jl")
-include("methods/line_search_helpers/nls_cache_util.jl")
 include("methods/line_search_helpers/non_sequential_armijo.jl")
 
 ## Source Code 
