@@ -97,7 +97,7 @@ function add_identity_until_pd!(
 ) where {T}
 
     iter = 0
-    add_identity(res, λ)                                                
+    add_identity(res, λ + β)                                                
     while iter < max_iterations
         
         iter += 1

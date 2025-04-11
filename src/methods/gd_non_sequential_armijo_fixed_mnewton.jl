@@ -174,6 +174,71 @@ function NonsequentialArmijoFixedMNewtonGD(
 end
 
 """
+    inner_loop!(ψjk::S, θk::S, optData::NonsequentialArmijoFixedMNewtonGD{T}, 
+        progData::P1 where P1 <: AbstractNLPModel{T, S}, 
+        precomp::P2 where P2 <: AbstractPrecompute{T}, 
+        store::P3 where P3 <: AbstractProblemAllocate{T}, 
+        k::Int64; 
+        radius = 10,
+        max_iteration = 100) where {T, S}
+
+Conduct the inner loop iteration, modifying `ψjk`, `optData`, and
+`store` in place. `ψjk` gets updated to be the terminal iterate of the inner loop.
+The inner loop uses a constant step size and modified newton steps
+
+# Method
+
+In what follows, we let ``||\\cdot||_2`` denote the L2-norm. 
+Let ``\\theta_{k}`` for ``k + 1 \\in\\mathbb{N}`` be the ``k^{th}`` iterate
+of the optimization algorithm. Let ``\\delta_{k}, 
+\\tau_{\\mathrm{grad},\\mathrm{lower}}^k, \\tau_{\\mathrm{grad},\\mathrm{upper}}^k``
+be the ``k^{th}`` parameters for the optimization method. Let ``\\alpha`` be 
+a user defined step size that remains fixed.
+
+Let ``\\psi_0^k = \\theta_k``, then this method returns
+```math
+    \\psi_{j_k}^k = \\psi_0^k - \\sum_{i = 0}^{j_k-1} \\delta_k 
+        \\alpha \\left(H_{i}^k\\right)^{-1}\\dot F(\\psi_i^k),
+```
+where ``j_k \\in \\mathbb{N}`` is the smallest iteration for which at least one of the
+conditions are satisfied: 
+
+1. ``||\\psi_{j_k}^k - \\theta_k||_2 > 10``, 
+2. ``||\\dot F(\\psi_{j_k}^k)||_2 \\not\\in (\\tau_{\\mathrm{grad},\\mathrm{lower}}^k,
+    \\tau_{\\mathrm{grad},\\mathrm{upper}}^k)``, 
+3. ``j_k == 100``.
+
+And, `H_{i}^k` is the modified Hessian of `F(\\psi_i^k)` if the subroutine is
+successful (i.e., a constant was found such that 
+``\\ddot F(\\psi_i^k) + \\lambda I``). If the subroutine was unsuccessful, then
+`H_{i}^k` is set to the identity matrix (i.e., a negative gradient step is taken).
+
+# Arguments
+
+- `ψjk::S`, buffer array for the inner loop iterates.
+- `θk::S`, starting iterate.
+- `optData::NonsequentialArmijoFixedMNewtonGD{T}`, `struct` that specifies the optimization
+    algorithm. Fields are modified during the inner loop.
+- `progData::P1 where P1 <: AbstractNLPModel{T, S}`, `struct` that specifies the
+    optimization problem. Fields are modified during the inner loop.
+- `precomp::P2 where P2 <: AbstractPrecompute{T}`, `struct` that has precomputed
+    values. Required to take advantage of this during the gradient computation.
+- `store::P3 where P3 <: AbstractProblemAllocate{T}`, `struct` that contains
+    buffer arrays for computation.
+- `k::Int64`, outer loop iteration for computation of the local Lipschitz
+    approximation scheme.
+
+## Optional Keyword Arguments
+
+- `radius = 10`, the radius of the bounding ball event. Should be kept at `10`,
+    however we allow it to be a parameter for future purposes.
+- `max_iteration = 100`, maximum number of allowable iteration of the inner loop.
+    Should be kept at `100` as that is what is specified in the paper, but
+    is useful to change for testing.
+
+# Returns
+
+- `j::Int64`, the iteration for which a triggering event evaluated to true.
 """
 function inner_loop!(
     ψjk::S,
