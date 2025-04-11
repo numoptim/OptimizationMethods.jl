@@ -4,6 +4,87 @@
 # with modified newton steps and fixed step size
 
 """
+    NonsequentialArmijoFixedMNewtonGD{T} <: AbstractOptimizerData{T}
+
+A mutable struct that represents gradient descent with non-sequential Armijo
+    line search and triggering events. The inner loop uses fixed step sizes
+    with modified newton steps. This `struct` stores the specification of
+    the method, and important values throughout iteration.
+
+# Fields
+
+- `name::String`, name of the optimizer for reference.
+- `∇F_θk::Vector{T}`, buffer array for the gradient of the initial inner
+    loop iterate. This is saved to avoid recomputation if there is a rejection.
+- `∇∇F_θk::Matrix{T}`, buffer matrix for the hessian of the initial inner loop
+    iterate. This is saved to avoid recomputation if there is a rejection.
+- `norm_∇F_ψ::T`, norm of the gradient of the current inner loop iterate.
+- `α::T`, step size used in the inner loop. 
+- `δk::T`, scaling factor used to condition the step size.
+- `δ_upper::T`, upper limit imposed on the scaling factor when updating.
+- `ρ::T`, parameter used in the non-sequential Armijo condition. Larger
+    numbers indicate stricter descent conditions. Smaller numbers indicate
+    less strict descent conditions.
+- `β::T`, argument for the function used to modify the hessian.
+- `λ::T`, argument for the function used to modify the hessian.
+- `hessian_modification_max_iteration::Int64`, max number of attempts
+    at modifying the hessian per-step.
+- `objective_hist::CircularVector{T, Vector{T}}`,  vector of previous accepted 
+    objective value for non-monotone cache update.
+- `reference_value::T`, the maximum objective value in `objective_hist`.
+- `reference_value_index::Int64`, the index of the maximum value in `objective_hist`.
+- `acceptance_cnt::Int64`,
+- `τ_lower::T`, lower bound on the gradient interval triggering event.
+- `τ_upper::T`, upper bound on the gradient interval triggering event.
+- `inner_loop_radius::T`, inner loop radius for the bounding ball event.
+- `inner_loop_max_iterations::Int64`, inner loop max number of iterations.
+- `threshold::T`, norm gradient tolerance condition. Induces stopping when norm 
+    is at most `threshold`.
+- `max_iterations::Int64`, max number of iterates that are produced, not 
+    including the initial iterate.
+- `iter_hist::Vector{Vector{T}}`, store the iterate sequence as the algorithm 
+    progresses. The initial iterate is stored in the first position.
+- `grad_val_hist::Vector{T}`, stores the norm gradient values at each iterate. 
+    The norm of the gradient evaluated at the initial iterate is stored in the 
+    first position.
+- `stop_iteration::Int64`, the iteration number the algorithm stopped on. The 
+    iterate that induced stopping is saved at `iter_hist[stop_iteration + 1]`.
+
+# Constructors
+
+    NonsequentialArmijoFixedMNewtonGD(::Type{T}; x0::Vector{T}, α::T,
+        δ0::T, δ_upper::T, ρ::T, β::T, λ::T,
+        hessian_modification_max_iteration::Int64, M::Int64,
+        inner_loop_radius::T, inner_loop_max_iterations::Int64, threshold::T,
+        max_iterations::Int64) where {T}
+
+## Arguments
+
+- `T::DataType`, type for data and computation.
+
+## Keyword Arguments
+
+- `x0::Vector{T}`, initial point to start the optimization routine. Saved in
+    `iter_hist[1]`.
+- `α::T`, step size used in the inner loop. 
+- `δ0::T`, initial scaling factor.
+- `δ_upper::T`, upper bound on scalling factor 
+- `ρ::T`, parameter used in the non-sequential Armijo condition. Larger
+    numbers indicate stricter descent conditions. Smaller numbers indicate
+    less strict descent conditions.
+- `β::T`, argument for the function used to modify the hessian.
+- `λ::T`, argument for the function used to modify the hessian.
+- `hessian_modification_max_iteration::Int64`, max number of attempts
+    at modifying the hessian per-step.
+- `M::Int64`, number of objective function values from accepted iterates utilized
+    in the non-monotone cache.
+- `inner_loop_radius::T`, inner loop radius for the bounding ball event.
+- `inner_loop_max_iterations::Int64`, inner loop max number of iterations.
+- `threshold::T`, norm gradient tolerance condition. Induces stopping when norm 
+    at most `threshold`.
+- `max_iterations::Int64`, max number of iterates that are produced, not 
+    including the initial iterate.
+
 """
 mutable struct NonsequentialArmijoFixedMNewtonGD{T} <: AbstractOptimizerData{T}
     name::String
@@ -17,7 +98,6 @@ mutable struct NonsequentialArmijoFixedMNewtonGD{T} <: AbstractOptimizerData{T}
     β::T
     λ::T
     hessian_modification_max_iteration::Int64
-    newton_step::Vector{T}
     objective_hist::CircularVector{T, Vector{T}}
     reference_value::T
     reference_value_index::Int64
@@ -77,7 +157,6 @@ function NonsequentialArmijoFixedMNewtonGD(
         β,
         λ,
         hessian_modification_max_iteration,
-        zeros(T, d),
         CircularVector(zeros(T, M)),
         T(-1),
         -1,
