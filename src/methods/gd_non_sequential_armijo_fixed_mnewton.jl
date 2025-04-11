@@ -24,6 +24,8 @@ mutable struct NonsequentialArmijoFixedMNewtonGD{T} <: AbstractOptimizerData{T}
     acceptance_cnt::Int64
     τ_lower::T
     τ_upper::T
+    inner_loop_radius::T
+    inner_loop_max_iterations::Int64
     threshold::T
     max_iterations::Int64
     iter_hist::Vector{Vector{T}}
@@ -41,6 +43,8 @@ function NonsequentialArmijoFixedMNewtonGD(
     λ::T,
     hessian_modification_max_iteration::Int64,
     M::Int64,
+    inner_loop_radius::T,
+    inner_loop_max_iterations::Int64,
     threshold::T,
     max_iterations::Int64
 ) where {T}
@@ -80,6 +84,8 @@ function NonsequentialArmijoFixedMNewtonGD(
         0,
         T(-1),
         T(-1),
+        inner_loop_radius,
+        inner_loop_max_iterations,
         threshold,
         max_iterations,
         iter_hist,
@@ -112,19 +118,19 @@ function inner_loop!(
         j += 1
 
         # modify hessian and return the result
-        res = add_identity_until_psd!(store.hess;
+        res = add_identity_until_pd!(store.hess;
             λ = optData.λ,
             β = optData.β, 
             max_iterations = optData.hessian_modification_max_iteration)
         
         # take a gradient step if this was not successful
-        if !res[3]
+        if !res[2]
             ψjk .-= (optData.δk * optData.α) .* store.grad
         else
-            optData.λ = res[2] / 2
-            optData.newton_step .= res[1].L \ store.grad
-            optData.newton_step .= res[1].U \ optData.newton_step
-            ψjk .-= (optData.δk * optData.α) .* optData.newton_step
+            optData.λ = res[1] / 2
+            lower_triangle_solve!(store.grad, store.hess')
+            upper_triangle_solve!(store.grad, store.hess)
+            ψjk .-= (optData.δk * optData.α) .* store.grad
         end
 
         ## store values for next iteration
@@ -175,7 +181,9 @@ function nonsequential_armijo_mnewton_fixed_gd(
         optData.∇F_θk .= store.grad
         optData.∇∇F_θk .= store.hess
         inner_loop!(x, optData.iter_hist[iter], optData, progData,
-            precomp, store, iter)
+            precomp, store, iter; 
+            radius = optData.inner_loop_radius,
+            max_iteration = optData.max_iterations)
 
         # check non-sequential armijo condition
         Fx = F(x)

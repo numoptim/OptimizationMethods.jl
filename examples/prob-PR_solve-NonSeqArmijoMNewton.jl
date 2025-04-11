@@ -1,6 +1,6 @@
 using OptimizationMethods
 
-progData = OptimizationMethods.LogisticRegression(Float64)
+progData = OptimizationMethods.PoissonRegression(Float64);
 
 M = 1
 x0 = randn(50)
@@ -13,9 +13,9 @@ optData = OptimizationMethods.NonsequentialArmijoFixedMNewtonGD(Float64;
     β = 1e-3,
     λ = 0.0,
     hessian_modification_max_iteration = 10,
+    M = M,
     inner_loop_radius = 100.0,
     inner_loop_max_iterations = 100,
-    M = M,
     threshold = 1e-10,
     max_iterations = 20) 
 
@@ -69,7 +69,7 @@ optData = OptimizationMethods.NonsequentialArmijoFixedMNewtonGD(Float64;
     λ = 0.0,
     hessian_modification_max_iteration = 10,
     M = M,
-    inner_loop_radius = 100.0,
+    inner_loop_radius = 1000.0,
     inner_loop_max_iterations = 100,
     threshold = 1e-10,
     max_iterations = 20) 
