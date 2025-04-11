@@ -45,6 +45,7 @@ A mutable struct that represents gradient descent with non-sequential armijo
     for non-monotone cache update.
 - `reference_value::T`, the maximum objective value in `objective_hist`.
 - `reference_value_index::T`, the index of the maximum value in `objective_hist`.
+- `acceptance_cnt::Int64`, the number of accepted iterates.
 - `τ_lower::T`, lower bound on the gradient interval triggering event.
 - `τ_upper::T`, upper bound on the gradient interval triggering event.
 - `second_acceptance_occurred::Bool`, if a second accepted iterate has occured.
