@@ -287,6 +287,79 @@ function inner_loop!(
 end
 
 """
+    nonsequential_armijo_mnewton_fixed_gd(
+        optData::NonsequentialArmijoFixedMNewtonGD,
+        progData::P where P <: AbstractNLPModel{T, S}) where {T, S}
+
+Implementation of gradient descent with non-sequential armijo and triggering
+    events. The inner loop carries out a fixed step size, modified newton step.
+    The optimization algorithm is specified through `optData`, and applied to the
+    problem `progData`.
+
+# Method
+
+In what follows, we let ``||\\cdot||_2`` denote the L2-norm. 
+Let ``\\theta_{k}`` for ``k + 1 \\in\\mathbb{N}`` be the ``k^{th}`` iterate
+of the optimization algorithm. Let ``\\delta_{k}, 
+\\tau_{\\mathrm{grad},\\mathrm{lower}}^k, \\tau_{\\mathrm{grad},\\mathrm{upper}}^k``
+be the ``k^{th}`` parameters for the optimization method. Let ``\\alpha`` be
+a user selected constant step size.
+The ``k+1^{th}`` iterate and parameters are produced by the following procedure. 
+
+Let ``\\psi_0^k = \\theta_k``, and recursively define
+```math
+    \\psi_{j}^k = \\psi_0^k - \\sum_{i = 0}^{j-1} \\delta_k 
+        \\alpha \\left(H_{i}^k\\right)^{-1}\\dot F(\\psi_i^k),
+```
+where `H_{i}^k` is the modified Hessian of `F(\\psi_i^k)` if the subroutine is
+successful (i.e., a constant was found such that 
+``\\ddot F(\\psi_i^k) + \\lambda I``). If the subroutine was unsuccessful, then
+`H_{i}^k` is set to the identity matrix (i.e., a negative gradient step is taken).
+
+Let ``j_k \\in \\mathbb{N}`` be the smallest iteration for which at least one of the
+conditions are satisfied: 
+
+1. ``||\\psi_{j_k}^k - \\theta_k||_2 > 10``, 
+2. ``||\\dot F(\\psi_{j_k}^k)||_2 \\not\\in (\\tau_{\\mathrm{grad},\\mathrm{lower}}^k,
+    \\tau_{\\mathrm{grad},\\mathrm{upper}}^k)``, 
+3. ``j_k == 100``.
+
+The next iterate and algorithmic parameters in `optData` are updated based on 
+the result of the non-sequential Armijo condition
+```math
+    F(\\psi_{j_k}^k) \\leq 
+    F(\\theta_k) - \\rho\\delta_k\\alpha_0^k||\\dot F(\\theta_k)||_2.
+```
+
+When this condition is not satisfied, the following quantities are updated.
+
+1. The iterate ``\\psi_{j_k}^k`` is rejected, and ``\\theta_{k+1} = \\theta_k``
+2. The scaling factor ``\\delta_{k+1} = .5\\delta_k``
+
+When this condition is satisfied, the following quantities are updated.
+
+1. The iterate ``\\psi_{j_k}^k`` is accepted, and ``\\theta_{k+1} = \\psi_{j_k}^k``.
+2. The scaling factor is updated as ``\\delta_{k+1} = \\min(1.5*\\delta_k, \\bar\\delta)``
+    when ``||\\dot F(\\psi_{j_k}^k)||_2 > \\tau_{\\mathrm{grad},\\mathrm{lower}}^k``,
+    otherwise ``\\delta_{k+1} = \\delta_k``.
+3. If ``||\\dot F(\\psi_{j_k}^k)||_2 \\not\\in (\\tau_{\\mathrm{grad},\\mathrm{lower}}^k,
+    \\tau_{\\mathrm{grad},\\mathrm{upper}}^k)``, then 
+    ``\\tau_{\\mathrm{grad},\\mathrm{lower}}^{k+1} = 
+    ||\\dot F(\\psi_{j_k}^k)||_2/\\sqrt{2}`` and 
+    ``\\tau_{\\mathrm{grad},\\mathrm{upper}}^{k+1} = 
+    \\sqrt{10}||\\dot F(\\psi_{j_k}^k)||_2``. Otherwise, this parameters are held
+    constant.
+
+# Arguments
+
+- `optData::NonsequentialArmijoFixedMNewtonGD{T}`, the specification for the optimization 
+    method.
+- `progData<:AbstractNLPModel{T,S}`, the specification for the optimization
+    problem.
+
+# Return
+
+- `x::S`, final iterate of the optimization algorithm.
 """
 function nonsequential_armijo_mnewton_fixed_gd(
     optData::NonsequentialArmijoFixedMNewtonGD{T},
