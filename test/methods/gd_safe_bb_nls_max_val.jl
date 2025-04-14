@@ -255,9 +255,47 @@ end # end test set SafeBarzilaiBorweinNLSMaxValGD{T} -- Structure
 
 @testset "Test backtracking_safe_bb_gd -- Monotone Version" begin
 
+    # initialize a ranodm linear regression problem for testing
+
+    # sample random fields for initialization
+
+    ############################################################################
+    # Line search should be successful
+    ############################################################################
+
+    # Base case: test the first iteration of the method
+
+    # Inductive step: test a random iteration of the method
+
+    ############################################################################
+    # Line search failure on first iteration
+    ############################################################################
+
+    # Check to make sure the correct iterate is being returned
+
 end # end test set backtracking_safe_bb_gd -- Monotone Version 
 
 @testset "Test backtracking_safe_bb_gd -- Nonmonotone Version" begin
+
+    # initialize a random linear regression problem for testing
+
+    # sample random fields for initialization
+
+    ############################################################################
+    # Line search should be successful
+    ############################################################################
+
+    # Bsae case: test the first iteration of the method
+
+    # Inductive step: test a random iteration of the method 
+    # and ensure that the objective history is correctly updated
+
+    ############################################################################
+    # Line search failure on first iteration
+    ############################################################################
+
+    # Check to make sure the correct iterate is being returned
+
 end # end test set backtracking_safe_bb_gd -- Nonmonotone Version
 
 end # End the testing module
