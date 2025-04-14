@@ -128,7 +128,7 @@ function SafeBarzilaiBorweinNLSMaxValGD(::Type{T};
 
     iter_diff = zeros(T, d)
     grad_diff = zeros(T, d)
-    objective_hist = zeros(T, window_size)
+    objective_hist = CircularVector(zeros(T, window_size))
     max_value = T(0.0)
     max_index = -1
 
@@ -234,8 +234,8 @@ function safe_barzilai_borwein_nls_maxval_gd(optData::SafeBarzilaiBorweinNLSMaxV
 
     # Initialize the objective storage
     optData.max_value = F(x)
-    optData.objective_hist[optData.window_size] = optData.max_value
-    optData.max_index = optData.window_size
+    optData.objective_hist[iter + 1] = optData.max_value
+    optData.max_index = iter + 1
 
     while (iter < optData.max_iterations) && 
         (optData.grad_val_hist[iter + 1] > optData.threshold)
@@ -271,11 +271,11 @@ function safe_barzilai_borwein_nls_maxval_gd(optData::SafeBarzilaiBorweinNLSMaxV
 
         # compute the next reference value
         F_x = F(x)
-        shift_left!(optData.objective_hist, optData.window_size)
-        optData.objective_hist[optData.window_size] = F_x
-        optData.max_value, optData.max_index = 
-            update_maximum(optData.objective_hist, optData.max_index-1,
-                optData.window_size)
+        optData.objective_hist[iter + 1] = F_x
+        if (iter % optData.window_size) + 1 == optData.max_index
+            optData.max_value, optData.max_index = 
+                findmax(optData.objective_hist)
+        end
 
         # store values
         optData.iter_hist[iter + 1] .= x
