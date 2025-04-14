@@ -91,7 +91,7 @@ mutable struct SafeBarzilaiBorweinNLSMaxValGD{T} <: AbstractOptimizerData{T}
     ρ::T
     line_search_max_iteration::Int64
     window_size::Int64
-    objective_hist::Vector{T}
+    objective_hist::CircularVector{T, Vector{T}}
     max_value::T
     max_index::Int64
     init_stepsize::T
@@ -119,8 +119,13 @@ function SafeBarzilaiBorweinNLSMaxValGD(::Type{T};
     threshold::T, 
     max_iterations::Int64) where {T}
 
+    # initial step size must be positive
     @assert init_stepsize > 0 "Initial step size must be a postive value."
 
+    # window size must be positive
+    @assert window_size >= 1 "$(window_size) needs to be a natural number."
+
+    # create the name for the method
     name = "Safe Barzilai Borwein Gradient Descent with (Non)-monotone"*
         " line search"
 
