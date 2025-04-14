@@ -5,7 +5,7 @@
 
 module TestFixedStepNLSMaxValGD
 
-using Test, OptimizationMethods, LinearAlgebra, Random
+using Test, OptimizationMethods, CircularArrays, LinearAlgebra, Random
 
 @testset "Test FixedStepNLSMaxValGD{T} -- Structure" begin
 
@@ -40,8 +40,9 @@ using Test, OptimizationMethods, LinearAlgebra, Random
         (:ρ, type),
         (:window_size, Int64),
         (:line_search_max_iteration, Int64),
-        (:objective_hist, Vector{type}),
+        (:objective_hist, CircularVector{type, Vector{type}}),
         (:max_value, type),
+        (:max_index, Int64),
         (:threshold, type),
         (:max_iterations, Int64),
         (:iter_hist, Vector{Vector{type}}),
@@ -232,12 +233,12 @@ end # end test set for structure
         @test optData.grad_val_hist[2] ≈ norm(OptimizationMethods.grad(progData, x1))
 
         # test the values in optData.objective_hist
-        @test optData.objective_hist[window_size - 1] == F(optData.iter_hist[1])
-        @test optData.objective_hist[window_size] == F(x1)
+        @test optData.objective_hist[1] == F(optData.iter_hist[1])
+        @test optData.objective_hist[2] == F(x1)
 
         # test the values of optData.max_value and optData.max_index
         @test (optData.max_value == F(optData.iter_hist[1]) || !success)
-        @test (optData.max_index == window_size - 1 || !success)
+        @test (optData.max_index == 1 || !success)
     end
 
     # "Inductive Step": test a random iteration of the method
@@ -261,9 +262,8 @@ end # end test set for structure
         xk = fixed_step_nls_maxval_gd(optData, progData)
 
         # test the values of optData.objective_hist 
-        for i in 1:window_size
-            @test optData.objective_hist[i] ==
-                F(optData.iter_hist[max_iterations + 1 - window_size + i])
+        for i in (optData.stop_iteration + 1 - window_size + 1):(optData.stop_iteration + 1)
+            @test optData.objective_hist[i] == F(optData.iter_hist[i])
         end
 
         # test the values of optData.max_value and optData.max_index
@@ -323,11 +323,11 @@ end # end test set for structure
         @test optData.grad_val_hist[1] ≈ norm(g0)
 
         # test the values in optData.objective_hist
-        @test optData.objective_hist[window_size] == F(x1)
+        @test optData.objective_hist[1] == F(x1)
 
         # test the values of optData.max_value and optData.max_index
         @test optData.max_value == F(optData.iter_hist[1])
-        @test optData.max_index == window_size
+        @test optData.max_index == 1
     end
 
 end # end test for for method

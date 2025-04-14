@@ -103,7 +103,7 @@ mutable struct FixedStepNLSMaxValGD{T} <: AbstractOptimizerData{T}
     ρ::T
     window_size::Int64                         
     line_search_max_iteration::Int64
-    objective_hist::Vector{T}                   
+    objective_hist::CircularVector{T, Vector{T}}                   
     max_value::T                                
     max_index::Int64                            
     threshold::T
@@ -118,7 +118,8 @@ mutable struct FixedStepNLSMaxValGD{T} <: AbstractOptimizerData{T}
         stop_iteration) where {T} = 
         begin
             new(name, α, δ, ρ, window_size, line_search_max_iteration, 
-                zeros(T, window_size), T(0.0), -1, threshold,
+                CircularVector(zeros(T, window_size)), 
+                T(0.0), -1, threshold,
                 max_iterations, iter_hist, grad_val_hist, stop_iteration)
         end
 end
@@ -221,8 +222,8 @@ function fixed_step_nls_maxval_gd(
 
     # Update the objective cache
     optData.max_value = F(x)
-    optData.objective_hist[optData.window_size] = optData.max_value
-    optData.max_index = optData.window_size
+    optData.objective_hist[1] = optData.max_value
+    optData.max_index = 1
 
     while (iter < optData.max_iterations) &&
         (optData.grad_val_hist[iter + 1] > optData.threshold)
@@ -250,15 +251,11 @@ function fixed_step_nls_maxval_gd(
 
         # update the objective cache 
         F_x = F(x)
-
-        # shift and delete old objective value
-        shift_left!(optData.objective_hist, optData.window_size)
-        optData.objective_hist[optData.window_size] = F_x
-
-        # update the maximums
-        optData.max_value, optData.max_index = 
-            update_maximum(optData.objective_hist, optData.max_index-1, 
-                optData.window_size)
+        optData.objective_hist[iter + 1] = F_x
+        if ((iter) % optData.window_size) + 1 == optData.max_index
+            optData.max_value, optData.max_index = 
+            findmax(optData.objective_hist)
+        end
     end
 
     optData.stop_iteration = iter
