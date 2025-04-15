@@ -1,7 +1,11 @@
+# Date: 02/13/2025
+# Author: Christian Varner
+# Purpose: Test problem for our method
+
 using OptimizationMethods
 
-progData = OptimizationMethods.PoissonRegression(Float64);
-optData = OptimizationMethods.NonsequentialArmijoGD(
+progData = OptimizationMethods.LeastSquares(Float64);
+optData = OptimizationMethods.NonsequentialArmijoAdaptiveGD(
     Float64;
     x0 = randn(50),
     δ0 = 1.0,
@@ -11,16 +15,16 @@ optData = OptimizationMethods.NonsequentialArmijoGD(
     max_iterations = 100
 )
 
-x = OptimizationMethods.nonsequential_armijo_gd(optData, progData);
+x = OptimizationMethods.nonsequential_armijo_adaptive_gd(optData, progData);
 
 # Compute objective and residual evals during optimization 
 obj_evals = progData.counters.neval_obj
+res_evals = progData.counters.neval_residual 
 
 # Compute objective values of different iterates for reporting purposes
 obj_init = OptimizationMethods.obj(progData, optData.iter_hist[1])
 obj_term = OptimizationMethods.obj(progData, 
-    optData.iter_hist[optData.stop_iteration+1])
-
+    optData.iter_hist[optData.stop_iteration + 1])
 
 
 println(
@@ -37,9 +41,11 @@ println(
 
     Terminal Iteration: $(optData.stop_iteration)
     Terminal Objective: $obj_term
-    Terminal Grad Norm: $(optData.grad_val_hist[optData.stop_iteration+1])
+    Terminal Grad Norm: $(optData.grad_val_hist[optData.stop_iteration + 1])
 
     Objective Evaluations: $obj_evals
     Gradient Evaluations: $(progData.counters.neval_grad)
+    Residual Evaluations: $res_evals
+    Jacobian Evaluations: $(progData.counters.neval_jac_residual)
 """
 )

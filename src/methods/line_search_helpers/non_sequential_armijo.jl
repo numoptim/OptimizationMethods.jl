@@ -21,19 +21,21 @@ for some ``T \\in \\mathbb{N}``, recursively define
     \\psi_j^k = \\psi_0^k - \\sum_{t = 0}^{j-1} \\delta_k \\alpha_t^k \\dot F(\\psi_t^k).
 ```
 
-Then, the (monotone) non-sequential armijo condition requires that
+Then, the non-sequential armijo condition requires that
 
 ```math
-    F(\\psi_j^k) < F(\\psi_0^k) - \\rho \\delta_k \\alpha_0^k ||\\dot F(\\psi_0^k)||_2^2,
+    F(\\psi_j^k) < \\mathcal{O}_k - \\rho \\delta_k \\alpha_0^k ||\\dot F(\\psi_0^k)||_2^2,
 ```
-where ``||\\cdot||_2`` is the L2-norm and ``\\rho \\in (0, 1)``.
+where ``||\\cdot||_2`` is the L2-norm, ``\\rho \\in (0, 1)``, and ``\\mathcal{O}_k``
+is a reference value (e.g., ``\\mathcal{O}_k = F(\\theta_k)``).
 
 This function implements checking the inequality, where `F_ψjk` corresponds to
-    ``F(\\psi_j^k)``, `reference_value` corresponds to ``F(\\psi_0^k)``,
+    ``F(\\psi_j^k)``, `reference_value` corresponds to ``\\mathcal{O}_k``,
     `norm_grad_θk` to ``||\\dot F(\\psi_0^k)||_2``, `ρ` to ``\\rho``, 
-    `δk` to ``\\delta_k``, and `α0k` to ``\\alpha_0^k``. To see more 
-    about how this method is used read the documentation for 
-    [gradient descent with non-sequential armijo](@ref NonsequentialArmijoGD)
+    `δk` to ``\\delta_k``, and `α0k` to ``\\alpha_0^k``.
+    
+To see a list of methods that use this function check out
+    [Non-sequential Armijo Line Search with Event Triggered Objective Evaluations](@ref)
 
 # Arguments
 
@@ -51,7 +53,7 @@ This function implements checking the inequality, where `F_ψjk` corresponds to
     conditions, and lower value indicate looser conditions.
 - `δk::T`, numeric value that corresponds to a scaling factor for the step size.
 - `α0k::T`, numeric value. In the context of 
-    [non-sequential armijo gradient descent](@ref NonsequentialArmijoGD)
+    [non-sequential armijo gradient descent](@ref NonsequentialArmijoAdaptiveGD)
     this is the first step size used in an inner loop.
 
 # Return
@@ -63,4 +65,53 @@ function non_sequential_armijo_condition(F_ψjk::T, reference_value::T,
     norm_grad_θk::T, ρ::T, δk::T, α0k::T) where {T}
 
     return (F_ψjk < reference_value - ρ * δk * α0k * (norm_grad_θk ^ 2))
+end
+
+"""
+    update_algorithm_parameters!(θkp1::S, optData::AbstractOptimizerData{T},
+        achieved_descent::Bool, iter::Int64) where {T, S}
+
+Update the parameters of a non-sequential Armijo with event driven 
+    objective function evaluations after checking the non-sequential Armijo
+    descent condition. To see a list of compatible methods, check
+    [Non-sequential Armijo Line Search with Event Triggered Objective Evaluations](@ref)
+    
+- `θkp1` is updated to be the next outer loop iterate.
+- `optData` has (potentially) the following fields updated: `δk`, `τ_lower`,
+    `τ_upper`.
+
+# Arguments
+
+- `θkp1::S`, buffer array for the storage of the next iterate.
+- `optData::AbstractOptimizerData{T}`, `struct` that specifies the optimization
+    algorithm. 
+- `achieved_descent::Bool`, boolean flag indicating whether or not the
+    descent condition was achieved.
+- `iter::Int64`, the current iteration of the method. The outer loop iteration.
+    This is requried as it is used to overwrite `θkp1` with the previous iterate.
+
+# Returns
+
+- A boolean flag equal to `achieved_descent` to indicate whether `θkp1` is 
+    modified in-place.
+"""
+function update_algorithm_parameters!(θkp1::S, optData::AbstractOptimizerData{T},
+    achieved_descent::Bool, iter::Int64) where {T, S}
+    if !achieved_descent
+        θkp1 .= optData.iter_hist[iter]
+        optData.δk *= .5
+        return false 
+    elseif optData.norm_∇F_ψ <= optData.τ_lower
+        optData.τ_lower = optData.norm_∇F_ψ/sqrt(2) 
+        optData.τ_upper = sqrt(10) * optData.norm_∇F_ψ
+        return true
+    elseif optData.norm_∇F_ψ >= optData.τ_upper
+        optData.δk = min(1.5 * optData.δk, optData.δ_upper)
+        optData.τ_lower = optData.norm_∇F_ψ/sqrt(2) 
+        optData.τ_upper = sqrt(10) * optData.norm_∇F_ψ
+        return true
+    else
+        optData.δk = min(1.5 * optData.δk, optData.δ_upper)
+        return true
+    end 
 end

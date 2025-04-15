@@ -3,7 +3,7 @@
 # Purpose: Test cases for gradient descent with non-sequential armijo
 # (our method).
 
-module TestNonsequentialArmijo
+module TestNonsequentialArmijoAdaptiveGD
 
 using Test, OptimizationMethods, LinearAlgebra, Random
 
@@ -156,14 +156,14 @@ end
     Random.seed!(1010)
 
     # test definition
-    @test isdefined(OptimizationMethods, :NonsequentialArmijoGD)
+    @test isdefined(OptimizationMethods, :NonsequentialArmijoAdaptiveGD)
 
     # test field values -- default names
     default_fields = [:name, :threshold, :max_iterations, :iter_hist,
         :grad_val_hist, :stop_iteration]
     let fields = default_fields
         for field_name in fields
-            @test field_name in fieldnames(NonsequentialArmijoGD)
+            @test field_name in fieldnames(NonsequentialArmijoAdaptiveGD)
         end
     end
 
@@ -172,7 +172,7 @@ end
         :α0k, :δk, :δ_upper, :ρ, :τ_lower, :τ_upper, :local_lipschitz_estimate]
     let fields = unique_fields
         for field_name in fields
-            @test field_name in fieldnames(NonsequentialArmijoGD)
+            @test field_name in fieldnames(NonsequentialArmijoAdaptiveGD)
         end
     end
 
@@ -212,7 +212,7 @@ end
             max_iterations = rand(1:100)
 
             ## build structure
-            optData = NonsequentialArmijoGD(real_type;
+            optData = NonsequentialArmijoAdaptiveGD(real_type;
                 x0 = x0,
                 δ0 = δ0,
                 δ_upper = δ_upper,
@@ -254,7 +254,7 @@ end
             δ_upper = real_type(0)
             
             ## error should occur since δ0 < 0
-            @test_throws AssertionError optData = NonsequentialArmijoGD(
+            @test_throws AssertionError optData = NonsequentialArmijoAdaptiveGD(
                 real_type;
                 x0 = x0,
                 δ0 = δ0,
@@ -267,7 +267,7 @@ end
             δ_upper = real_type(.5)
 
             ## error should occur since δ0 > δ_upper
-            @test_throws AssertionError optData = NonsequentialArmijoGD(
+            @test_throws AssertionError optData = NonsequentialArmijoAdaptiveGD(
                 real_type;
                 x0 = x0,
                 δ0 = δ0,
@@ -282,6 +282,8 @@ end
 
 @testset "Utility -- Update Algorithm Parameters" begin
 
+    include("../utility/update_algorithm_parameters_test_cases.jl")
+
     ## arguments
     dim = 50
     x0 = randn(50)
@@ -292,7 +294,7 @@ end
     max_iterations = rand(3:100)
 
     ## build structure
-    optData = NonsequentialArmijoGD(Float64;
+    optData = NonsequentialArmijoAdaptiveGD(Float64;
         x0 = x0,
         δ0 = δ0,
         δ_upper = δ_upper,
@@ -300,278 +302,8 @@ end
         threshold = threshold,
         max_iterations = max_iterations)
     
-    ############################################################################
-    # Case 1: Did not satisfy armijo condition
-    ############################################################################
-    let optData = optData, achieved_descent = false, dim = dim
-        # First Iteration
-        xp1 = zeros(dim)
-        iter = 1
-        optData.τ_lower = 0.0
-        optData.τ_upper = 1.0
-        optData.δk = 1.0
-
-        params_update_flag = OptimizationMethods.update_algorithm_parameters!(xp1, 
-            optData, achieved_descent, iter)
-
-        @test xp1 == optData.iter_hist[iter]
-        @test optData.τ_lower == 0.0 
-        @test optData.τ_upper == 1.0
-        @test optData.δk == 0.5
-        @test !params_update_flag
-    end
-
-    let optData = optData, achieved_descent = false, dim = dim,
-        max_iterations = max_iterations 
-        # General Iteration 
-        xp1 = zeros(dim)
-        iter = rand(3:max_iterations)
-        optData.τ_lower = 0.0 
-        optData.τ_upper = 1.0 
-        optData.δk = 1.0 
-
-        params_update_flag = OptimizationMethods.update_algorithm_parameters!(xp1, 
-            optData, achieved_descent, iter)
-
-        @test xp1 == optData.iter_hist[iter]
-        @test optData.τ_lower == 0.0 
-        @test optData.τ_upper == 1.0
-        @test optData.δk == 0.5
-        @test !params_update_flag
-        
-    end
-
-    ############################################################################
-    # Case 2: Did satisfy condition + grad-norm smaller than lower bound
-    ############################################################################
-    let optData = optData, achieved_descent = true, dim = dim
-        # First Iteration
-        xp1_init = rand(dim)
-        xp1 = copy(xp1_init)
-        iter = 1
-        optData.τ_lower = 1.0
-        optData.τ_upper = 2.0
-        optData.norm_∇F_ψ = 0.5
-        optData.δk = 1.0
-
-        params_update_flag = OptimizationMethods.update_algorithm_parameters!(xp1, 
-            optData, achieved_descent, iter)
-
-        @test xp1 != optData.iter_hist[iter]
-        @test xp1 == xp1_init
-        @test optData.τ_lower == 0.5 / sqrt(2)
-        @test optData.τ_upper == 0.5 * sqrt(10)
-        @test optData.δk == 1.0
-        @test params_update_flag
-    end 
-
-    let optData = optData, achieved_descent = true, dim = dim,
-        max_iterations = max_iterations 
-        # General Iteration 
-        xp1_init = rand(dim)
-        xp1 = copy(xp1_init)
-        iter = rand(3:max_iterations)
-        optData.τ_lower = 1.0
-        optData.τ_upper = 2.0
-        optData.norm_∇F_ψ = 0.5
-        optData.δk = 1.0 
-
-        params_update_flag = OptimizationMethods.update_algorithm_parameters!(xp1, 
-            optData, achieved_descent, iter)
-
-        @test xp1 != optData.iter_hist[iter]
-        @test xp1 == xp1_init
-        @test optData.τ_lower == 0.5 / sqrt(2)
-        @test optData.τ_upper == 0.5 * sqrt(10)
-        @test optData.δk == 1.0
-        @test params_update_flag
-    end
-
-    ############################################################################
-    # Case 3: Did satisfy condition + grad-norm larger than upper bound
-    ############################################################################
-    let optData = optData, achieved_descent = true, dim = dim
-        # First Iteration, upper bound on delta is not exceeded during update
-        xp1_init = rand(dim)
-        xp1 = copy(xp1_init)
-        iter = 1
-        optData.τ_lower = 1.0
-        optData.τ_upper = 2.0
-        optData.norm_∇F_ψ = 2.5
-        optData.δk = 1.0
-        optData.δ_upper = 2.0
-
-        params_update_flag = OptimizationMethods.update_algorithm_parameters!(xp1, 
-            optData, achieved_descent, iter)
-
-        @test xp1 != optData.iter_hist[iter]
-        @test xp1 == xp1_init
-        @test optData.τ_lower == 2.5 / sqrt(2)
-        @test optData.τ_upper == 2.5 * sqrt(10)
-        @test optData.δk == 1.5
-        @test params_update_flag
-    end 
-
-    let optData = optData, achieved_descent = true, dim = dim
-        # First Iteration, upper bound on delta is exceeded during update
-        xp1_init = rand(dim)
-        xp1 = copy(xp1_init)
-        iter = 1
-        optData.τ_lower = 1.0
-        optData.τ_upper = 2.0
-        optData.norm_∇F_ψ = 2.5
-        optData.δk = 1.0
-        optData.δ_upper = 1.2
-
-        params_update_flag = OptimizationMethods.update_algorithm_parameters!(xp1, 
-            optData, achieved_descent, iter)
-
-        @test xp1 != optData.iter_hist[iter]
-        @test xp1 == xp1_init
-        @test optData.τ_lower == 2.5 / sqrt(2)
-        @test optData.τ_upper == 2.5 * sqrt(10)
-        @test optData.δk == 1.2
-        @test params_update_flag
-    end 
-    
-    let optData = optData, achieved_descent = true, dim = dim,
-        max_iterations = max_iterations 
-        # General Iteration, upper bound on delta is not exceeded during update
-        xp1_init = rand(dim)
-        xp1 = copy(xp1_init)
-        iter = rand(3:max_iterations)
-        optData.τ_lower = 1.0
-        optData.τ_upper = 2.0
-        optData.norm_∇F_ψ = 2.5
-        optData.δk = 1.0 
-        optData.δ_upper = 2.0
-
-        params_update_flag = OptimizationMethods.update_algorithm_parameters!(xp1, 
-            optData, achieved_descent, iter)
-
-        @test xp1 != optData.iter_hist[iter]
-        @test xp1 == xp1_init
-        @test optData.τ_lower == 2.5 / sqrt(2)
-        @test optData.τ_upper == 2.5 * sqrt(10)
-        @test optData.δk == 1.5
-        @test params_update_flag
-    end
-
-    let optData = optData, achieved_descent = true, dim = dim,
-        max_iterations = max_iterations 
-        # General Iteration, upper bound on delta is exceeded during update
-        xp1_init = rand(dim)
-        xp1 = copy(xp1_init)
-        iter = rand(3:max_iterations)
-        optData.τ_lower = 1.0
-        optData.τ_upper = 2.0
-        optData.norm_∇F_ψ = 2.5
-        optData.δk = 1.0 
-        optData.δ_upper = 1.2
-
-        params_update_flag = OptimizationMethods.update_algorithm_parameters!(xp1, 
-            optData, achieved_descent, iter)
-
-        @test xp1 != optData.iter_hist[iter]
-        @test xp1 == xp1_init
-        @test optData.τ_lower == 2.5 / sqrt(2)
-        @test optData.τ_upper == 2.5 * sqrt(10)
-        @test optData.δk == 1.2
-        @test params_update_flag
-    end
-    
-    ############################################################################
-    # Case 4: Did satisfy condition + inside interval
-    ############################################################################
-    let optData = optData, achieved_descent = true, dim = dim
-        # First Iteration, delta upper bound is exceeded
-        xp1_init = rand(dim)
-        xp1 = copy(xp1_init)
-        iter = 1
-        optData.τ_lower = 1.0
-        optData.τ_upper = 2.0
-        optData.norm_∇F_ψ = 1.5
-        optData.δk = 1.0
-        optData.δ_upper = 1.2
-
-        params_update_flag = OptimizationMethods.update_algorithm_parameters!(xp1, 
-            optData, achieved_descent, iter)
-
-        @test xp1 != optData.iter_hist[iter]
-        @test xp1 == xp1_init
-        @test optData.τ_lower == 1.0
-        @test optData.τ_upper == 2.0
-        @test optData.δk == 1.2
-        @test params_update_flag
-    end 
-
-    let optData = optData, achieved_descent = true, dim = dim
-        # First Iteration, delta upper bound is not exceeded
-        xp1_init = rand(dim)
-        xp1 = copy(xp1_init)
-        iter = 1
-        optData.τ_lower = 1.0
-        optData.τ_upper = 2.0
-        optData.norm_∇F_ψ = 1.5
-        optData.δk = 1.0
-        optData.δ_upper = 2.0
-
-        params_update_flag = OptimizationMethods.update_algorithm_parameters!(xp1, 
-            optData, achieved_descent, iter)
-
-        @test xp1 != optData.iter_hist[iter]
-        @test xp1 == xp1_init
-        @test optData.τ_lower == 1.0
-        @test optData.τ_upper == 2.0
-        @test optData.δk == 1.5
-        @test params_update_flag
-    end 
-
-    let optData = optData, achieved_descent = true, dim = dim,
-        max_iterations = max_iterations 
-        # General Iteration, upper bound on delta is exceeded during update
-        xp1_init = rand(dim)
-        xp1 = copy(xp1_init)
-        iter = rand(3:max_iterations)
-        optData.τ_lower = 1.0
-        optData.τ_upper = 2.0
-        optData.norm_∇F_ψ = 1.5
-        optData.δk = 1.0 
-        optData.δ_upper = 1.2
-
-        params_update_flag = OptimizationMethods.update_algorithm_parameters!(xp1, 
-            optData, achieved_descent, iter)
-
-        @test xp1 != optData.iter_hist[iter]
-        @test xp1 == xp1_init
-        @test optData.τ_lower == 1.0
-        @test optData.τ_upper == 2.0
-        @test optData.δk == 1.2
-        @test params_update_flag
-    end
-    
-    let optData = optData, achieved_descent = true, dim = dim,
-        max_iterations = max_iterations 
-        # General Iteration, upper bound on delta is not exceeded during update
-        xp1_init = rand(dim)
-        xp1 = copy(xp1_init)
-        iter = rand(3:max_iterations)
-        optData.τ_lower = 1.0
-        optData.τ_upper = 2.0
-        optData.norm_∇F_ψ = 1.5
-        optData.δk = 1.0 
-        optData.δ_upper = 2.0
-
-        params_update_flag = OptimizationMethods.update_algorithm_parameters!(xp1, 
-            optData, achieved_descent, iter)
-
-        @test xp1 != optData.iter_hist[iter]
-        @test xp1 == xp1_init
-        @test optData.τ_lower == 1.0
-        @test optData.τ_upper == 2.0
-        @test optData.δk == 1.5
-        @test params_update_flag
-    end
+    ## Conduct test cases
+    update_algorithm_parameters_test_cases(optData, dim, max_iterations)
 end
 
 @testset "Utility -- Inner Loop" begin
@@ -585,7 +317,7 @@ end
     max_iterations = rand(3:100)
 
     ## build structure
-    optData = NonsequentialArmijoGD(Float64;
+    optData = NonsequentialArmijoAdaptiveGD(Float64;
         x0 = x0,
         δ0 = δ0,
         δ_upper = δ_upper,
@@ -822,7 +554,7 @@ end
     dim = 50
     x0 = randn(dim)
     δ0 = abs(randn())
-    δ_upper = abs(randn()) + 2 
+    δ_upper = δ0 + 2 
     ρ = abs(randn()) * 1e-3
     threshold = 1e-3
     max_iterations = 100 
@@ -832,12 +564,12 @@ end
         max_iterations=0
 
         # Specify optimization method and problem
-        optData = NonsequentialArmijoGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
+        optData = NonsequentialArmijoAdaptiveGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
             ρ=ρ, threshold=threshold, max_iterations=max_iterations)
         progData = OptimizationMethods.LeastSquares(Float64, nvar=dim)
 
         # Run method
-        x = nonsequential_armijo_gd(optData, progData)
+        x = nonsequential_armijo_adaptive_gd(optData, progData)
 
         
         @test optData.stop_iteration == 0
@@ -857,12 +589,12 @@ end
         max_iterations=max_iterations
 
         # Specify optimization method and problem
-        optData = NonsequentialArmijoGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
+        optData = NonsequentialArmijoAdaptiveGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
             ρ=ρ, threshold=threshold, max_iterations=max_iterations)
         progData = OptimizationMethods.LeastSquares(Float64, nvar=dim)
 
         # Run method
-        x = nonsequential_armijo_gd(optData, progData)
+        x = nonsequential_armijo_adaptive_gd(optData, progData)
 
         @test optData.stop_iteration == 0
         @test progData.counters.neval_obj == 1 
@@ -885,10 +617,10 @@ end
         progData = OptimizationMethods.LeastSquares(Float64, nvar=dim)
 
         # Specify optimization method for exit_iteration - 1
-        optData = NonsequentialArmijoGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
+        optData = NonsequentialArmijoAdaptiveGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
             ρ=ρ, threshold=threshold, max_iterations=max_iterations)
         
-        x = nonsequential_armijo_gd(optData, progData)
+        x = nonsequential_armijo_adaptive_gd(optData, progData)
         g = OptimizationMethods.grad(progData, x)
         
         stop_iteration = optData.stop_iteration 
@@ -917,14 +649,14 @@ end
         for k in 1:(first_acceptance-1)
 
             # create optdata for k - 1 and k
-            optDatakm1 = NonsequentialArmijoGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
+            optDatakm1 = NonsequentialArmijoAdaptiveGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
                 ρ=ρ, threshold=threshold, max_iterations=k-1) ## return x_{k-1}
 
-            optDatak = NonsequentialArmijoGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
+            optDatak = NonsequentialArmijoAdaptiveGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
                 ρ=ρ, threshold=threshold, max_iterations=k) ## return x_k
 
             # generate k - 1 
-            xkm1 = nonsequential_armijo_gd(optDatakm1, progData)  
+            xkm1 = nonsequential_armijo_adaptive_gd(optDatakm1, progData)  
             
             # Setting up for test - output of inner loop for iteration k
             x = copy(xkm1) 
@@ -939,7 +671,7 @@ end
                 optDatakm1.ρ, optDatakm1.δk, optDatakm1.α0k)
 
             # Generate x_k and test the optDatak 
-            xk = nonsequential_armijo_gd(optDatak, progData)
+            xk = nonsequential_armijo_adaptive_gd(optDatak, progData)
 
             ## check gradient quantities
             @test isapprox(optDatak.∇F_θk, 
@@ -960,15 +692,15 @@ end
         iter = first_acceptance - 1
 
         # create optdata for k - 1 and k
-        optDatakm1 = NonsequentialArmijoGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
+        optDatakm1 = NonsequentialArmijoAdaptiveGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
             ρ=ρ, threshold=threshold, max_iterations=iter) ## stop_iteration = iter
 
-        optDatak = NonsequentialArmijoGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
+        optDatak = NonsequentialArmijoAdaptiveGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
             ρ=ρ, threshold=threshold, max_iterations=iter + 1) ## stop_iteration = iter + 1
 
         # generate k - 1 and k
-        xkm1 = nonsequential_armijo_gd(optDatakm1, progData)  
-        xk = nonsequential_armijo_gd(optDatak, progData)
+        xkm1 = nonsequential_armijo_adaptive_gd(optDatakm1, progData)  
+        xk = nonsequential_armijo_adaptive_gd(optDatak, progData)
 
         # Setting up for test - output of inner loop for iteration k
         x = copy(xkm1) 
@@ -1013,14 +745,14 @@ end
         for k in last_acceptance:(stop_iteration-1)
 
             # create optdata for k - 1 and k
-            optDatakm1 = NonsequentialArmijoGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
+            optDatakm1 = NonsequentialArmijoAdaptiveGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
                 ρ=ρ, threshold=threshold, max_iterations=k-1) ## return x_{k-1}
 
-            optDatak = NonsequentialArmijoGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
+            optDatak = NonsequentialArmijoAdaptiveGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
                 ρ=ρ, threshold=threshold, max_iterations=k) ## return x_k
 
             # generate k - 1 
-            xkm1 = nonsequential_armijo_gd(optDatakm1, progData)  
+            xkm1 = nonsequential_armijo_adaptive_gd(optDatakm1, progData)  
             
             # Setting up for test - output of inner loop for iteration k
             x = copy(xkm1) 
@@ -1035,7 +767,7 @@ end
                 optDatakm1.ρ, optDatakm1.δk, optDatakm1.α0k)
 
             # Generate x_k and test the optDatak 
-            xk = nonsequential_armijo_gd(optDatak, progData)
+            xk = nonsequential_armijo_adaptive_gd(optDatak, progData)
 
             ## check gradient quantities
             @test isapprox(optDatak.∇F_θk, 
@@ -1057,15 +789,15 @@ end
         iter = stop_iteration - 1
 
         # create optdata for k - 1 and k
-        optDatakm1 = NonsequentialArmijoGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
+        optDatakm1 = NonsequentialArmijoAdaptiveGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
             ρ=ρ, threshold=threshold, max_iterations=iter) ## stop_iteration = iter
 
-        optDatak = NonsequentialArmijoGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
+        optDatak = NonsequentialArmijoAdaptiveGD(Float64; x0=x0, δ0=δ0, δ_upper=δ_upper,
             ρ=ρ, threshold=threshold, max_iterations=iter + 1) ## stop_iteration = iter + 1
 
         # generate k - 1 and k
-        xkm1 = nonsequential_armijo_gd(optDatakm1, progData)  
-        xk = nonsequential_armijo_gd(optDatak, progData)
+        xkm1 = nonsequential_armijo_adaptive_gd(optDatakm1, progData)  
+        xk = nonsequential_armijo_adaptive_gd(optDatak, progData)
 
         # Setting up for test - output of inner loop for iteration k
         x = copy(xkm1) 
