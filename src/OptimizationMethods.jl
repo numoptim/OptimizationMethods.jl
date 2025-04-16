@@ -95,7 +95,7 @@ include("methods/line_search_helpers/non_sequential_armijo.jl")
 
 ### Helper functions for second order optimization methods
 include("methods/second_order_helpers/modified_newton.jl")
-include("methods/second_order_helpers/triangle-solve.jl")
+include("methods/second_order_helpers/triangle_solve.jl")
 
 ## Source Code 
 include("methods/gd_barzilai_borwein.jl")
