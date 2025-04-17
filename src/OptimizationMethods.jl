@@ -87,9 +87,9 @@ export DiminishingStepGD, diminishing_step_gd
 export WeightedNormDampingGD, weighted_norm_damping_gd
 export BacktrackingGD, backtracking_gd
 export FixedStepNLSMaxValGD, fixed_step_nls_maxval_gd
-export NonsequentialArmijoGD, nonsequential_armijo_gd
 export SafeBarzilaiBorweinNLSMaxValGD, safe_barzilai_borwein_nls_maxval_gd
-
+export NonsequentialArmijoAdaptiveGD, nonsequential_armijo_adaptive_gd
+export NonsequentialArmijoFixedGD, nonsequential_armijo_fixed_gd
 
 ## Helper functions for optimization methods
 include("methods/stepsize_helpers/diminishing_stepsizes.jl")
@@ -105,7 +105,8 @@ include("methods/gd_diminishing.jl")
 include("methods/gd_weighted_norm_damping.jl")
 include("methods/gd_backtracking.jl")
 include("methods/gd_fixed_nls.jl")
-include("methods/gd_non_sequential_armijo.jl")
 include("methods/gd_safe_bb_nls_max_val.jl")
+include("methods/gd_non_sequential_armijo_adaptive.jl")
+include("methods/gd_non_sequential_armijo_fixed.jl")
 
 end
