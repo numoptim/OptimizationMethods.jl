@@ -77,11 +77,6 @@ fixed_step_nls_maxval_gd
 FixedStepNLSMaxValGD
 ```
 
-# Gradient Descent with Non-sequential Armijo Line Search
-```@docs
-NonsequentialArmijoGD
-```
-
 # Non-sequential Armijo Line Search with Event Triggered Objective Evaluations
 
 ## First Order Methods
