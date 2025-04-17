@@ -211,9 +211,7 @@ end # end of testset
         max_iterations = max_iterations)
     
     ## Conduct test cases
-    update_algorithm_parameters_test_cases(optData, dim, max_iterations;
-        constant_fields = [:name, :∇F_θk, :norm_∇F_ψ, :α, :δ_upper,
-        :ρ, :objective_hist, :reference_value, :reference_value_index])
+    update_algorithm_parameters_test_cases(optData, dim, max_iterations)
 end
 
 @testset "Utility -- Inner Loop" begin
@@ -584,7 +582,7 @@ end
                 # update the cache at time k - 1
                 optDatakm1.acceptance_cnt += 1
                 optDatakm1.objective_hist[optDatakm1.acceptance_cnt] = F(x)
-                if (optDatakm1.acceptance_cnt % M) + 1 == optDatakm1.reference_value_index
+                if ((optDatakm1.acceptance_cnt - 1) % M) + 1 == optDatakm1.reference_value_index
                     optDatakm1.reference_value, optDatakm1.reference_value_index =
                     findmax(optDatakm1.objective_hist)
                 end
@@ -667,7 +665,7 @@ end
                 end
 
                 # Test values are correctly updated for acceptance
-                iter = stop_iteration - 1
+                iter = last_acceptance - 2
 
                 # create optdata for k - 1 and k
                 optDatakm1 = NonsequentialArmijoFixedGD(Float64; x0=x0, α = α, δ0=δ0, 
@@ -701,7 +699,7 @@ end
                 # update the cache at time k - 1
                 optDatakm1.acceptance_cnt += 1
                 optDatakm1.objective_hist[optDatakm1.acceptance_cnt] = F(x)
-                if (optDatakm1.acceptance_cnt % M) + 1 == optDatakm1.reference_value_index
+                if ((optDatakm1.acceptance_cnt - 1) % M) + 1 == optDatakm1.reference_value_index
                     optDatakm1.reference_value, optDatakm1.reference_value_index =
                     findmax(optDatakm1.objective_hist)
                 end

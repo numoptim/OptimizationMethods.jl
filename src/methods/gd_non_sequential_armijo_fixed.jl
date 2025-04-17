@@ -25,6 +25,7 @@ A mutable struct that represents gradient descent with non-sequential armijo
     for non-monotone cache update.
 - `reference_value::T`, the maximum objective value in `objective_hist`.
 - `reference_value_index::T`, the index of the maximum value in `objective_hist`.
+- `acceptance_cnt::Int64`, the number of accepted iterates.
 - `τ_lower::T`, lower bound on the gradient interval triggering event.
 - `τ_upper::T`, upper bound on the gradient interval triggering event.
 - `threshold::T`, norm gradient tolerance condition. Induces stopping when norm 
@@ -363,7 +364,7 @@ function nonsequential_armijo_fixed_gd(
             # accepted case
             optData.acceptance_cnt += 1
             optData.objective_hist[optData.acceptance_cnt] = Fx
-            if (optData.acceptance_cnt % M) + 1 == optData.reference_value_index
+            if ((optData.acceptance_cnt - 1) % M) + 1 == optData.reference_value_index
                 optData.reference_value, optData.reference_value_index =
                 findmax(optData.objective_hist)
             end
