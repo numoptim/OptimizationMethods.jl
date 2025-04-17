@@ -29,19 +29,7 @@ using Test, OptimizationMethods, LinearAlgebra, Random
 
     # test field names
 
-    field_info(type::T) where T = [
-            [:name, String], 
-            [:α, type],
-            [:δ, type],
-            [:ρ, type],
-            [:line_search_max_iteration, Int64],
-            [:threshold, type],
-            [:max_iterations, Int64],
-            [:iter_hist, Vector{Vector{type}}],
-            [:grad_val_hist, Vector{type}],
-            [:stop_iteration, Int64]
-            
-        ]
+    
 
     names = [:name, :α, :δ, :ρ, :line_search_max_iteration,
     :threshold, :max_iterations, :iter_hist, :grad_val_hist,
@@ -63,7 +51,7 @@ using Test, OptimizationMethods, LinearAlgebra, Random
     
         for type in real_types
             for trial in 1:number_random_parameters_trials
-
+                
                 ## Expected field types
                 field_types = [String, type, type, type, Int64, type, 
                                Int64, Vector{Vector{type}}, Vector{type}, Int64]
@@ -143,14 +131,14 @@ using Test, OptimizationMethods, LinearAlgebra, Random
 
         # output after one step
         
-        x1 = backtracking_gd(optData, progData)
 
         ## TODO - test that either x1 fails the backtracking 
         ## condition or it succeeds
         
-
+        # x1 = OptimizatoinMethods.backtracking!(x0, optData.iter_hist[0], F,  
+        store.grad, )
         # Compute x1 using backtracking
-        backtracking_gd!(optData, progData)
+        x1 = backtracking_gd(optData, progData)
 
         # Get function and gradient values
 
@@ -160,13 +148,13 @@ using Test, OptimizationMethods, LinearAlgebra, Random
         grad_x1 = OptimizationMethods.grad(progData, x1)
 
         # Compute right-hand side of backtracking condition
-        rhs = F_x0 - optData.ρ * optData.α * norm(grad_x0)^2
+        rhs = F_x0 - optData.ρ * optData.δ * optData.α * norm(grad_x0)^2
 
 
         # Test that either x1 satisfies the backtracking condition or it is rejected
 
         
-        @test (F_x1 <= rhs) || (x1 == x0)
+        @test (F_x1 <= rhs) || x1 == x0
 
        
         ## TODO - test that the iteration history is correct
