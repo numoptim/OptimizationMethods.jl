@@ -85,6 +85,10 @@ export NesterovAcceleratedGD, nesterov_accelerated_gd
 export DiminishingStepGD, diminishing_step_gd
 export WeightedNormDampingGD, weighted_norm_damping_gd
 export BacktrackingGD, backtracking_gd
+<<<<<<< HEAD
+=======
+export NonsequentialArmijoGD, nonsequential_armijo_gd
+>>>>>>> 81c52472a2c6f613903b92ccf86031c7af562f25
 
 ## Helper functions for optimization methods
 include("methods/stepsize_helpers/diminishing_stepsizes.jl")

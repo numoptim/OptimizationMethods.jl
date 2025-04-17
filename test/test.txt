@@ -20,7 +20,4 @@ methods/stepsize_helpers/diminishing_stepsizes.jl
 methods/line_search_helpers/backtracking.jl
 problems/regression_helpers/variance_function_derivatives.jl
 methods/stepsize_helpers/diminishing_stepsizes.jl
-<<<<<<< HEAD
-=======
 methods/line_search_helpers/non_sequential_armijo.jl
->>>>>>> main
