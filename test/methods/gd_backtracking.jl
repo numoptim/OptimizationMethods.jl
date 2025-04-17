@@ -28,9 +28,6 @@ using Test, OptimizationMethods, LinearAlgebra, Random
     ###########################################################################
 
     # test field names
-
-    
-
     names = [:name, :α, :δ, :ρ, :line_search_max_iteration,
     :threshold, :max_iterations, :iter_hist, :grad_val_hist,
     :stop_iteration]
@@ -110,8 +107,8 @@ using Test, OptimizationMethods, LinearAlgebra, Random
     let progData = progData, x0 = x0
 
         # parameters for the struct
-        α::Float64 = abs(randn(Float64))
-        δ::Float64 = abs(randn(Float64))
+        α::Float64 = rand()
+        δ::Float64 = rand()/2
         ρ::Float64 = 1e-4
         line_search_max_iteration = 100
         threshold = 1e-10
@@ -130,53 +127,38 @@ using Test, OptimizationMethods, LinearAlgebra, Random
         )
 
         # output after one step
-        
-
-        ## TODO - test that either x1 fails the backtracking 
-        ## condition or it succeeds
-        
-        #x1 = OptimizatoinMethods.backtracking!(x0, optData.iter_hist[0], F,  
-       # store.grad )
-        # Compute x1 using backtracking
         x1 = backtracking_gd(optData, progData)
 
-        # Get function and gradient values
-
-        F_x0 = OptimizationMethods.obj(progData, x0)
-        F_x1 = OptimizationMethods.obj(progData, x1)
-        grad_x0 = OptimizationMethods.grad(progData, x0)
-        grad_x1 = OptimizationMethods.grad(progData, x1)
-
-        # Compute right-hand side of backtracking condition
-        rhs = F_x0 - optData.ρ * optData.δ * optData.α * norm(grad_x0)^2
-
-
-        # Test that either x1 satisfies the backtracking condition or it is rejected
-
-        
-        @test (F_x1 <= rhs) || x1 == x0
-
-       
-        ## TODO - test that the iteration history is correct
-    
-
+        # test that first iterate was saved correctly
         @test optData.iter_hist[1] == x0
+
+        # Compute x1 using backtracking
+        x = optData.iter_hist[1]
+        x_copy = copy(x)
+        F(θ) = OptimizationMethods.obj(progData, θ)
+        g0 = OptimizationMethods.grad(progData, x)
+        F_x0 = F(x)
+
+        # do one iteration of backtracking -- should pass
+        success = OptimizationMethods.backtracking!(x, x_copy, F, g0,
+            norm(g0) ^ 2, F_x0, optData.α, optData.δ, optData.ρ;
+            max_iteration = optData.line_search_max_iteration)
+        
+        # test that backtracking was used
+        @test success
+        @test x1 ≈ x
+       
+        ## test that the iteration history is correct
         @test optData.iter_hist[2] == x1
-       
+        
+        ## test that the gradient value history is correct
+        @test optData.grad_val_hist[1] ≈ norm(g0) atol=1e-9
+        
+        g1 = norm(OptimizationMethods.grad(progData, x))
+        @test optData.grad_val_hist[2] ≈ norm(g1) atol=1e-9
 
-            
-        ## TODO - test that the gradient value history is correct
-
-        @test optData.grad_val_hist[1] ≈ norm(grad_x0)
-        atol=1e-9
-        @test optData.grad_val_hist[2] ≈ norm(grad_x1)
-        atol=1e-9
-
-
-        ## TODO - test that the stop iteration is correct
-
+        ## test that the stop iteration is correct
         @test optData.stop_iteration == 1
-       
     end
 
     ############################################################################
@@ -185,18 +167,16 @@ using Test, OptimizationMethods, LinearAlgebra, Random
 
     progData = OptimizationMethods.LeastSquares(Float64)
     x0 = progData.meta.x0
-    k = 75 
     
-    let progData = progData, x0 = x0, k = 75
+    let progData = progData, x0 = x0
 
         # parameters for the struct
         α::Float64 = abs(randn(Float64))
         δ::Float64 = abs(randn(Float64))
         ρ::Float64 = 1e-4
         line_search_max_iteration = 100
-        threshold = 1e-6
-        max_iterations = 100  # Ensure it's large enough to include k = 75
-
+        threshold = 1e-10
+        max_iterations = rand(2:20)
 
         # construct the struct
         optData = BacktrackingGD(
@@ -211,44 +191,96 @@ using Test, OptimizationMethods, LinearAlgebra, Random
         )
 
         # Run the gradient descent with backtracking
-        backtracking_gd(optData, progData)
+        xk = backtracking_gd(optData, progData)
 
-
-        ## TODO - test that the stop iteration is correct
-
+        ## test that the stop iteration is correct
         @test 0 < optData.stop_iteration <= max_iterations
 
-
-        ## TODO - test that xk was updated correctly (e.g., by using backtracking! on xkm1)
-        
+        ## test that xk was updated correctly (e.g., by using backtracking! on xkm1)
+        k = optData.stop_iteration
         xkm1 = optData.iter_hist[k]
-        xk = optData.iter_hist[k+1]
         grad_xkm1 = OptimizationMethods.grad(progData, xkm1)
 
         # Compute the right-hand side of the Armijo condition
-        F_xkm1 = OptimizationMethods.obj(progData, xkm1)
-        rhs = F_xkm1 - optData.ρ * optData.α * norm(grad_xkm1)^2
-        F_xk = OptimizationMethods.obj(progData, xk)
-        @test F_xk <= rhs || xk == xkm1
+        F(θ) = OptimizationMethods.obj(progData, θ) 
+        xkm1_copy = copy(xkm1)
+        success = OptimizationMethods.backtracking!(xkm1, xkm1_copy, F,
+            grad_xkm1, norm(grad_xkm1) ^ 2, F(xkm1), optData.α, optData.δ, optData.ρ;
+            max_iteration = optData.line_search_max_iteration)
 
+        @test success
+        @test xkm1 ≈ xk
 
-        ## TODO - test that the gradient value is correct at stop_iteration and
-        ## stop_iteration + 1
+        # test iterate history
+        @test optData.iter_hist[k + 1] == xk
 
+        # test gradient value history
         grad_xk = OptimizationMethods.grad(progData, xk)
-
         @test optData.grad_val_hist[optData.stop_iteration + 1] ≈ norm(grad_xk) 
         atol=1e-9
 
+        grad_xkm1 = OptimizationMethods.grad(progData, xkm1_copy)
+        @test optData.grad_val_hist[optData.stop_iteration] ≈ norm(grad_xkm1) 
+        rtol=1e-9
+    end
+
+    ############################################################################
+    # Test Optimizer: Line search fails
+    ############################################################################
+
+    progData = OptimizationMethods.LeastSquares(Float64)
+    x0 = progData.meta.x0
+    
+    let progData = progData, x0 = x0
+
+        # parameters for the struct
+        α::Float64 = abs(randn(Float64))
+        δ::Float64 = abs(randn(Float64))
+        ρ::Float64 = 1e-4
+        line_search_max_iteration = 0
+        threshold = 1e-10
+        max_iterations = rand(2:20)
+
+        # construct the struct
+        optData = BacktrackingGD(
+            Float64,
+            x0 = x0,
+            α = α,
+            δ = δ,
+            ρ = ρ,
+            line_search_max_iteration = line_search_max_iteration,
+            threshold = threshold,
+            max_iterations = max_iterations
+        )
+
+        # Run the gradient descent with backtracking
+        xk = backtracking_gd(optData, progData)
+
+        ## test that the stop iteration is correct
+        @test optData.stop_iteration == 0
+        @test xk == x0
+        @test optData.iter_hist[1] == x0
+
+        ## test that xk was updated correctly (e.g., by using backtracking! on xkm1)
+        k = optData.stop_iteration
+        xkm1 = optData.iter_hist[1]
         grad_xkm1 = OptimizationMethods.grad(progData, xkm1)
 
-        @test optData.grad_val_hist[optData.stop_iteration] ≈ norm(grad_xkm1) 
+        # Compute the right-hand side of the Armijo condition
+        F(θ) = OptimizationMethods.obj(progData, θ) 
+        xkm1_copy = copy(xkm1)
+        success = OptimizationMethods.backtracking!(xkm1, xkm1_copy, F,
+            grad_xkm1, norm(grad_xkm1) ^ 2, F(xkm1), optData.α, optData.δ, optData.ρ;
+            max_iteration = optData.line_search_max_iteration)
+
+        @test !success
+
+        # test gradient value history
+        grad_xk = OptimizationMethods.grad(progData, xkm1_copy)
+        @test optData.grad_val_hist[optData.stop_iteration + 1] ≈ norm(grad_xk) 
         atol=1e-9
-
-        
-        
-
     end
+
 end
 
 
