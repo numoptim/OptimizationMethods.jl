@@ -220,7 +220,7 @@ function AllocateLS(
         zeros(T, prog.nls_meta.nequ),
         prog.coef,
         zeros(T, prog.nls_meta.nvar),
-        preComp.coef_t_coef,
+        prog.coef' * prog.coef,
     )
 end
 
@@ -525,6 +525,7 @@ args_store = [
     """
     function hess!($(args_store...); recompute::Bool=true) where {T,S}
         increment!(progData, :neval_hess)
+        store.hess .= preComp.coef_t_coef
         return nothing
     end
 end

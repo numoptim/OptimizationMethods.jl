@@ -494,7 +494,7 @@ end # end the structure tests
     max_iterations = rand(1:100)
 
     # build structure
-    optData = NonsequentialArmijoFixedMNewtonGD(type;
+    optData = NonsequentialArmijoFixedMNewtonGD(Float64;
         x0 = x0,
         α = α,
         δ0 = δ0,
@@ -510,11 +510,210 @@ end # end the structure tests
         max_iterations = max_iterations)
 
     # conduct test cases
-    update_algorithm_parameters_test_cases(optData, dim, max_iterations)
+    update_algorithm_parameters_test_cases(optData, 50, max_iterations)
 
 end # end the update parameter tests
 
-@testset "Utility -- Inner Loop Nonsequential Armijo Modified Newton" begin 
+@testset "Utility -- Inner Loop Nonsequential Armijo Modified Newton" begin
+
+    # generate random arguments
+    x0 = randn(50)            
+    α = rand()
+    δ0 = rand()
+    δ_upper = 1 + rand()
+    ρ = rand()
+    β = rand()
+    λ = rand()
+    hessian_modification_max_iteration = 10
+    M = rand(1:100)
+    inner_loop_radius = rand()
+    inner_loop_max_iterations = rand(1:100)
+    threshold = rand()
+    max_iterations = rand(1:100)
+
+    # build structure
+    optData = NonsequentialArmijoFixedMNewtonGD(Float64;
+        x0 = x0,
+        α = α,
+        δ0 = δ0,
+        δ_upper = δ_upper,
+        ρ = ρ,
+        β = β,
+        λ = λ,
+        hessian_modification_max_iteration = hessian_modification_max_iteration,
+        M = M,
+        inner_loop_radius = inner_loop_radius,
+        inner_loop_max_iterations = inner_loop_max_iterations,
+        threshold = threshold,
+        max_iterations = max_iterations)
+
+    progData = OptimizationMethods.LeastSquares(Float64, nvar=50)
+    precomp, store = OptimizationMethods.initialize(progData)
+    ks = [1, max_iterations]
+
+    for k in ks
+
+        # Test first event trigger: radius violation
+        let ψjk=x0 .+ 11, θk=x0, optData=optData, progData=progData,
+            store=store, k=k
+
+            optData.grad_val_hist[k] = 1.5
+            optData.τ_lower = 1.0
+            optData.τ_upper = 2.0
+            
+            OptimizationMethods.inner_loop!(ψjk, θk, optData, progData, precomp, 
+                store, k, max_iteration=100)
+
+            @test ψjk == x0 .+ 11
+        end # end first event trigger test
+
+        # Test second event trigger: τ_lower 
+        let ψjk=copy(x0), θk=copy(x0), optData=optData, progData=progData,
+            store=store, k=k
+
+            optData.grad_val_hist[k] = 0.5 
+            optData.τ_lower = 1.0
+            optData.τ_upper = 2.0
+            
+            OptimizationMethods.inner_loop!(ψjk, θk, optData, progData, precomp, 
+                store, k, max_iteration=100)
+
+            @test ψjk == x0
+        end # end second event triggering event
+
+        # Test third event trigger: τ_upper 
+        let ψjk=copy(x0), θk=copy(x0), optData=optData, progData=progData,
+            store=store, k=k
+
+            optData.grad_val_hist[k] = 2.5 
+            optData.τ_lower = 1.0
+            optData.τ_upper = 2.0
+            
+            OptimizationMethods.inner_loop!(ψjk, θk, optData, progData, precomp, 
+                store, k, max_iteration=100)
+
+            @test ψjk == x0
+        end
+        
+        # Test fourth event trigger: max_iteration
+        let ψjk=copy(x0), θk=copy(x0), optData=optData, progData=progData,
+            store=store, k=k
+
+            optData.grad_val_hist[k] = 1.5 
+            optData.τ_lower = 1.0
+            optData.τ_upper = 2.0
+            
+            OptimizationMethods.inner_loop!(ψjk, θk, optData, progData, precomp, 
+                store, k, max_iteration=0)
+
+            @test ψjk == x0
+        end
+
+        # Test first iteration -- successful hessian modification
+        let ψjk=copy(x0), θk=copy(x0), optData=optData, progData=progData,
+            store=store, k=k
+
+            j=1
+
+            optData.hessian_modification_max_iteration = hessian_modification_max_iteration
+            OptimizationMethods.grad!(progData, precomp, store, θk)
+            OptimizationMethods.hess!(progData, precomp, store, θk)
+            optData.grad_val_hist[k] = norm(store.grad)
+            optData.norm_∇F_ψ = norm(store.grad)
+            optData.τ_lower = 0.5 * norm(store.grad) 
+            optData.τ_upper = 1.5 * norm(store.grad)
+            optData.λ = 1.0
+
+            optData.δk = 1.5
+            α = optData.α
+
+            # modify hessian and return the result -- should terminate with success
+            H = OptimizationMethods.hess(progData, θk)
+            g = OptimizationMethods.grad(progData, θk)
+            res = OptimizationMethods.add_identity_until_pd!(H;
+                λ = optData.λ,
+                β = optData.β, 
+                max_iterations = optData.hessian_modification_max_iteration)
+        
+            # take a gradient step if this was not successful
+            step = zeros(50)
+            if !res[2]
+                step .= (optData.δk * optData.α) .* g
+            else
+                OptimizationMethods.lower_triangle_solve!(g, H')
+                OptimizationMethods.upper_triangle_solve!(g, H)
+                step .= (optData.δk * optData.α) .* g
+            end
+
+            # reset
+            j = OptimizationMethods.inner_loop!(ψjk, θk, optData, progData, precomp,
+                store, k; radius = optData.inner_loop_radius, max_iteration = 1
+            )
+            @test j == 1
+
+            # test cases
+            @test ψjk ≈ θk - step 
+            @test optData.λ == res[1] / 2
+            @test optData.α == α
+            @test store.grad ≈ OptimizationMethods.grad(progData, ψjk)
+            @test store.hess ≈ OptimizationMethods.hess(progData, ψjk)
+            @test optData.norm_∇F_ψ == norm(store.grad)
+        end
+
+        # Test first iteration
+        let ψjk=copy(x0), θk=copy(x0), optData=optData, progData=progData,
+            store=store, k=k
+
+            j=1
+
+            optData.hessian_modification_max_iteration = 0
+            OptimizationMethods.grad!(progData, precomp, store, θk)
+            OptimizationMethods.hess!(progData, precomp, store, θk)
+            optData.grad_val_hist[k] = norm(store.grad)
+            optData.norm_∇F_ψ = norm(store.grad)
+            optData.τ_lower = 0.5 * norm(store.grad) 
+            optData.τ_upper = 1.5 * norm(store.grad)
+            optData.λ = 1.0
+
+            optData.δk = 1.5
+            α = optData.α
+
+            # modify hessian and return the result -- should terminate with success
+            H = OptimizationMethods.hess(progData, θk)
+            g = OptimizationMethods.grad(progData, θk)
+            res = OptimizationMethods.add_identity_until_pd!(H;
+                λ = optData.λ,
+                β = optData.β, 
+                max_iterations = optData.hessian_modification_max_iteration)
+        
+            # take a gradient step if this was not successful
+            step = zeros(50)
+            if !res[2]
+                step .= (optData.δk * optData.α) .* g
+            else
+                OptimizationMethods.lower_triangle_solve!(g, H')
+                OptimizationMethods.upper_triangle_solve!(g, H)
+                step .= (optData.δk * optData.α) .* g
+            end
+
+            # reset
+            j = OptimizationMethods.inner_loop!(ψjk, θk, optData, progData, precomp,
+                store, k; radius = optData.inner_loop_radius, max_iteration = 1
+            )
+            @test j == 1
+
+            # test cases
+            @test ψjk ≈ θk - step 
+            @test optData.λ == 1.0
+            @test optData.α == α
+            @test store.grad ≈ OptimizationMethods.grad(progData, ψjk)
+            @test store.hess ≈ OptimizationMethods.hess(progData, ψjk)
+            @test optData.norm_∇F_ψ == norm(store.grad)
+        end
+
+        # Test random iteration
+
+    end # end of for loop 
 end # end the test of the inner loop
 
 @testset "Method -- Nonsequential Armijo with Modified Newton (Monotone)" begin
