@@ -70,11 +70,11 @@ function centered_exp(μ::T, p::T, c::T) where {T}
 end
 
 """
-    centered_shifted_log(μ::T, p::T, c::T) where {T}
+    centered_shifted_log(μ::T, p::T, c::T, d::T) where {T}
 
 Implements the variance function
 ```math
-    V(\\mu) = \\log(|\\mu-c|^{2p} + 1).
+    V(\\mu) = \\log(|\\mu-c|^{2p} + 1) + d.
 ```
 See [Quasi-likelihood Estimation](@ref) for details.
 
@@ -82,13 +82,16 @@ See [Quasi-likelihood Estimation](@ref) for details.
 
 - `μ::T`, scalar. In the regression context, this is the estimated mean of a 
     datapoint.
-- `p::T`, scalar. Power applied to `μ^2`.
+- `p::T`, scalar. Power applied to `|\\mu-c|^2`.
 - `c::T`, scalar. Center where noise level is lowest.
+- `d::T`, scalar. Irreducible variance. Corresponds to the minimum variance.
+    Must be positive.
 
 !!! note
-    For `p` smaller than ``.5``, the variance function is not continuously 
-    differentiable at ``c``.
+    For `p` smaller than or equal to ``.5``, the variance function is not 
+    continuously differentiable at ``c``. When `d <= 0`, the variance function
+    is not well-defined, that is it can take on negative and zero values.
 """
-function centered_shifted_log(μ::T, p::T, c::T) where {T}
-    return log(abs(μ-c)^(2*p) + 1)
+function centered_shifted_log(μ::T, p::T, c::T, d::T) where {T}
+    return log(abs(μ-c)^(2*p) + 1) + d
 end 

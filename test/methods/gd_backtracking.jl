@@ -135,8 +135,8 @@ using Test, OptimizationMethods, LinearAlgebra, Random
         ## TODO - test that either x1 fails the backtracking 
         ## condition or it succeeds
         
-        # x1 = OptimizatoinMethods.backtracking!(x0, optData.iter_hist[0], F,  
-        store.grad, )
+        #x1 = OptimizatoinMethods.backtracking!(x0, optData.iter_hist[0], F,  
+       # store.grad )
         # Compute x1 using backtracking
         x1 = backtracking_gd(optData, progData)
 
