@@ -475,6 +475,43 @@ using Test, OptimizationMethods, LinearAlgebra, CircularArrays
 end # end the structure tests
 
 @testset "Utility -- Update Algorithm Parameters Nonsequential Modified Newton" begin
+
+    include("../utility/update_algorithm_parameters_test_cases.jl")
+
+    # generate random arguments
+    x0 = randn(50)            
+    α = rand()
+    δ0 = rand()
+    δ_upper = 1 + rand()
+    ρ = rand()
+    β = rand()
+    λ = rand()
+    hessian_modification_max_iteration = rand(1:100)
+    M = rand(1:100)
+    inner_loop_radius = rand()
+    inner_loop_max_iterations = rand(1:100)
+    threshold = rand()
+    max_iterations = rand(1:100)
+
+    # build structure
+    optData = NonsequentialArmijoFixedMNewtonGD(type;
+        x0 = x0,
+        α = α,
+        δ0 = δ0,
+        δ_upper = δ_upper,
+        ρ = ρ,
+        β = β,
+        λ = λ,
+        hessian_modification_max_iteration = hessian_modification_max_iteration,
+        M = M,
+        inner_loop_radius = inner_loop_radius,
+        inner_loop_max_iterations = inner_loop_max_iterations,
+        threshold = threshold,
+        max_iterations = max_iterations)
+
+    # conduct test cases
+    update_algorithm_parameters_test_cases(optData, dim, max_iterations)
+
 end # end the update parameter tests
 
 @testset "Utility -- Inner Loop Nonsequential Armijo Modified Newton" begin 
