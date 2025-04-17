@@ -585,7 +585,7 @@ end # end test set backtracking_safe_bb_gd -- Monotone Version
         k = optData.stop_iteration
 
         # carry out process for backtracking
-        xkmwindsz = optData.iter_hist[k - optData.window_size]
+        xkmwindsz = optData.iter_hist[k + 1 - optData.window_size]
         xkm2 = optData.iter_hist[k-1] 
         xkm1 = optData.iter_hist[k]
         F(θ) = OptimizationMethods.obj(progData, θ)
