@@ -130,6 +130,26 @@ function NonsequentialArmijoFixedMNewtonGD(
 ) where {T}
 
     # error checking
+    @assert α > 0 "Step size $(α) needs to be positive."
+
+    @assert δ0 > 0 "Step size $(δ0) needs to be postive."
+    
+    @assert δ_upper >= δ0 "The upper bound $(δ_upper) is smaller than $(δ0)."
+
+    @assert ρ > 0 "Line search parameter ρ is not positive."
+
+    @assert β > 0 "Modified Newton Parameter β is not positive."
+
+    @assert λ >= 0 "Modified Newton Parameter λ is not non-negative."
+    
+    @assert M > 0 "Objective history length $(M) is zero or negative."
+
+    @assert inner_loop_radius > 0 "Inner loop radius is zero or negative."
+
+    @assert inner_loop_max_iterations > 0 "Inner loop max iteration is zero"*
+        "or negative."
+
+    @assert max_iterations >= 0 "Max iterations is negative."
 
     # initializations for struct
     name::String = "Gradient Descent with Triggering Events and Nonsequential"*
