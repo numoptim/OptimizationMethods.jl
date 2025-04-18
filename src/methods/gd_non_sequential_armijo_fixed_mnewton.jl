@@ -420,7 +420,7 @@ function nonsequential_armijo_mnewton_fixed_gd(
         inner_loop!(x, optData.iter_hist[iter], optData, progData,
             precomp, store, iter; 
             radius = optData.inner_loop_radius,
-            max_iteration = optData.max_iterations)
+            max_iteration = optData.inner_loop_max_iterations)
 
         # check non-sequential armijo condition
         Fx = F(x)

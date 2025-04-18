@@ -547,14 +547,15 @@ end # end the update parameter tests
         threshold = threshold,
         max_iterations = max_iterations)
 
-    progData = OptimizationMethods.LeastSquares(Float64, nvar=50)
+    progData = OptimizationMethods.LogisticRegression(Float64, nvar=50)
     precomp, store = OptimizationMethods.initialize(progData)
     ks = [1, max_iterations]
 
     for k in ks
 
         # Test first event trigger: radius violation
-        let ψjk=x0 .+ 11, θk=x0, optData=optData, progData=progData,
+        let ψjk=x0 .+ inner_loop_radius, 
+            θk=x0, optData=optData, progData=progData,
             store=store, k=k
 
             optData.grad_val_hist[k] = 1.5
@@ -562,9 +563,11 @@ end # end the update parameter tests
             optData.τ_upper = 2.0
             
             OptimizationMethods.inner_loop!(ψjk, θk, optData, progData, precomp, 
-                store, k, max_iteration=100)
+                store, k;
+                radius = optData.inner_loop_radius,
+                max_iteration=100)
 
-            @test ψjk == x0 .+ 11
+            @test ψjk == x0 .+ inner_loop_radius
         end # end first event trigger test
 
         # Test second event trigger: τ_lower 
@@ -576,7 +579,9 @@ end # end the update parameter tests
             optData.τ_upper = 2.0
             
             OptimizationMethods.inner_loop!(ψjk, θk, optData, progData, precomp, 
-                store, k, max_iteration=100)
+                store, k;
+                radius = optData.inner_loop_radius,
+                max_iteration=100)
 
             @test ψjk == x0
         end # end second event triggering event
@@ -590,7 +595,9 @@ end # end the update parameter tests
             optData.τ_upper = 2.0
             
             OptimizationMethods.inner_loop!(ψjk, θk, optData, progData, precomp, 
-                store, k, max_iteration=100)
+                store, k;
+                radius = optData.inner_loop_radius,
+                max_iteration=100)
 
             @test ψjk == x0
         end
@@ -604,7 +611,9 @@ end # end the update parameter tests
             optData.τ_upper = 2.0
             
             OptimizationMethods.inner_loop!(ψjk, θk, optData, progData, precomp, 
-                store, k, max_iteration=0)
+                store, k; 
+                radius = optData.inner_loop_radius,
+                max_iteration=0)
 
             @test ψjk == x0
         end
@@ -660,7 +669,7 @@ end # end the update parameter tests
             @test optData.norm_∇F_ψ == norm(store.grad)
         end
 
-        # Test first iteration
+        # Test first iteration -- unsuccessful hessian modification
         let ψjk=copy(x0), θk=copy(x0), optData=optData, progData=progData,
             store=store, k=k
 
@@ -711,15 +720,1139 @@ end # end the update parameter tests
             @test optData.norm_∇F_ψ == norm(store.grad)
         end
 
-        # Test random iteration
+        # Test random iteration -- successful hessian modification
+        let ψjk=copy(x0), θk=copy(x0), optData=optData, progData=progData,
+            store=store, k=k
 
+            #To do this test correctly, we would need to know at what iteration 
+            #j an inner loop exists.
+            max_iteration = rand(2:100)
+
+            # Reset
+            optData.hessian_modification_max_iteration = 
+                hessian_modification_max_iteration
+            OptimizationMethods.grad!(progData, precomp, store, θk)
+            OptimizationMethods.hess!(progData, precomp, store, θk) 
+            optData.grad_val_hist[k] = norm(store.grad)
+            optData.norm_∇F_ψ = norm(store.grad)
+            optData.τ_lower = 0.5 * norm(store.grad) 
+            optData.τ_upper = 1.5 * norm(store.grad)
+            optData.δk = 1.5
+            optData.λ = 0.0
+
+            #Get exit iteration j -- radius == 10 so that we get resonable j
+            j = OptimizationMethods.inner_loop!(ψjk, θk, optData, progData, precomp,
+                store, k; max_iteration = max_iteration
+            )
+
+            # Reset 
+            ψjk = copy(x0)
+            θk = copy(x0)
+
+            optData.hessian_modification_max_iteration = 
+                hessian_modification_max_iteration
+            OptimizationMethods.grad!(progData, precomp, store, θk)
+            OptimizationMethods.hess!(progData, precomp, store, θk) 
+            optData.grad_val_hist[k] = norm(store.grad)
+            optData.norm_∇F_ψ = norm(store.grad)
+            optData.τ_lower = 0.5 * norm(store.grad) 
+            optData.τ_upper = 1.5 * norm(store.grad)
+            optData.δk = 1.5
+            optData.λ = 0.0
+
+            OptimizationMethods.inner_loop!(ψjk, θk, optData, progData, precomp,
+                store, k, max_iteration = j-1
+            )
+            α = optData.α
+
+            ψ_jm1_k = copy(ψjk)
+            grd = OptimizationMethods.grad(progData, ψ_jm1_k)
+            hess = OptimizationMethods.hess(progData, ψ_jm1_k)
+
+            # compute step
+            res = OptimizationMethods.add_identity_until_pd!(hess;
+                λ = optData.λ,
+                β = optData.β, 
+                max_iterations = optData.hessian_modification_max_iteration)
+        
+            # take a gradient step if this was not successful
+            step = zeros(50)
+            if !res[2]
+                step .= (optData.δk * optData.α) .* grd
+            else
+                OptimizationMethods.lower_triangle_solve!(grd, hess')
+                OptimizationMethods.upper_triangle_solve!(grd, hess)
+                step .= (optData.δk * optData.α) .* grd
+            end
+
+            # Reset 
+            ψjk = copy(x0)
+            θk = copy(x0)
+
+            optData.hessian_modification_max_iteration = 
+                hessian_modification_max_iteration
+            OptimizationMethods.grad!(progData, precomp, store, θk)
+            OptimizationMethods.hess!(progData, precomp, store, θk) 
+            optData.grad_val_hist[k] = norm(store.grad)
+            optData.norm_∇F_ψ = norm(store.grad)
+            optData.τ_lower = 0.5 * norm(store.grad) 
+            optData.τ_upper = 1.5 * norm(store.grad)
+            optData.δk = 1.5
+            optData.λ = 0.0
+
+            #Get ψ_{j,k}
+            OptimizationMethods.inner_loop!(ψjk, θk, optData, progData, precomp,
+                store, k, max_iteration = max_iteration
+            )
+
+            @test ψjk ≈ ψ_jm1_k - step
+            @test store.grad ≈ OptimizationMethods.grad(progData, ψjk)
+            @test store.hess ≈ OptimizationMethods.hess(progData, ψjk)
+            @test optData.norm_∇F_ψ ≈ norm(store.grad)
+            @test optData.α == α
+        end
+
+        # Test random iteration -- unsuccessful termination
+        let ψjk=copy(x0), θk=copy(x0), optData=optData, progData=progData,
+            store=store, k=k
+
+            #To do this test correctly, we would need to know at what iteration 
+            #j an inner loop exists.
+            max_iteration = rand(2:100)
+
+            # Reset
+            optData.hessian_modification_max_iteration = 0
+            OptimizationMethods.grad!(progData, precomp, store, θk)
+            OptimizationMethods.hess!(progData, precomp, store, θk) 
+            optData.grad_val_hist[k] = norm(store.grad)
+            optData.norm_∇F_ψ = norm(store.grad)
+            optData.τ_lower = 0.5 * norm(store.grad) 
+            optData.τ_upper = 1.5 * norm(store.grad)
+            optData.δk = 1.5
+            optData.λ = 0.0
+
+            #Get exit iteration j
+            j = OptimizationMethods.inner_loop!(ψjk, θk, optData, progData, precomp,
+                store, k, max_iteration = max_iteration
+            )
+
+            # Reset 
+            ψjk = copy(x0)
+            θk = copy(x0)
+
+            optData.hessian_modification_max_iteration = 0
+            OptimizationMethods.grad!(progData, precomp, store, θk)
+            OptimizationMethods.hess!(progData, precomp, store, θk) 
+            optData.grad_val_hist[k] = norm(store.grad)
+            optData.norm_∇F_ψ = norm(store.grad)
+            optData.τ_lower = 0.5 * norm(store.grad) 
+            optData.τ_upper = 1.5 * norm(store.grad)
+            optData.δk = 1.5
+            optData.λ = 0.0
+
+            OptimizationMethods.inner_loop!(ψjk, θk, optData, progData, precomp,
+                store, k, max_iteration = j-1
+            )
+            α = optData.α
+
+            ψ_jm1_k = copy(ψjk)
+            grd = OptimizationMethods.grad(progData, ψ_jm1_k)
+            hess = OptimizationMethods.hess(progData, ψ_jm1_k)
+
+            # compute step
+            res = OptimizationMethods.add_identity_until_pd!(hess;
+                λ = optData.λ,
+                β = optData.β, 
+                max_iterations = optData.hessian_modification_max_iteration)
+        
+            # take a gradient step if this was not successful
+            step = zeros(50)
+            if !res[2]
+                step .= (optData.δk * optData.α) .* grd
+            else
+                OptimizationMethods.lower_triangle_solve!(grd, hess')
+                OptimizationMethods.upper_triangle_solve!(grd, hess)
+                step .= (optData.δk * optData.α) .* grd
+            end
+
+            # Reset 
+            ψjk = copy(x0)
+            θk = copy(x0)
+
+            optData.hessian_modification_max_iteration = 0
+            OptimizationMethods.grad!(progData, precomp, store, θk)
+            OptimizationMethods.hess!(progData, precomp, store, θk) 
+            optData.grad_val_hist[k] = norm(store.grad)
+            optData.norm_∇F_ψ = norm(store.grad)
+            optData.τ_lower = 0.5 * norm(store.grad) 
+            optData.τ_upper = 1.5 * norm(store.grad)
+            optData.δk = 1.5
+            optData.λ = 0.0
+
+            #Get ψ_{j,k}
+            OptimizationMethods.inner_loop!(ψjk, θk, optData, progData, precomp,
+                store, k, max_iteration = max_iteration
+            )
+
+            @test ψjk ≈ ψ_jm1_k - step
+            @test store.grad ≈ OptimizationMethods.grad(progData, ψjk)
+            @test store.hess ≈ OptimizationMethods.hess(progData, ψjk)
+            @test optData.norm_∇F_ψ ≈ norm(store.grad)
+            @test optData.α == α
+        end
     end # end of for loop 
 end # end the test of the inner loop
 
 @testset "Method -- Nonsequential Armijo with Modified Newton (Monotone)" begin
+
+    # generate random arguments
+    x0 = randn(50)            
+    α = rand()
+    δ0 = rand()
+    δ_upper = 1 + rand()
+    ρ = rand()
+    β = rand()
+    λ = rand()
+    hessian_modification_max_iteration = 10
+    M = 1                                           # M = 1 for monotone
+    inner_loop_radius = rand()
+    inner_loop_max_iterations = rand(1:100)
+    threshold = rand()
+    max_iterations = rand(10:100)
+
+
+    # Should exit on iteration 0 because max_iterations is 0
+    let x0=copy(x0), α = α, δ0=δ0, δ_upper=δ_upper, ρ=ρ, β = β, λ = λ,
+        hessian_modification_max_iteration = hessian_modification_max_iteration,
+        M = M, inner_loop_radius = inner_loop_radius, threshold=threshold, 
+        max_iterations=0
+
+        # Specify optimization method and problem
+        optData = NonsequentialArmijoFixedMNewtonGD(Float64;
+            x0 = x0,
+            α = α,
+            δ0 = δ0,
+            δ_upper = δ_upper,
+            ρ = ρ,
+            β = β,
+            λ = λ,
+            hessian_modification_max_iteration = hessian_modification_max_iteration,
+            M = M,
+            inner_loop_radius = inner_loop_radius,
+            inner_loop_max_iterations = inner_loop_max_iterations,
+            threshold = threshold,
+            max_iterations = max_iterations)
+        progData = OptimizationMethods.LogisticRegression(Float64, nvar=length(x0))
+
+        # Run method
+        x = nonsequential_armijo_mnewton_fixed_gd(optData, progData)
+
+        @test optData.stop_iteration == 0
+        @test progData.counters.neval_obj == 1 
+        @test progData.counters.neval_grad == 1
+        @test progData.counters.neval_hess == 1
+        @test x == x0
+        
+        grd = OptimizationMethods.grad(progData, x0)
+        grd_norm = norm(grd)
+        @test optData.grad_val_hist ≈ [norm(grd)]
+        @test optData.τ_lower ≈ norm(grd) / sqrt(2)
+        @test optData.τ_upper ≈ norm(grd) * sqrt(10)
+        @test optData.objective_hist[1] == OptimizationMethods.obj(progData, x0)
+        @test optData.reference_value == OptimizationMethods.obj(progData, x0)
+        @test optData.reference_value_index == 1
+    end
+
+    # should exit on iteration 0 because threshold is larger than gradient 
+    let x0=copy(x0), α = α, δ0=δ0, δ_upper=δ_upper, ρ=ρ, β = β, λ = λ,
+        hessian_modification_max_iteration = hessian_modification_max_iteration,
+        M = M, inner_loop_radius = inner_loop_radius, threshold=1e16, 
+        max_iterations=100
+
+        # Specify optimization method and problem
+        optData = NonsequentialArmijoFixedMNewtonGD(Float64;
+            x0 = x0,
+            α = α,
+            δ0 = δ0,
+            δ_upper = δ_upper,
+            ρ = ρ,
+            β = β,
+            λ = λ,
+            hessian_modification_max_iteration = hessian_modification_max_iteration,
+            M = M,
+            inner_loop_radius = inner_loop_radius,
+            inner_loop_max_iterations = inner_loop_max_iterations,
+            threshold = threshold,
+            max_iterations = max_iterations)
+        progData = OptimizationMethods.LogisticRegression(Float64, nvar=length(x0))
+
+        # Run method
+        x = nonsequential_armijo_mnewton_fixed_gd(optData, progData)
+
+        @test optData.stop_iteration == 0
+        @test progData.counters.neval_obj == 1 
+        @test progData.counters.neval_grad == 1
+        @test progData.counters.neval_hess == 1 
+        @test x == x0
+        
+        grd = OptimizationMethods.grad(progData, x0)
+        grd_norm = norm(grd)
+        @test optData.grad_val_hist[1] ≈ norm(grd)
+        @test optData.τ_lower ≈ norm(grd) / sqrt(2)
+        @test optData.τ_upper ≈ norm(grd) * sqrt(10)
+        @test optData.objective_hist[1] == OptimizationMethods.obj(progData, x0)
+        @test optData.reference_value == OptimizationMethods.obj(progData, x0)
+        @test optData.reference_value_index == 1
+    end
+
+    factor = 1000
+    let x0=copy(x0), α = α, δ0=factor*δ0, δ_upper=factor*δ_upper, ρ=ρ, β = β, λ = λ,
+        hessian_modification_max_iteration = hessian_modification_max_iteration,
+        M = M, inner_loop_radius = inner_loop_radius, threshold=threshold, 
+        max_iterations=max_iterations
+
+        #Specify Problem 
+        progData = OptimizationMethods.LogisticRegression(Float64, nvar=length(x0))
+
+        # Specify optimization method for exit_iteration - 1
+        optData = NonsequentialArmijoFixedMNewtonGD(Float64;
+            x0 = x0,
+            α = α,
+            δ0 = δ0,
+            δ_upper = δ_upper,
+            ρ = ρ,
+            β = β,
+            λ = λ,
+            hessian_modification_max_iteration = hessian_modification_max_iteration,
+            M = M,
+            inner_loop_radius = inner_loop_radius,
+            inner_loop_max_iterations = inner_loop_max_iterations,
+            threshold = threshold,
+            max_iterations = max_iterations)
+        
+        x = nonsequential_armijo_mnewton_fixed_gd(optData, progData)
+
+        g = OptimizationMethods.grad(progData, x) 
+        stop_iteration = optData.stop_iteration 
+
+        @test optData.iter_hist[stop_iteration+1] == x
+        @test optData.grad_val_hist[stop_iteration+1] ≈ norm(g)
+
+        # Find the first time we accept an iterate, stop 1 before it
+        # and verify that the inner loop is correct
+        first_acceptance = 1
+        while (first_acceptance < stop_iteration) && 
+                (optData.iter_hist[first_acceptance] == 
+                    optData.iter_hist[first_acceptance + 1])
+            first_acceptance += 1
+        end
+
+        ## reset
+        precomp, store = OptimizationMethods.initialize(progData)
+        F(x) = OptimizationMethods.obj(progData, x)
+        for k in 1:(first_acceptance-1)
+
+            # create optdata for k - 1 and k
+            optDatakm1 = NonsequentialArmijoFixedMNewtonGD(Float64;
+                x0 = x0,
+                α = α,
+                δ0 = δ0,
+                δ_upper = δ_upper,
+                ρ = ρ,
+                β = β,
+                λ = λ,
+                hessian_modification_max_iteration = hessian_modification_max_iteration,
+                M = M,
+                inner_loop_radius = inner_loop_radius,
+                inner_loop_max_iterations = inner_loop_max_iterations,
+                threshold = threshold,
+                max_iterations = k-1) ## return x_{k-1}
+
+            optDatak = NonsequentialArmijoFixedMNewtonGD(Float64;
+                x0 = x0,
+                α = α,
+                δ0 = δ0,
+                δ_upper = δ_upper,
+                ρ = ρ,
+                β = β,
+                λ = λ,
+                hessian_modification_max_iteration = hessian_modification_max_iteration,
+                M = M,
+                inner_loop_radius = inner_loop_radius,
+                inner_loop_max_iterations = inner_loop_max_iterations,
+                threshold = threshold,
+                max_iterations = k) ## return x_k
+
+            # generate k - 1 
+            xkm1 = nonsequential_armijo_mnewton_fixed_gd(optDatakm1, progData)
+            
+            # Setting up for test - output of inner loop for iteration k
+            x = copy(xkm1) 
+            OptimizationMethods.grad!(progData, precomp, store, x)
+            OptimizationMethods.hess!(progData, precomp, store, x)
+            OptimizationMethods.inner_loop!(x, optDatakm1.iter_hist[k], 
+                optDatakm1, progData, precomp, store, k;
+                radius = optData.inner_loop_radius,
+                max_iteration = optData.inner_loop_max_iterations)
+            
+            # Test that the non sequential armijo condition is failed
+            @test !OptimizationMethods.non_sequential_armijo_condition(
+                F(x), optDatakm1.reference_value, 
+                norm(OptimizationMethods.grad(progData, xkm1)), 
+                optDatakm1.ρ, optDatakm1.δk, optDatakm1.α)
+
+            # Generate x_k and test the optDatak 
+            xk = nonsequential_armijo_mnewton_fixed_gd(optDatak, progData)
+
+            ## check gradient quantities
+            @test optDatak.∇F_θk ≈ OptimizationMethods.grad(progData, xkm1)
+            @test optDatak.∇∇F_θk ≈ OptimizationMethods.hess(progData, xkm1)
+
+            ## Check that that the algorithm updated the parameters correctly
+            @test optDatak.δk == (optDatakm1.δk * .5)
+            @test xk == xkm1
+
+            ## test field values at time k
+            @test optDatak.reference_value == maximum(optDatak.objective_hist)
+            @test optDatak.objective_hist[optDatak.reference_value_index] ==
+                optDatak.reference_value
+            @test optDatak.iter_hist[k+1] == xk
+            @test optDatak.grad_val_hist[k+1] == optDatak.grad_val_hist[k]
+            @test optDatak.grad_val_hist[k+1] ≈ 
+                norm(OptimizationMethods.grad(progData, xkm1))
+        end 
+
+        # Test values are correctly updated for acceptance
+        iter = first_acceptance - 1
+
+        # create optdata for k - 1 and k
+        optDatakm1 = NonsequentialArmijoFixedMNewtonGD(Float64;
+            x0 = x0,
+            α = α,
+            δ0 = δ0,
+            δ_upper = δ_upper,
+            ρ = ρ,
+            β = β,
+            λ = λ,
+            hessian_modification_max_iteration = hessian_modification_max_iteration,
+            M = M,
+            inner_loop_radius = inner_loop_radius,
+            inner_loop_max_iterations = inner_loop_max_iterations,
+            threshold = threshold,
+            max_iterations = iter) ## stop_iteration = iter
+
+        optDatak = NonsequentialArmijoFixedMNewtonGD(Float64;
+            x0 = x0,
+            α = α,
+            δ0 = δ0,
+            δ_upper = δ_upper,
+            ρ = ρ,
+            β = β,
+            λ = λ,
+            hessian_modification_max_iteration = hessian_modification_max_iteration,
+            M = M,
+            inner_loop_radius = inner_loop_radius,
+            inner_loop_max_iterations = inner_loop_max_iterations,
+            threshold = threshold,
+            max_iterations = iter + 1) ## stop_iteration = iter + 1
+
+        # generate k - 1 and k
+        xkm1 = nonsequential_armijo_mnewton_fixed_gd(optDatakm1, progData)
+        xk = nonsequential_armijo_mnewton_fixed_gd(optDatak, progData)
+
+        # Setting up for test - output of inner loop for iteration k
+        x = copy(xkm1) 
+        OptimizationMethods.grad!(progData, precomp, store, x)
+        OptimizationMethods.hess!(progData, precomp, store, x)
+        OptimizationMethods.inner_loop!(x, optDatakm1.iter_hist[iter + 1], 
+            optDatakm1, progData, precomp, store, iter + 1;
+            radius = optData.inner_loop_radius,
+            max_iteration = optData.inner_loop_max_iterations)
+
+        # test that non sequential armijo condition is accepted  
+        achieved_descent = OptimizationMethods.non_sequential_armijo_condition(
+            F(x),  optDatakm1.reference_value, optDatakm1.grad_val_hist[iter + 1], 
+            optDatakm1.ρ, optDatakm1.δk, optDatakm1.α)
+        @test achieved_descent
+        
+        # Update the parameters in optDatakm1
+        flag = OptimizationMethods.update_algorithm_parameters!(x, optDatakm1, 
+            achieved_descent, iter + 1)
+        
+        # update the cache at time k - 1
+        optDatakm1.acceptance_cnt += 1
+        optDatakm1.objective_hist[optDatakm1.acceptance_cnt] = F(x)
+        if ((optDatakm1.acceptance_cnt - 1) % M) + 1 == optDatakm1.reference_value_index
+            optDatakm1.reference_value, optDatakm1.reference_value_index =
+            findmax(optDatakm1.objective_hist)
+        end
+        
+        # Check that optDatak matches optDatakm1
+        @test flag
+        @test xk == x
+        @test optDatak.∇F_θk ≈ OptimizationMethods.grad(progData, xkm1)
+        @test optDatak.∇∇F_θk ≈ OptimizationMethods.hess(progData, xkm1)
+        @test optDatak.grad_val_hist[iter + 2] == optDatakm1.norm_∇F_ψ
+        @test optDatak.δk == optDatakm1.δk
+        @test optDatak.τ_lower == optDatakm1.τ_lower
+        @test optDatak.τ_upper == optDatakm1.τ_upper
+
+        ## test field values at time k
+        @test optDatak.reference_value == maximum(optDatak.objective_hist)
+        @test optDatak.objective_hist[optDatak.reference_value_index] ==
+            optDatak.reference_value
+        @test optDatak.reference_value == optDatakm1.reference_value
+        @test optDatak.reference_value_index == optDatakm1.reference_value_index
+        @test optDatak.iter_hist[iter+1] == xkm1
+        @test optDatak.iter_hist[iter+2] == xk
+        @test optDatak.grad_val_hist[iter+2] ≈ 
+            norm(OptimizationMethods.grad(progData, x))
+        
+        # Find window of non-accepted iterates for last accepted iterate
+        last_acceptance = stop_iteration - 1
+        while (1 < last_acceptance) && 
+                (optData.iter_hist[last_acceptance] == 
+                    optData.iter_hist[last_acceptance + 1])
+            last_acceptance -= 1
+        end
+        last_acceptance += 1
+
+        for k in last_acceptance:(stop_iteration-1)
+
+            # create optdata for k - 1 and k
+            optDatakm1 = NonsequentialArmijoFixedMNewtonGD(Float64;
+                x0 = x0,
+                α = α,
+                δ0 = δ0,
+                δ_upper = δ_upper,
+                ρ = ρ,
+                β = β,
+                λ = λ,
+                hessian_modification_max_iteration = hessian_modification_max_iteration,
+                M = M,
+                inner_loop_radius = inner_loop_radius,
+                inner_loop_max_iterations = inner_loop_max_iterations,
+                threshold = threshold,
+                max_iterations = k-1) ## return x_{k-1}
+
+            optDatak = NonsequentialArmijoFixedMNewtonGD(Float64;
+                x0 = x0,
+                α = α,
+                δ0 = δ0,
+                δ_upper = δ_upper,
+                ρ = ρ,
+                β = β,
+                λ = λ,
+                hessian_modification_max_iteration = hessian_modification_max_iteration,
+                M = M,
+                inner_loop_radius = inner_loop_radius,
+                inner_loop_max_iterations = inner_loop_max_iterations,
+                threshold = threshold,
+                max_iterations = k) ## return x_k
+
+            # generate k - 1 
+            xkm1 = nonsequential_armijo_mnewton_fixed_gd(optDatakm1, progData)  
+            
+            # Setting up for test - output of inner loop for iteration k
+            x = copy(xkm1) 
+            OptimizationMethods.grad!(progData, precomp, store, x)
+            OptimizationMethods.hess!(progData, precomp, store, x)
+            OptimizationMethods.inner_loop!(x, optDatakm1.iter_hist[k], 
+                optDatakm1, progData, precomp, store, k;
+                radius = optData.inner_loop_radius,
+                max_iteration = optData.inner_loop_max_iteration)
+            
+            # Test that the non sequential armijo condition is failed
+            @test !OptimizationMethods.non_sequential_armijo_condition(
+                F(x), optDatakm1.reference_value, 
+                norm(OptimizationMethods.grad(progData, xkm1)), 
+                optDatakm1.ρ, optDatakm1.δk, optDatakm1.α)
+
+            # Generate x_k and test the optDatak 
+            xk = nonsequential_armijo_mnewton_fixed_gd(optDatak, progData)
+
+            ## check gradient quantities
+            @test optDatak.∇F_θk ≈ OptimizationMethods.grad(progData, xkm1)
+            @test optDatak.∇∇F_θk ≈ OptimizationMethods.hess(progData, xkm1)
+
+            ## Check that that the algorithm updated the parameters correctly
+            @test optDatak.δk == (optDatakm1.δk * .5)
+            @test xk == xkm1
+
+            ## test field values at time k
+            @test optDatak.reference_value == maximum(optDatak.objective_hist)
+            @test optDatak.objective_hist[optDatak.reference_value_index] ==
+                optDatak.reference_value
+            @test optDatak.iter_hist[k+1] == xk
+            @test optDatak.grad_val_hist[k+1] == optDatak.grad_val_hist[k]
+            @test optDatak.grad_val_hist[k+1] ≈ 
+                norm(OptimizationMethods.grad(progData, xkm1))
+
+        end
+
+        # Test values are correctly updated for acceptance
+        iter = last_acceptance - 2
+
+        # create optdata for k - 1 and k
+        optDatakm1 = NonsequentialArmijoFixedMNewtonGD(Float64;
+            x0 = x0,
+            α = α,
+            δ0 = δ0,
+            δ_upper = δ_upper,
+            ρ = ρ,
+            β = β,
+            λ = λ,
+            hessian_modification_max_iteration = hessian_modification_max_iteration,
+            M = M,
+            inner_loop_radius = inner_loop_radius,
+            inner_loop_max_iterations = inner_loop_max_iterations,
+            threshold = threshold,
+            max_iterations = iter) ## stop_iteration = iter
+
+        optDatak = NonsequentialArmijoFixedMNewtonGD(Float64;
+            x0 = x0,
+            α = α,
+            δ0 = δ0,
+            δ_upper = δ_upper,
+            ρ = ρ,
+            β = β,
+            λ = λ,
+            hessian_modification_max_iteration = hessian_modification_max_iteration,
+            M = M,
+            inner_loop_radius = inner_loop_radius,
+            inner_loop_max_iterations = inner_loop_max_iterations,
+            threshold = threshold,
+            max_iterations = iter + 1) ## stop_iteration = iter + 1
+
+        # generate k - 1 and k
+        xkm1 = nonsequential_armijo_mnewton_fixed_gd(optDatakm1, progData)  
+        xk = nonsequential_armijo_mnewton_fixed_gd(optDatak, progData)
+
+        # Setting up for test - output of inner loop for iteration k
+        x = copy(xkm1) 
+        OptimizationMethods.grad!(progData, precomp, store, x)
+        OptimizationMethods.hess!(progData, precomp, store, x)
+        OptimizationMethods.inner_loop!(x, optDatakm1.iter_hist[iter + 1], 
+            optDatakm1, progData, precomp, store, iter + 1;
+            radius = optData.inner_loop_radius,
+            max_iteration = optData.inner_loop_max_iterations)
+
+        # test that non sequential armijo condition is accepted  
+        achieved_descent = OptimizationMethods.non_sequential_armijo_condition(
+            F(x), optDatakm1.reference_value, optDatakm1.grad_val_hist[iter + 1], 
+            optDatakm1.ρ, optDatakm1.δk, optDatakm1.α)
+        @test achieved_descent
+        
+        # Update the parameters in optDatakm1
+        flag = OptimizationMethods.update_algorithm_parameters!(x, optDatakm1, 
+            achieved_descent, iter + 1)
+
+        # update the cache at time k - 1
+        optDatakm1.acceptance_cnt += 1
+        optDatakm1.objective_hist[optDatakm1.acceptance_cnt] = F(x)
+        if ((optDatakm1.acceptance_cnt - 1) % M) + 1 == optDatakm1.reference_value_index
+            optDatakm1.reference_value, optDatakm1.reference_value_index =
+            findmax(optDatakm1.objective_hist)
+        end
+        
+        # Check that optDatak matches optDatakm1
+        @test flag
+        @test optDatak.∇F_θk ≈ OptimizationMethods.grad(progData, xkm1)
+        @test optDatak.∇∇F_θk ≈ OptimizationMethods.hess(progData, xkm1)
+        @test optDatak.grad_val_hist[iter + 2] == optDatakm1.norm_∇F_ψ
+        @test optDatak.δk == optDatakm1.δk
+        @test optDatak.τ_lower == optDatakm1.τ_lower
+        @test optDatak.τ_upper == optDatakm1.τ_upper
+        @test xk == x
+
+        ## test field values at time k
+        @test optDatak.reference_value == maximum(optDatak.objective_hist)
+        @test optDatak.objective_hist[optDatak.reference_value_index] ==
+            optDatak.reference_value
+        @test optDatak.reference_value == optDatakm1.reference_value
+        @test optDatak.reference_value_index == optDatakm1.reference_value_index
+        @test optDatak.iter_hist[iter+1] == xkm1
+        @test optDatak.iter_hist[iter+2] == xk
+        @test optDatak.grad_val_hist[iter+2] ≈ 
+            norm(OptimizationMethods.grad(progData, x))
+    end # end of test cases for the monotone version
+
 end # end the test for the method 
 
 @testset "Method -- Nonsequential Armijo with Modified Newton (Non-monotone)" begin
+
+    # generate random arguments
+    x0 = randn(50)            
+    α = rand()
+    δ0 = rand()
+    δ_upper = 1 + rand()
+    ρ = rand()
+    β = rand()
+    λ = rand()
+    hessian_modification_max_iteration = 10
+    M = rand(2:100)                                           # M = 2 for monotone
+    inner_loop_radius = rand()
+    inner_loop_max_iterations = rand(1:100)
+    threshold = rand()
+    max_iterations = rand(10:100)
+
+
+    # Should exit on iteration 0 because max_iterations is 0
+    let x0=copy(x0), α = α, δ0=δ0, δ_upper=δ_upper, ρ=ρ, β = β, λ = λ,
+        hessian_modification_max_iteration = hessian_modification_max_iteration,
+        M = M, inner_loop_radius = inner_loop_radius, threshold=threshold, 
+        max_iterations=0
+
+        # Specify optimization method and problem
+        optData = NonsequentialArmijoFixedMNewtonGD(Float64;
+            x0 = x0,
+            α = α,
+            δ0 = δ0,
+            δ_upper = δ_upper,
+            ρ = ρ,
+            β = β,
+            λ = λ,
+            hessian_modification_max_iteration = hessian_modification_max_iteration,
+            M = M,
+            inner_loop_radius = inner_loop_radius,
+            inner_loop_max_iterations = inner_loop_max_iterations,
+            threshold = threshold,
+            max_iterations = max_iterations)
+        progData = OptimizationMethods.LogisticRegression(Float64, nvar=length(x0))
+
+        # Run method
+        x = nonsequential_armijo_mnewton_fixed_gd(optData, progData)
+
+        @test optData.stop_iteration == 0
+        @test progData.counters.neval_obj == 1 
+        @test progData.counters.neval_grad == 1
+        @test progData.counters.neval_hess == 1
+        @test x == x0
+        
+        grd = OptimizationMethods.grad(progData, x0)
+        grd_norm = norm(grd)
+        @test optData.grad_val_hist ≈ [norm(grd)]
+        @test optData.τ_lower ≈ norm(grd) / sqrt(2)
+        @test optData.τ_upper ≈ norm(grd) * sqrt(10)
+        @test optData.objective_hist[1] == OptimizationMethods.obj(progData, x0)
+        @test optData.reference_value == OptimizationMethods.obj(progData, x0)
+        @test optData.reference_value_index == 1
+    end
+
+    # should exit on iteration 0 because threshold is larger than gradient 
+    let x0=copy(x0), α = α, δ0=δ0, δ_upper=δ_upper, ρ=ρ, β = β, λ = λ,
+        hessian_modification_max_iteration = hessian_modification_max_iteration,
+        M = M, inner_loop_radius = inner_loop_radius, threshold=1e16, 
+        max_iterations=100
+
+        # Specify optimization method and problem
+        optData = NonsequentialArmijoFixedMNewtonGD(Float64;
+            x0 = x0,
+            α = α,
+            δ0 = δ0,
+            δ_upper = δ_upper,
+            ρ = ρ,
+            β = β,
+            λ = λ,
+            hessian_modification_max_iteration = hessian_modification_max_iteration,
+            M = M,
+            inner_loop_radius = inner_loop_radius,
+            inner_loop_max_iterations = inner_loop_max_iterations,
+            threshold = threshold,
+            max_iterations = max_iterations)
+        progData = OptimizationMethods.LogisticRegression(Float64, nvar=length(x0))
+
+        # Run method
+        x = nonsequential_armijo_mnewton_fixed_gd(optData, progData)
+
+        @test optData.stop_iteration == 0
+        @test progData.counters.neval_obj == 1 
+        @test progData.counters.neval_grad == 1
+        @test progData.counters.neval_hess == 1 
+        @test x == x0
+        
+        grd = OptimizationMethods.grad(progData, x0)
+        grd_norm = norm(grd)
+        @test optData.grad_val_hist[1] ≈ norm(grd)
+        @test optData.τ_lower ≈ norm(grd) / sqrt(2)
+        @test optData.τ_upper ≈ norm(grd) * sqrt(10)
+        @test optData.objective_hist[1] == OptimizationMethods.obj(progData, x0)
+        @test optData.reference_value == OptimizationMethods.obj(progData, x0)
+        @test optData.reference_value_index == 1
+    end
+
+    factor = 1000
+    let x0=copy(x0), α = α, δ0=factor*δ0, δ_upper=factor*δ_upper, ρ=ρ, β = β, λ = λ,
+        hessian_modification_max_iteration = hessian_modification_max_iteration,
+        M = M, inner_loop_radius = inner_loop_radius, threshold=threshold, 
+        max_iterations=max_iterations
+
+        #Specify Problem 
+        progData = OptimizationMethods.LogisticRegression(Float64, nvar=length(x0))
+
+        # Specify optimization method for exit_iteration - 1
+        optData = NonsequentialArmijoFixedMNewtonGD(Float64;
+            x0 = x0,
+            α = α,
+            δ0 = δ0,
+            δ_upper = δ_upper,
+            ρ = ρ,
+            β = β,
+            λ = λ,
+            hessian_modification_max_iteration = hessian_modification_max_iteration,
+            M = M,
+            inner_loop_radius = inner_loop_radius,
+            inner_loop_max_iterations = inner_loop_max_iterations,
+            threshold = threshold,
+            max_iterations = max_iterations)
+        
+        x = nonsequential_armijo_mnewton_fixed_gd(optData, progData)
+
+        g = OptimizationMethods.grad(progData, x) 
+        stop_iteration = optData.stop_iteration 
+
+        @test optData.iter_hist[stop_iteration+1] == x
+        @test optData.grad_val_hist[stop_iteration+1] ≈ norm(g)
+
+        # Find the first time we accept an iterate, stop 1 before it
+        # and verify that the inner loop is correct
+        first_acceptance = 1
+        while (first_acceptance < stop_iteration) && 
+                (optData.iter_hist[first_acceptance] == 
+                    optData.iter_hist[first_acceptance + 1])
+            first_acceptance += 1
+        end
+
+        ## reset
+        precomp, store = OptimizationMethods.initialize(progData)
+        F(x) = OptimizationMethods.obj(progData, x)
+        for k in 1:(first_acceptance-1)
+
+            # create optdata for k - 1 and k
+            optDatakm1 = NonsequentialArmijoFixedMNewtonGD(Float64;
+                x0 = x0,
+                α = α,
+                δ0 = δ0,
+                δ_upper = δ_upper,
+                ρ = ρ,
+                β = β,
+                λ = λ,
+                hessian_modification_max_iteration = hessian_modification_max_iteration,
+                M = M,
+                inner_loop_radius = inner_loop_radius,
+                inner_loop_max_iterations = inner_loop_max_iterations,
+                threshold = threshold,
+                max_iterations = k-1) ## return x_{k-1}
+
+            optDatak = NonsequentialArmijoFixedMNewtonGD(Float64;
+                x0 = x0,
+                α = α,
+                δ0 = δ0,
+                δ_upper = δ_upper,
+                ρ = ρ,
+                β = β,
+                λ = λ,
+                hessian_modification_max_iteration = hessian_modification_max_iteration,
+                M = M,
+                inner_loop_radius = inner_loop_radius,
+                inner_loop_max_iterations = inner_loop_max_iterations,
+                threshold = threshold,
+                max_iterations = k) ## return x_k
+
+            # generate k - 1 
+            xkm1 = nonsequential_armijo_mnewton_fixed_gd(optDatakm1, progData)
+            
+            # Setting up for test - output of inner loop for iteration k
+            x = copy(xkm1) 
+            OptimizationMethods.grad!(progData, precomp, store, x)
+            OptimizationMethods.hess!(progData, precomp, store, x)
+            OptimizationMethods.inner_loop!(x, optDatakm1.iter_hist[k], 
+                optDatakm1, progData, precomp, store, k;
+                radius = optData.inner_loop_radius,
+                max_iteration = optData.inner_loop_max_iterations)
+            
+            # Test that the non sequential armijo condition is failed
+            @test !OptimizationMethods.non_sequential_armijo_condition(
+                F(x), optDatakm1.reference_value, 
+                norm(OptimizationMethods.grad(progData, xkm1)), 
+                optDatakm1.ρ, optDatakm1.δk, optDatakm1.α)
+
+            # Generate x_k and test the optDatak 
+            xk = nonsequential_armijo_mnewton_fixed_gd(optDatak, progData)
+
+            ## check gradient quantities
+            @test optDatak.∇F_θk ≈ OptimizationMethods.grad(progData, xkm1)
+            @test optDatak.∇∇F_θk ≈ OptimizationMethods.hess(progData, xkm1)
+
+            ## Check that that the algorithm updated the parameters correctly
+            @test optDatak.δk == (optDatakm1.δk * .5)
+            @test xk == xkm1
+
+            ## test field values at time k
+            @test optDatak.reference_value == maximum(optDatak.objective_hist)
+            @test optDatak.objective_hist[optDatak.reference_value_index] ==
+                optDatak.reference_value
+            @test optDatak.iter_hist[k+1] == xk
+            @test optDatak.grad_val_hist[k+1] == optDatak.grad_val_hist[k]
+            @test optDatak.grad_val_hist[k+1] ≈ 
+                norm(OptimizationMethods.grad(progData, xkm1))
+        end 
+
+        # Test values are correctly updated for acceptance
+        iter = first_acceptance - 1
+
+        # create optdata for k - 1 and k
+        optDatakm1 = NonsequentialArmijoFixedMNewtonGD(Float64;
+            x0 = x0,
+            α = α,
+            δ0 = δ0,
+            δ_upper = δ_upper,
+            ρ = ρ,
+            β = β,
+            λ = λ,
+            hessian_modification_max_iteration = hessian_modification_max_iteration,
+            M = M,
+            inner_loop_radius = inner_loop_radius,
+            inner_loop_max_iterations = inner_loop_max_iterations,
+            threshold = threshold,
+            max_iterations = iter) ## stop_iteration = iter
+
+        optDatak = NonsequentialArmijoFixedMNewtonGD(Float64;
+            x0 = x0,
+            α = α,
+            δ0 = δ0,
+            δ_upper = δ_upper,
+            ρ = ρ,
+            β = β,
+            λ = λ,
+            hessian_modification_max_iteration = hessian_modification_max_iteration,
+            M = M,
+            inner_loop_radius = inner_loop_radius,
+            inner_loop_max_iterations = inner_loop_max_iterations,
+            threshold = threshold,
+            max_iterations = iter + 1) ## stop_iteration = iter + 1
+
+        # generate k - 1 and k
+        xkm1 = nonsequential_armijo_mnewton_fixed_gd(optDatakm1, progData)
+        xk = nonsequential_armijo_mnewton_fixed_gd(optDatak, progData)
+
+        # Setting up for test - output of inner loop for iteration k
+        x = copy(xkm1) 
+        OptimizationMethods.grad!(progData, precomp, store, x)
+        OptimizationMethods.hess!(progData, precomp, store, x)
+        OptimizationMethods.inner_loop!(x, optDatakm1.iter_hist[iter + 1], 
+            optDatakm1, progData, precomp, store, iter + 1;
+            radius = optData.inner_loop_radius,
+            max_iteration = optData.inner_loop_max_iterations)
+
+        # test that non sequential armijo condition is accepted  
+        achieved_descent = OptimizationMethods.non_sequential_armijo_condition(
+            F(x),  optDatakm1.reference_value, optDatakm1.grad_val_hist[iter + 1], 
+            optDatakm1.ρ, optDatakm1.δk, optDatakm1.α)
+        @test achieved_descent
+        
+        # Update the parameters in optDatakm1
+        flag = OptimizationMethods.update_algorithm_parameters!(x, optDatakm1, 
+            achieved_descent, iter + 1)
+        
+        # update the cache at time k - 1
+        optDatakm1.acceptance_cnt += 1
+        optDatakm1.objective_hist[optDatakm1.acceptance_cnt] = F(x)
+        if ((optDatakm1.acceptance_cnt - 1) % M) + 1 == optDatakm1.reference_value_index
+            optDatakm1.reference_value, optDatakm1.reference_value_index =
+            findmax(optDatakm1.objective_hist)
+        end
+        
+        # Check that optDatak matches optDatakm1
+        @test flag
+        @test xk == x
+        @test optDatak.∇F_θk ≈ OptimizationMethods.grad(progData, xkm1)
+        @test optDatak.∇∇F_θk ≈ OptimizationMethods.hess(progData, xkm1)
+        @test optDatak.grad_val_hist[iter + 2] == optDatakm1.norm_∇F_ψ
+        @test optDatak.δk == optDatakm1.δk
+        @test optDatak.τ_lower == optDatakm1.τ_lower
+        @test optDatak.τ_upper == optDatakm1.τ_upper
+
+        ## test field values at time k
+        @test optDatak.reference_value == maximum(optDatak.objective_hist)
+        @test optDatak.objective_hist[optDatak.reference_value_index] ==
+            optDatak.reference_value
+        @test optDatak.reference_value == optDatakm1.reference_value
+        @test optDatak.reference_value_index == optDatakm1.reference_value_index
+        @test optDatak.iter_hist[iter+1] == xkm1
+        @test optDatak.iter_hist[iter+2] == xk
+        @test optDatak.grad_val_hist[iter+2] ≈ 
+            norm(OptimizationMethods.grad(progData, x))
+        
+        # Find window of non-accepted iterates for last accepted iterate
+        last_acceptance = stop_iteration - 1
+        while (1 < last_acceptance) && 
+                (optData.iter_hist[last_acceptance] == 
+                    optData.iter_hist[last_acceptance + 1])
+            last_acceptance -= 1
+        end
+        last_acceptance += 1
+
+        for k in last_acceptance:(stop_iteration-1)
+
+            # create optdata for k - 1 and k
+            optDatakm1 = NonsequentialArmijoFixedMNewtonGD(Float64;
+                x0 = x0,
+                α = α,
+                δ0 = δ0,
+                δ_upper = δ_upper,
+                ρ = ρ,
+                β = β,
+                λ = λ,
+                hessian_modification_max_iteration = hessian_modification_max_iteration,
+                M = M,
+                inner_loop_radius = inner_loop_radius,
+                inner_loop_max_iterations = inner_loop_max_iterations,
+                threshold = threshold,
+                max_iterations = k-1) ## return x_{k-1}
+
+            optDatak = NonsequentialArmijoFixedMNewtonGD(Float64;
+                x0 = x0,
+                α = α,
+                δ0 = δ0,
+                δ_upper = δ_upper,
+                ρ = ρ,
+                β = β,
+                λ = λ,
+                hessian_modification_max_iteration = hessian_modification_max_iteration,
+                M = M,
+                inner_loop_radius = inner_loop_radius,
+                inner_loop_max_iterations = inner_loop_max_iterations,
+                threshold = threshold,
+                max_iterations = k) ## return x_k
+
+            # generate k - 1 
+            xkm1 = nonsequential_armijo_mnewton_fixed_gd(optDatakm1, progData)  
+            
+            # Setting up for test - output of inner loop for iteration k
+            x = copy(xkm1) 
+            OptimizationMethods.grad!(progData, precomp, store, x)
+            OptimizationMethods.hess!(progData, precomp, store, x)
+            OptimizationMethods.inner_loop!(x, optDatakm1.iter_hist[k], 
+                optDatakm1, progData, precomp, store, k;
+                radius = optData.inner_loop_radius,
+                max_iteration = optData.inner_loop_max_iteration)
+            
+            # Test that the non sequential armijo condition is failed
+            @test !OptimizationMethods.non_sequential_armijo_condition(
+                F(x), optDatakm1.reference_value, 
+                norm(OptimizationMethods.grad(progData, xkm1)), 
+                optDatakm1.ρ, optDatakm1.δk, optDatakm1.α)
+
+            # Generate x_k and test the optDatak 
+            xk = nonsequential_armijo_mnewton_fixed_gd(optDatak, progData)
+
+            ## check gradient quantities
+            @test optDatak.∇F_θk ≈ OptimizationMethods.grad(progData, xkm1)
+            @test optDatak.∇∇F_θk ≈ OptimizationMethods.hess(progData, xkm1)
+
+            ## Check that that the algorithm updated the parameters correctly
+            @test optDatak.δk == (optDatakm1.δk * .5)
+            @test xk == xkm1
+
+            ## test field values at time k
+            @test optDatak.reference_value == maximum(optDatak.objective_hist)
+            @test optDatak.objective_hist[optDatak.reference_value_index] ==
+                optDatak.reference_value
+            @test optDatak.iter_hist[k+1] == xk
+            @test optDatak.grad_val_hist[k+1] == optDatak.grad_val_hist[k]
+            @test optDatak.grad_val_hist[k+1] ≈ 
+                norm(OptimizationMethods.grad(progData, xkm1))
+
+        end
+
+        # Test values are correctly updated for acceptance
+        iter = last_acceptance - 2
+
+        # create optdata for k - 1 and k
+        optDatakm1 = NonsequentialArmijoFixedMNewtonGD(Float64;
+            x0 = x0,
+            α = α,
+            δ0 = δ0,
+            δ_upper = δ_upper,
+            ρ = ρ,
+            β = β,
+            λ = λ,
+            hessian_modification_max_iteration = hessian_modification_max_iteration,
+            M = M,
+            inner_loop_radius = inner_loop_radius,
+            inner_loop_max_iterations = inner_loop_max_iterations,
+            threshold = threshold,
+            max_iterations = iter) ## stop_iteration = iter
+
+        optDatak = NonsequentialArmijoFixedMNewtonGD(Float64;
+            x0 = x0,
+            α = α,
+            δ0 = δ0,
+            δ_upper = δ_upper,
+            ρ = ρ,
+            β = β,
+            λ = λ,
+            hessian_modification_max_iteration = hessian_modification_max_iteration,
+            M = M,
+            inner_loop_radius = inner_loop_radius,
+            inner_loop_max_iterations = inner_loop_max_iterations,
+            threshold = threshold,
+            max_iterations = iter + 1) ## stop_iteration = iter + 1
+
+        # generate k - 1 and k
+        xkm1 = nonsequential_armijo_mnewton_fixed_gd(optDatakm1, progData)  
+        xk = nonsequential_armijo_mnewton_fixed_gd(optDatak, progData)
+
+        # Setting up for test - output of inner loop for iteration k
+        x = copy(xkm1) 
+        OptimizationMethods.grad!(progData, precomp, store, x)
+        OptimizationMethods.hess!(progData, precomp, store, x)
+        OptimizationMethods.inner_loop!(x, optDatakm1.iter_hist[iter + 1], 
+            optDatakm1, progData, precomp, store, iter + 1;
+            radius = optData.inner_loop_radius,
+            max_iteration = optData.inner_loop_max_iterations)
+
+        # test that non sequential armijo condition is accepted  
+        achieved_descent = OptimizationMethods.non_sequential_armijo_condition(
+            F(x), optDatakm1.reference_value, optDatakm1.grad_val_hist[iter + 1], 
+            optDatakm1.ρ, optDatakm1.δk, optDatakm1.α)
+        @test achieved_descent
+        
+        # Update the parameters in optDatakm1
+        flag = OptimizationMethods.update_algorithm_parameters!(x, optDatakm1, 
+            achieved_descent, iter + 1)
+
+        # update the cache at time k - 1
+        optDatakm1.acceptance_cnt += 1
+        optDatakm1.objective_hist[optDatakm1.acceptance_cnt] = F(x)
+        if ((optDatakm1.acceptance_cnt - 1) % M) + 1 == optDatakm1.reference_value_index
+            optDatakm1.reference_value, optDatakm1.reference_value_index =
+            findmax(optDatakm1.objective_hist)
+        end
+        
+        # Check that optDatak matches optDatakm1
+        @test flag
+        @test optDatak.∇F_θk ≈ OptimizationMethods.grad(progData, xkm1)
+        @test optDatak.∇∇F_θk ≈ OptimizationMethods.hess(progData, xkm1)
+        @test optDatak.grad_val_hist[iter + 2] == optDatakm1.norm_∇F_ψ
+        @test optDatak.δk == optDatakm1.δk
+        @test optDatak.τ_lower == optDatakm1.τ_lower
+        @test optDatak.τ_upper == optDatakm1.τ_upper
+        @test xk == x
+
+        ## test field values at time k
+        @test optDatak.reference_value == maximum(optDatak.objective_hist)
+        @test optDatak.objective_hist[optDatak.reference_value_index] ==
+            optDatak.reference_value
+        @test optDatak.reference_value == optDatakm1.reference_value
+        @test optDatak.reference_value_index == optDatakm1.reference_value_index
+        @test optDatak.iter_hist[iter+1] == xkm1
+        @test optDatak.iter_hist[iter+2] == xk
+        @test optDatak.grad_val_hist[iter+2] ≈ 
+            norm(OptimizationMethods.grad(progData, x))
+    end # end of test cases for the non-monotone version
+
 end # end the test for the method 
 
 end # end the tests for NonsequentialArmijoFixedMNewtonGD
