@@ -91,6 +91,7 @@ export SafeBarzilaiBorweinNLSMaxValGD, safe_barzilai_borwein_nls_maxval_gd
 export FixedModifiedNewtonNLSMaxValGD, fixed_modified_newton_nls_maxval_gd
 export NonsequentialArmijoAdaptiveGD, nonsequential_armijo_adaptive_gd
 export NonsequentialArmijoFixedGD, nonsequential_armijo_fixed_gd
+export FixedDampedBFGSNLSMaxValGD, fixed_damped_bfgs_nls_maxval_gd
 
 ## Helper functions for optimization methods
 include("methods/stepsize_helpers/diminishing_stepsizes.jl")
@@ -99,7 +100,6 @@ include("methods/line_search_helpers/non_sequential_armijo.jl")
 include("methods/second_order_helpers/modified_newton.jl")
 include("methods/second_order_helpers/triangle-solve.jl")
 include("methods/second_order_helpers/bfgs_update.jl")
-include("methods/second_order_helpers/cholesky_solve.jl")
 
 ## Source Code 
 include("methods/gd_barzilai_borwein.jl")
@@ -114,5 +114,6 @@ include("methods/gd_safe_bb_nls_max_val.jl")
 include("methods/gd_fixed_nls_max_val_mnewton.jl")
 include("methods/gd_non_sequential_armijo_adaptive.jl")
 include("methods/gd_non_sequential_armijo_fixed.jl")
+include("methods/gd_fixed_nls_max_val_bfgs.jl")
 
 end

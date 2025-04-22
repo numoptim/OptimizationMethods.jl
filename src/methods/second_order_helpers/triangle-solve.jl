@@ -62,11 +62,15 @@ end
 """
 function cholesky_and_solve(b::Vector{T}, A::AbstractMatrix) where {T}
 
-    # compute cholesky
-    C = cholesky(Hermitian(A))
+    # compute cholesky and check success
+    C = cholesky(Hermitian(A); check = false)
+    if !issuccess(C)
+        return false
+    end
 
-    # solve -- solution stored in b
+    # solve -- solution stored in b if cholesky was successful
     lower_triangle_solve!(b, C.U')
     upper_triangle_solve!(b, C.U)
 
+    return true
 end

@@ -4,7 +4,7 @@
 
 """
     update_bfgs!(H::Matrix{T}, r::Vector{T}, update::Matrix{T}, s::Vector{T},
-        y::Vector{T}; curvature::Bool = false)
+        y::Vector{T}; damped_update::Bool = false)
 """
 function update_bfgs!(
     H::Matrix{T},
@@ -24,7 +24,7 @@ function update_bfgs!(
         r .= θ .* y .+ (1 - θ) .* Hs
     end
 
-    update .= (Hs*transpose(Hs) ./ sHs)
+    update .= -(Hs*transpose(Hs) ./ sHs)
     update .+= (r*transpose(r) ./ dot(s, r))  
     H .+= update
 end

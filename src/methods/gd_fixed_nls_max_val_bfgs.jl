@@ -12,7 +12,7 @@ mutable struct FixedDampedBFGSNLSMaxValGD{T} <: AbstractOptimizerData{T}
     β::T
     B::Matrix{T}
     δB::Matrix{T}
-    r::Matrix{T}
+    r::Vector{T}
     s::Vector{T}
     y::Vector{T}
     # parameters for line search
@@ -114,8 +114,7 @@ function fixed_damped_bfgs_nls_maxval_gd(
     optData.grad_val_hist[iter + 1] = norm(store.grad)
 
     # Initialize approximation
-    d = length(x0)
-    OptimizationMethods.add_identity!(optData.B,
+    OptimizationMethods.add_identity(optData.B,
         optData.c * norm(store.grad))
 
     # Update the objective cache
@@ -135,7 +134,13 @@ function fixed_damped_bfgs_nls_maxval_gd(
         optData.step .= store.grad
 
         # compute step
-        OptimizationMethods.cholesky_and_solve(optData.step, optData.B)
+        chol_success = OptimizationMethods.cholesky_and_solve(optData.step, 
+            optData.B)
+
+        if isnan(optData.step[1])
+            optData.stop_iteration = (iter - 1)
+            return optData.iter_hist[iter]
+        end
 
         # backtrack
         success = OptimizationMethods.backtracking!(
