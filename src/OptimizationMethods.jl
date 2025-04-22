@@ -98,6 +98,8 @@ include("methods/line_search_helpers/backtracking.jl")
 include("methods/line_search_helpers/non_sequential_armijo.jl")
 include("methods/second_order_helpers/modified_newton.jl")
 include("methods/second_order_helpers/triangle-solve.jl")
+include("methods/second_order_helpers/bfgs_update.jl")
+include("methods/second_order_helpers/cholesky_solve.jl")
 
 ## Source Code 
 include("methods/gd_barzilai_borwein.jl")

@@ -57,3 +57,16 @@ function lower_triangle_solve!(b::Vector{T}, L::AbstractMatrix) where {T}
 
     return nothing
 end
+
+"""
+"""
+function cholesky_and_solve(b::Vector{T}, A::AbstractMatrix) where {T}
+
+    # compute cholesky
+    C = cholesky(Hermitian(A))
+
+    # solve -- solution stored in b
+    lower_triangle_solve!(b, C.U')
+    upper_triangle_solve!(b, C.U)
+
+end
