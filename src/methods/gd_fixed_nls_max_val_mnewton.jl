@@ -187,8 +187,8 @@ is produced by the following procedure.
     \\theta_{k+1} = \\theta_{k} - \\delta^j \\alpha d_k, ~d_k \\in\\mathbb{R}^n
 ```
 
-where ``j`` is the smallest number such that ``j + 1 \\in \\mathbb{N}`` and ...
-**finish this**
+where ``j`` is found by a 
+[backtracking procedure](@ref OptimizationMethods.backtracking!).
 
 The vector ``d_k \\in \\mathbb{R}^n`` is defined as either the modified
 Newton step, or the negative gradient step. In particular, a

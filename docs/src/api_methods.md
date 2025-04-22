@@ -130,6 +130,20 @@ OptimizationMethods.backtracking!
 OptimizationMethods.non_sequential_armijo_condition
 ```
 
+# Second Order Helper Functions
+
+## Hessian Modification
+```@docs
+OptimizationMethods.add_identity_until_pd!
+```
+
+## Linear System Solvers
+```@docs
+OptimizationMethods.lower_triangle_solve!
+
+OptimizationMethods.upper_triangle_solve!
+```
+
 # Index 
 ```@index
 ```
