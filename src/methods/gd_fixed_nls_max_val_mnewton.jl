@@ -110,8 +110,11 @@ function FixedModifiedNewtonNLSMaxValGD(::Type{T};
     window_size::Int64,
     β::T,
     λ::T,
+    hessian_modification_max_iteration::Int64,
     threshold::T,
     max_iterations::Int64) where {T}
+
+    # error checking
 
     # length for initialization purposes
     d = length(x0)
@@ -137,11 +140,12 @@ function FixedModifiedNewtonNLSMaxValGD(::Type{T};
         line_search_max_iteration,
         zeros(T, d),                                                # step
         window_size,
-        CircularVector(zeros(T, d)),                                # objective-hist
+        CircularVector(zeros(T, window_size)),                      # objective-hist
         T(0),                                                       # max_value
         -1,                                                         # max_index
         β,
         λ,
+        hessian_modification_max_iteration,
         threshold,
         max_iterations,
         iter_hist,
@@ -232,6 +236,7 @@ function fixed_modified_newton_nls_maxval_gd(
     # Update iteration 
     x = copy(optData.iter_hist[iter + 1]) 
     grad!(progData, precomp, store, x)
+    hess!(progData, precomp, store, x)
 
     # Store Values
     optData.grad_val_hist[iter + 1] = norm(store.grad)
@@ -248,7 +253,7 @@ function fixed_modified_newton_nls_maxval_gd(
         iter += 1
 
         # modify the current newton step
-        res = OptimizationMethods.add_identity_until_pd(
+        res = OptimizationMethods.add_identity_until_pd!(
             store.hess;
             λ = optData.λ,
             β = optData.β,
@@ -258,9 +263,9 @@ function fixed_modified_newton_nls_maxval_gd(
         # subroutine success compute step, otherwise use negative gradient
         optData.step .= store.grad
         if res[2]
-            optData.λ = λ / 2
-            lower_triangle_solve!(optData.step, store.hess')
-            upper_triangle_solve!(optData.step, store.hess)            
+            optData.λ = res[1] / 2
+            OptimizationMethods.lower_triangle_solve!(optData.step, store.hess')
+            OptimizationMethods.upper_triangle_solve!(optData.step, store.hess)            
         end
         success = OptimizationMethods.backtracking!(
             x,
