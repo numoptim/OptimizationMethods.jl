@@ -14,6 +14,8 @@ methods/gd_nesterov_accelerated.jl
 methods/gd_diminishing.jl
 methods/gd_non_sequential_armijo_adaptive.jl
 methods/gd_non_sequential_armijo_fixed.jl
+methods/gd_fixed_nls_max_val_mnewton.jl
+methods/gd_safe_bb_nls_max_val.jl
 problems/regression_helpers/link_functions.jl
 problems/regression_helpers/link_function_derivatives.jl
 problems/regression_helpers/variance_functions.jl

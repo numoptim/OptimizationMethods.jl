@@ -76,6 +76,7 @@ fixed_step_nls_maxval_gd
 
 FixedStepNLSMaxValGD
 ```
+
 # Non-sequential Armijo Line Search with Event Triggered Objective Evaluations
 
 ## First Order Methods
@@ -108,6 +109,13 @@ OptimizationMethods.update_algorithm_parameters!
 safe_barzilai_borwein_nls_maxval_gd
 
 SafeBarzilaiBorweinNLSMaxValGD
+```
+
+# Safeguarded Modified Newton's Method with Line Search
+```@docs
+fixed_modified_newton_nls_maxval_gd
+
+FixedModifiedNewtonNLSMaxValGD
 ```
 
 # Line search Helper Functions
