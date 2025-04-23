@@ -59,8 +59,25 @@ function lower_triangle_solve!(b::Vector{T}, L::AbstractMatrix) where {T}
 end
 
 """
+    cholesky_and_solve(b::Vector{T}, A::AbstractMatrix) where {T}
+
+Compute the cholesky of `A`, and store the solution to the linear system
+``Ax = b`` in the vector `b`.
+
+!!! warning
+    This function overwrites the vector `b` when the cholesky factorization
+    is successfully computed.
+
+# Arguments
+
+- `b::Vector{T}`, constant vector of the linear system. 
+- `A::AbstractMatrix`, coefficient matrix of the linear system.
+
+# Returns
+
+A boolean flag indicating whether the cholesky was successful.
 """
-function cholesky_and_solve(b::Vector{T}, A::AbstractMatrix) where {T}
+function cholesky_and_solve!(b::Vector{T}, A::AbstractMatrix) where {T}
 
     # compute cholesky and check success
     C = cholesky(Hermitian(A); check = false)

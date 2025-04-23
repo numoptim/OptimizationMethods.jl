@@ -134,7 +134,7 @@ function fixed_damped_bfgs_nls_maxval_gd(
         optData.step .= store.grad
 
         # compute step
-        chol_success = OptimizationMethods.cholesky_and_solve(optData.step, 
+        chol_success = OptimizationMethods.cholesky_and_solve!(optData.step, 
             optData.B)
 
         if isnan(optData.step[1])
