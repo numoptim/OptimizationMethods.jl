@@ -114,8 +114,10 @@ function fixed_damped_bfgs_nls_maxval_gd(
     optData.grad_val_hist[iter + 1] = norm(store.grad)
 
     # Initialize approximation
+    fill!(optData.B, 0)
     OptimizationMethods.add_identity(optData.B,
-        optData.c * norm(store.grad))
+        optData.c * optData.grad_val_hist[iter + 1])
+    optData.step .= optData.B \ store.grad
 
     # Update the objective cache
     optData.max_value = F(x)
@@ -131,19 +133,9 @@ function fixed_damped_bfgs_nls_maxval_gd(
         # store values for update
         optData.s .= -x
         optData.y .= -store.grad
-        optData.step .= store.grad
-
-        # compute step
-        chol_success = OptimizationMethods.cholesky_and_solve!(optData.step, 
-            optData.B)
-
-        if isnan(optData.step[1])
-            optData.stop_iteration = (iter - 1)
-            return optData.iter_hist[iter]
-        end
 
         # backtrack
-        success = OptimizationMethods.backtracking!(
+        backtrack_success = OptimizationMethods.backtracking!(
             x,
             optData.iter_hist[iter],
             F,
@@ -157,7 +149,7 @@ function fixed_damped_bfgs_nls_maxval_gd(
         )
 
         # if backtracking is not successful, return the previous point
-        if !success
+        if !backtrack_success
             optData.stop_iteration = (iter - 1)
             return optData.iter_hist[iter]
         end
@@ -168,9 +160,16 @@ function fixed_damped_bfgs_nls_maxval_gd(
         # update approximation
         optData.s .+= x
         optData.y .+= store.grad
-        OptimizationMethods.update_bfgs!(optData.B, optData.r, optData.δB,
+        update_success = OptimizationMethods.update_bfgs!(optData.B, 
+            optData.r, optData.δB,
             optData.s, optData.y; damped_update = true)
         OptimizationMethods.add_identity(optData.B, optData.β)
+
+        # compute next step
+        optData.step .= store.grad
+        if update_success
+            optData.step .= optData.B \ optData.step
+        end
 
         # store values
         optData.iter_hist[iter + 1] .= x
