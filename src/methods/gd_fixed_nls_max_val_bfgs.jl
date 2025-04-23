@@ -63,7 +63,7 @@ function FixedDampedBFGSNLSMaxValGD(::Type{T};
         name = "Gradient Descent with line search using damped BFGS updates"
     else
         name = "Gradient Descent with (non-monotone) line search using"*
-        "damped BFGS updates"
+        " damped BFGS updates"
     end
 
     return FixedDampedBFGSNLSMaxValGD{T}(
@@ -167,9 +167,7 @@ function fixed_damped_bfgs_nls_maxval_gd(
 
         # compute next step
         optData.step .= store.grad
-        if update_success
-            optData.step .= optData.B \ optData.step
-        end
+        optData.step .= optData.B \ optData.step
 
         # store values
         optData.iter_hist[iter + 1] .= x
