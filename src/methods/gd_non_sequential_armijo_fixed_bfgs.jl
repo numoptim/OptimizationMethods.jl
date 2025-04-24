@@ -30,13 +30,15 @@ mutable struct NonsequentialArmijoFixedBFGSGD{T} <: AbstractOptimizerData{T}
     acceptance_cnt::Int64
     τ_lower::T 
     τ_upper::T
+    inner_loop_radius
+    inner_loop_max_iterations
     threshold::T
     max_iterations::Int64
     iter_hist::Vector{Vector{T}}
     grad_val_hist::Vector{T}
     stop_iteration::Int64
 end
-function NonsequentialArmijoFixedBFGSGD(::type{T};
+function NonsequentialArmijoFixedBFGSGD(::Type{T};
     x0::Vector{T},
     c::T,
     β::T,
@@ -45,6 +47,8 @@ function NonsequentialArmijoFixedBFGSGD(::type{T};
     δ_upper::T,
     ρ::T,
     M::Int64,
+    inner_loop_radius::T,
+    inner_loop_max_iterations::Int64,
     threshold::T,
     max_iterations::Int64
     ) where {T}
@@ -91,6 +95,8 @@ function NonsequentialArmijoFixedBFGSGD(::type{T};
         0,
         T(-1),
         T(-1),
+        inner_loop_radius,
+        inner_loop_max_iterations,
         threshold,
         max_iterations,
         iter_hist,
@@ -139,9 +145,9 @@ function inner_loop!(
         optData.sjk .+= ψjk
         optData.yjk .+= store.grad
         update_success = OptimizationMethods.update_bfgs!(
-            optData.Bjk, optData.rjk, optData.δB,
+            optData.Bjk, optData.rjk, optData.δBjk,
             optData.sjk, optData.yjk; damped_update = true)
-        OptimizationMethods.add_identity(optData.B, optData.β)
+        OptimizationMethods.add_identity(optData.Bjk, optData.β)
 
         optData.norm_∇F_ψ = norm(store.grad)
     end
@@ -194,7 +200,8 @@ function nonsequential_armijo_fixed_bfgs(
         optData.s_θk .= optData.sjk
         optData.y_θk .= optData.yjk
         inner_loop!(x, optData.iter_hist[iter], optData, progData,
-            precomp, store, iter)
+            precomp, store, iter; radius = optData.inner_loop_radius,
+            max_iteration = optData.inner_loop_max_iterations)
 
         # check non-sequential armijo condition
         Fx = F(x)

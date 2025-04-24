@@ -92,6 +92,7 @@ export FixedModifiedNewtonNLSMaxValGD, fixed_modified_newton_nls_maxval_gd
 export NonsequentialArmijoAdaptiveGD, nonsequential_armijo_adaptive_gd
 export NonsequentialArmijoFixedGD, nonsequential_armijo_fixed_gd
 export FixedDampedBFGSNLSMaxValGD, fixed_damped_bfgs_nls_maxval_gd
+export NonsequentialArmijoFixedBFGSGD, nonsequential_armijo_fixed_bfgs
 
 ## Helper functions for optimization methods
 include("methods/stepsize_helpers/diminishing_stepsizes.jl")
@@ -115,5 +116,6 @@ include("methods/gd_fixed_nls_max_val_mnewton.jl")
 include("methods/gd_non_sequential_armijo_adaptive.jl")
 include("methods/gd_non_sequential_armijo_fixed.jl")
 include("methods/gd_fixed_nls_max_val_bfgs.jl")
+include("methods/gd_non_sequential_armijo_fixed_bfgs.jl")
 
 end
