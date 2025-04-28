@@ -53,7 +53,7 @@ let ``\\lambda_0`` be some initial value and ``\\beta \\in \\mathbb{R}_{> 0}``.
 The algorithm proceeds for each ``k-1 \\in \\mathbb{N}`` as follows:
 
 1. Try a cholesky factorization of ``A + \\lambda_k I``, if this is successful
-    then return the cholesky factorization.
+    then return the cholesky factorization of ``A + \\lambda_k I + \\beta I``.
 2. If the cholesky factorization is not successful, 
     ``\\lambda_{k+1} = \\max(10 * \\lambda_k, \\beta)``, `k += 1`, and return
     to step 1.
@@ -97,12 +97,14 @@ function add_identity_until_pd!(
 ) where {T}
 
     iter = 0
-    add_identity(res, λ + β)                                                
+    add_identity(res, λ)                                                
     while iter < max_iterations
         
         iter += 1
     
-        if issuccess(cholesky!(Hermitian(res); check = false))
+        if issuccess(cholesky(Hermitian(res); check = false))
+            add_identity!(res, β)
+            cholesky!(Hermitian(res); check = false)
             return λ, true
         else
             add_identity(res, -λ)
