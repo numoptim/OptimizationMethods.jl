@@ -41,8 +41,7 @@ using Test, OptimizationMethods, LinearAlgebra, Random
     number_random_parameters_trials = 5
     dimension = 50
 
-    let real_types = [Float16, Float32, Float64], 
-        number_random_parameters_trials = number_random_parameters_trials,
+    let number_random_parameters_trials = number_random_parameters_trials,
         dimension = dimension,  # Example dimension
         real_types = real_types
     

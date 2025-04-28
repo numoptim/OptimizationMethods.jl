@@ -83,7 +83,7 @@ let max_iter = 5
 end
 
 ################################################################################
-# Testing of backtracing!(...) v2 -- backtracking should be satisfied
+# Testing of backtracking!(...) v2 -- backtracking should be satisfied
 ################################################################################
 
 let dim = 50
@@ -123,7 +123,7 @@ let dim = 50
 end
 
 ################################################################################
-# Testing of backtracing!(...) v2 -- backtracking should not be satisfied
+# Testing of backtracking!(...) v2 -- backtracking should not be satisfied
 ################################################################################
 
 let max_iter = 5
