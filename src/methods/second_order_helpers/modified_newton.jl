@@ -5,7 +5,7 @@
 # below is Algorithm 3.3 from Nocedal and Wright, "Numerical Optimization".
 
 """
-    add_identity(A::Matrix{T}, λ::T) where {T}
+    add_identity!(A::Matrix{T}, λ::T) where {T}
 
 Add the scaler `λ` only to the diagonal of the matrix `A`, modifying `A` 
 in place.
@@ -15,7 +15,7 @@ in place.
 - `A::Matrix{T}`, matrix of values for which the diagonal will be editted.
 - `λ::T`, constant that will be added to the matrix `A`
 """
-function add_identity(
+function add_identity!(
     A::Matrix{T},
     λ::T
 ) where {T}
@@ -97,7 +97,7 @@ function add_identity_until_pd!(
 ) where {T}
 
     iter = 0
-    add_identity(res, λ)                                                
+    add_identity!(res, λ)                                                
     while iter < max_iterations
         
         iter += 1
@@ -107,9 +107,9 @@ function add_identity_until_pd!(
             cholesky!(Hermitian(res); check = false)
             return λ, true
         else
-            add_identity(res, -λ)
+            add_identity!(res, -λ)
             λ = max(10 * λ, β)
-            add_identity(res, λ)
+            add_identity!(res, λ)
         end
     end
 
