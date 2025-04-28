@@ -92,7 +92,7 @@ export FixedModifiedNewtonNLSMaxValGD, fixed_modified_newton_nls_maxval_gd
 export NonsequentialArmijoAdaptiveGD, nonsequential_armijo_adaptive_gd
 export NonsequentialArmijoFixedGD, nonsequential_armijo_fixed_gd
 export FixedDampedBFGSNLSMaxValGD, fixed_damped_bfgs_nls_maxval_gd
-export NonsequentialArmijoFixedBFGSGD, nonsequential_armijo_fixed_bfgs
+export NonsequentialArmijoFixedDampedBFGSGD, nonsequential_armijo_fixed_damped_bfgs
 
 ## Helper functions for optimization methods
 include("methods/stepsize_helpers/diminishing_stepsizes.jl")

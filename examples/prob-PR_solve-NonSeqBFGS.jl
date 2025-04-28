@@ -12,7 +12,7 @@ inner_loop_radius = 5.0
 inner_loop_max_iterations = 10
 max_iterations = 500
 
-optData = NonsequentialArmijoFixedBFGSGD(Float64;
+optData = NonsequentialArmijoFixedDampedBFGSGD(Float64;
     x0 = x0,
     c = 1e-4,
     β = 1e-3,
@@ -26,7 +26,7 @@ optData = NonsequentialArmijoFixedBFGSGD(Float64;
     threshold = 1e-10,
     max_iterations = max_iterations)
 
-x = nonsequential_armijo_fixed_bfgs(
+x = nonsequential_armijo_fixed_damped_bfgs(
     optData,
     progData
 )
@@ -68,7 +68,7 @@ progData.counters.neval_obj = 0
 progData.counters.neval_grad = 0
 
 M = 10
-optData = NonsequentialArmijoFixedBFGSGD(Float64;
+optData = NonsequentialArmijoFixedDampedBFGSGD(Float64;
     x0 = x0,
     c = 1e-4,
     β = 1e-3,
@@ -82,7 +82,7 @@ optData = NonsequentialArmijoFixedBFGSGD(Float64;
     threshold = 1e-10,
     max_iterations = max_iterations)
 
-x = nonsequential_armijo_fixed_bfgs(
+x = nonsequential_armijo_fixed_damped_bfgs(
     optData,
     progData
 )
