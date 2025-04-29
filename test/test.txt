@@ -16,6 +16,8 @@ methods/gd_non_sequential_armijo.jl
 problems/regression_helpers/link_functions.jl
 problems/regression_helpers/link_function_derivatives.jl
 problems/regression_helpers/variance_functions.jl
+methods/stepsize_helpers/diminishing_stepsizes.jl
+methods/line_search_helpers/backtracking.jl
 problems/regression_helpers/variance_function_derivatives.jl
 methods/stepsize_helpers/diminishing_stepsizes.jl
 methods/line_search_helpers/non_sequential_armijo.jl

@@ -61,6 +61,13 @@ OptimizationMethods.inverse_log2k_step_size
 OptimizationMethods.stepdown_100_step_size
 ```
 
+# Gradient Descent with Backtracking
+```@docs
+backtracking_gd
+
+BacktrackingGD
+```
+
 # Gradient Descent with Non-sequential Armijo Line Search
 ```@docs
 NonsequentialArmijoGD
@@ -82,6 +89,11 @@ OptimizationMethods.update_algorithm_parameters!
 ```
 
 # Line search Helper Functions
+
+## Backtracking
+```@docs
+OptimizationMethods.backtracking!
+```
 
 ## Non-sequential Armijo
 ```@docs
