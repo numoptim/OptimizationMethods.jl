@@ -150,7 +150,7 @@ function NonsequentialArmijoFixedDampedBFGSGD(::Type{T};
 
     # name for recording purposed
     name = "Gradient Descent with Triggering Events and Nonsequential"*
-    " Armijo with fixed step size and BFGS steps."
+    " Armijo with fixed step size and Damped BFGS steps."
 
     # initialize buffer for history keeping
     d = length(x0)
