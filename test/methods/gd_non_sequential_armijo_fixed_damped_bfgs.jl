@@ -252,6 +252,235 @@ end # end test on structure
 end # end test on update algorithm parameters
 
 @testset "Utility -- Inner Loop NonseqArmijoDampedBFGS" begin
+
+    # random arguments
+    dim = 50
+    x0 =               randn(dim)
+    c =                 rand()
+    β =                 rand()
+    α =                 rand()
+    δ0 =                rand()
+    ρ =                 rand()
+    M =                 rand(1:10)
+    threshold =        randn()
+    inner_loop_radius = rand()
+    inner_loop_max_iterations = rand(1:100)
+    max_iterations = rand(1:100)
+    δ_upper = δ0 + 1   
+    
+    # build structure
+    optData = NonsequentialArmijoFixedDampedBFGSGD(Float64;
+        x0 = x0,
+        c = c,
+        β = β,
+        α = α,
+        δ0 = δ0,
+        δ_upper = δ_upper,
+        ρ = ρ,
+        M = M,
+        inner_loop_radius = inner_loop_radius,
+        inner_loop_max_iterations = inner_loop_max_iterations,
+        threshold = threshold,
+        max_iterations = max_iterations)
+    
+    progData = OptimizationMethods.LogisticRegression(Float64, nvar=50)
+    precomp, store = OptimizationMethods.initialize(progData)
+    ks = [1, max_iterations]
+
+    for k in ks
+        # Test first event trigger: radius violation
+        let ψjk=x0 .+ inner_loop_radius, 
+            θk=x0, optData=optData, progData=progData,
+            store=store, k=k
+
+            optData.grad_val_hist[k] = 1.5
+            optData.τ_lower = 1.0
+            optData.τ_upper = 2.0
+            
+            OptimizationMethods.inner_loop!(ψjk, θk, optData, progData, precomp, 
+                store, k;
+                radius = optData.inner_loop_radius,
+                max_iteration=100)
+
+            @test ψjk == x0 .+ inner_loop_radius
+        end # end first event trigger test
+
+         # Test second event trigger: τ_lower 
+         let ψjk=copy(x0), θk=copy(x0), optData=optData, progData=progData,
+            store=store, k=k
+
+            optData.grad_val_hist[k] = 0.5 
+            optData.τ_lower = 1.0
+            optData.τ_upper = 2.0
+            
+            OptimizationMethods.inner_loop!(ψjk, θk, optData, progData, precomp, 
+                store, k;
+                radius = optData.inner_loop_radius,
+                max_iteration=100)
+
+            @test ψjk == x0
+        end # end second event triggering event
+
+        # Test third event trigger: τ_upper 
+        let ψjk=copy(x0), θk=copy(x0), optData=optData, progData=progData,
+            store=store, k=k
+
+            optData.grad_val_hist[k] = 2.5 
+            optData.τ_lower = 1.0
+            optData.τ_upper = 2.0
+            
+            OptimizationMethods.inner_loop!(ψjk, θk, optData, progData, precomp, 
+                store, k;
+                radius = optData.inner_loop_radius,
+                max_iteration=100)
+
+            @test ψjk == x0
+        end
+
+         # Test fourth event trigger: max_iteration
+         let ψjk=copy(x0), θk=copy(x0), optData=optData, progData=progData,
+            store=store, k=k
+
+            optData.grad_val_hist[k] = 1.5 
+            optData.τ_lower = 1.0
+            optData.τ_upper = 2.0
+            
+            OptimizationMethods.inner_loop!(ψjk, θk, optData, progData, precomp, 
+                store, k; 
+                radius = optData.inner_loop_radius,
+                max_iteration=0)
+
+            @test ψjk == x0
+        end
+
+        # Test first iteration
+        let ψjk=copy(x0), θk=copy(x0), optData=optData, progData=progData,
+            store=store, k=k
+
+            j=1
+
+            OptimizationMethods.grad!(progData, precomp, store, θk)
+            optData.grad_val_hist[k] = norm(store.grad)
+            optData.norm_∇F_ψ = norm(store.grad)
+            optData.τ_lower = 0.5 * norm(store.grad) 
+            optData.τ_upper = 1.5 * norm(store.grad)
+
+            optData.δk = 1.5
+            α = optData.α
+
+            # compute the initial step
+            g00 = OptimizationMethods.grad(progData, θk)
+            B00 = optData.c * norm(g00) * Matrix{Float64}(I, 50, 50)
+            step = optData.δk * optData.α * (B00 \ g00)
+
+            # reset
+            optData.Bjk = B00
+            j = OptimizationMethods.inner_loop!(ψjk, θk, optData, progData, precomp,
+                store, k; radius = optData.inner_loop_radius, max_iteration = 1
+            )
+            @test j == 1
+
+            # test cases
+            @test ψjk ≈ θk - step 
+            @test optData.α == α
+            @test store.grad ≈ OptimizationMethods.grad(progData, ψjk)
+            @test optData.norm_∇F_ψ == norm(store.grad)
+
+            g10 = OptimizationMethods.grad(progData, ψjk)
+            @test optData.sjk ≈ ψjk - θk
+            @test optData.yjk ≈ g10 - g00
+
+            # test to make sure damped BFGS was updated
+            update_success = OptimizationMethods.update_bfgs!(
+                B00, optData.rjk, optData.δBjk,
+                optData.sjk, optData.yjk; damped_update = true)
+            OptimizationMethods.add_identity(optData.Bjk, optData.β)
+
+            @test B00 ≈ optData.Bjk
+        end
+
+         # test a random iteration
+        let ψjk=copy(x0), θk=copy(x0), optData=optData, progData=progData,
+            store=store, k=k
+
+            #To do this test correctly, we would need to know at what iteration 
+            #j an inner loop exists.
+            max_iteration = rand(2:100)
+
+            # Reset
+            OptimizationMethods.grad!(progData, precomp, store, θk)
+            optData.Bjk = optData.c * norm(store.grad) * Matrix{Float64}(I, 50, 50)
+            optData.grad_val_hist[k] = norm(store.grad)
+            optData.norm_∇F_ψ = norm(store.grad)
+            optData.τ_lower = 0.5 * norm(store.grad) 
+            optData.τ_upper = 1.5 * norm(store.grad)
+            optData.δk = 1.5
+
+            #Get exit iteration j -- radius == 10 so that we get resonable j
+            j = OptimizationMethods.inner_loop!(ψjk, θk, optData, progData, precomp,
+                store, k; max_iteration = max_iteration
+            )
+
+            # Reset 
+            ψjk = copy(x0)
+            θk = copy(x0)
+
+            OptimizationMethods.grad!(progData, precomp, store, θk)
+            optData.Bjk = optData.c * norm(store.grad) * Matrix{Float64}(I, 50, 50)
+            optData.grad_val_hist[k] = norm(store.grad)
+            optData.norm_∇F_ψ = norm(store.grad)
+            optData.τ_lower = 0.5 * norm(store.grad) 
+            optData.τ_upper = 1.5 * norm(store.grad)
+            optData.δk = 1.5
+
+            OptimizationMethods.inner_loop!(ψjk, θk, optData, progData, precomp,
+                store, k, max_iteration = j-1
+            )
+            α = optData.α
+
+            ψ_jm1_k = copy(ψjk)
+            B_jm1_k = copy(optData.Bjk)
+            step = optData.δk * optData.α * (optData.Bjk \ store.grad)
+
+            # Reset 
+            ψjk = copy(x0)
+            θk = copy(x0)
+
+            OptimizationMethods.grad!(progData, precomp, store, θk)
+            optData.Bjk = optData.c * norm(store.grad) * Matrix{Float64}(I, 50, 50)
+            optData.grad_val_hist[k] = norm(store.grad)
+            optData.norm_∇F_ψ = norm(store.grad)
+            optData.τ_lower = 0.5 * norm(store.grad) 
+            optData.τ_upper = 1.5 * norm(store.grad)
+            optData.δk = 1.5
+
+            #Get ψ_{j,k}
+            OptimizationMethods.inner_loop!(ψjk, θk, optData, progData, precomp,
+                store, k, max_iteration = max_iteration
+            )
+
+            @test ψjk ≈ ψ_jm1_k - step
+            @test store.grad ≈ OptimizationMethods.grad(progData, ψjk)
+            @test optData.norm_∇F_ψ ≈ norm(store.grad)
+            @test optData.α == α
+
+            # test the values of s, y
+            gjm10 = OptimizationMethods.grad(progData, ψ_jm1_k) 
+            gj0 = OptimizationMethods.grad(progData, ψjk)
+            @test optData.sjk ≈ ψjk - ψ_jm1_k
+            @test optData.yjk ≈ gj0 - gjm10
+
+           # test to make sure damped BFGS was updated
+           update_success = OptimizationMethods.update_bfgs!(
+                B_jm1_k, optData.rjk, optData.δBjk,
+                optData.sjk, optData.yjk; damped_update = true)
+            OptimizationMethods.add_identity(B_jm1_k, optData.β)
+
+            @test B_jm1_k ≈ optData.Bjk 
+
+        end # end of the test of a random iteration
+    end # end the test for the initial iteration
+
 end # end test on inner loop
 
 @testset "Test nonsequential_armijo_fixed_damped_bfgs Monotone" begin
