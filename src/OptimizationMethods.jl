@@ -115,7 +115,7 @@ include("methods/gd_safe_bb_nls_max_val.jl")
 include("methods/gd_fixed_nls_max_val_mnewton.jl")
 include("methods/gd_non_sequential_armijo_adaptive.jl")
 include("methods/gd_non_sequential_armijo_fixed.jl")
-include("methods/gd_fixed_nls_max_val_bfgs.jl")
 include("methods/gd_non_sequential_armijo_fixed_bfgs.jl")
+include("methods/gd_fixed_nls_max_val_damped_bfgs.jl")
 
 end

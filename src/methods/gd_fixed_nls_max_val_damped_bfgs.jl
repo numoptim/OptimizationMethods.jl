@@ -250,7 +250,6 @@ function fixed_damped_bfgs_nls_maxval_gd(
     fill!(optData.B, 0)
     OptimizationMethods.add_identity(optData.B,
         optData.c * optData.grad_val_hist[iter + 1])
-    optData.step .= optData.B \ store.grad
 
     # Update the objective cache
     optData.max_value = F(x)
@@ -268,6 +267,7 @@ function fixed_damped_bfgs_nls_maxval_gd(
         optData.y .= -store.grad
 
         # backtrack
+        optData.step .= optData.B \ store.grad
         backtrack_success = OptimizationMethods.backtracking!(
             x,
             optData.iter_hist[iter],
@@ -297,10 +297,6 @@ function fixed_damped_bfgs_nls_maxval_gd(
             optData.r, optData.δB,
             optData.s, optData.y; damped_update = true)
         OptimizationMethods.add_identity(optData.B, optData.β)
-
-        # compute next step
-        optData.step .= store.grad
-        optData.step .= optData.B \ optData.step
 
         # store values
         optData.iter_hist[iter + 1] .= x

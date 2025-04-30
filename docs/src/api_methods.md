@@ -118,6 +118,13 @@ fixed_modified_newton_nls_maxval_gd
 FixedModifiedNewtonNLSMaxValGD
 ```
 
+# Safeguarded Damped BFGS Quasi-Newton's Method with Line Search
+```@docs
+fixed_damped_bfgs_nls_maxval_gd
+
+FixedDampedBFGSNLSMaxValGD
+```
+
 # Line search Helper Functions
 
 ## Backtracking
@@ -135,6 +142,11 @@ OptimizationMethods.non_sequential_armijo_condition
 ## Hessian Modification
 ```@docs
 OptimizationMethods.add_identity_until_pd!
+```
+
+## Quasi-Newton Updates
+```@docs
+OptimizationMethods.update_bfgs!
 ```
 
 ## Linear System Solvers
