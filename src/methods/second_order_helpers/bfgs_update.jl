@@ -108,7 +108,7 @@ function update_bfgs!(
 
     # check to make sure update will be okay
     sr = dot(s, r)
-    if sr == 0.0
+    if sr <= 0.0
         return false
     end
 
