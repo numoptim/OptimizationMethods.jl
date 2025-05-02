@@ -321,7 +321,6 @@ function inner_loop!(
         update_success = OptimizationMethods.update_bfgs!(
             optData.Bjk, optData.rjk, optData.δBjk,
             optData.sjk, optData.yjk; damped_update = true)
-        OptimizationMethods.add_identity(optData.Bjk, optData.β)
 
         optData.norm_∇F_ψ = norm(store.grad)
     end

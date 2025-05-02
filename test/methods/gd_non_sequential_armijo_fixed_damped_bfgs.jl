@@ -394,7 +394,6 @@ end # end test on update algorithm parameters
             update_success = OptimizationMethods.update_bfgs!(
                 B00, optData.rjk, optData.δBjk,
                 optData.sjk, optData.yjk; damped_update = true)
-            OptimizationMethods.add_identity(optData.Bjk, optData.β)
 
             @test B00 ≈ optData.Bjk
         end
@@ -474,7 +473,6 @@ end # end test on update algorithm parameters
            update_success = OptimizationMethods.update_bfgs!(
                 B_jm1_k, optData.rjk, optData.δBjk,
                 optData.sjk, optData.yjk; damped_update = true)
-            OptimizationMethods.add_identity(B_jm1_k, optData.β)
 
             @test B_jm1_k ≈ optData.Bjk 
 
@@ -766,7 +764,12 @@ end # end test on inner loop
         @test flag
         @test xk == x
         @test optDatak.∇F_θk ≈ OptimizationMethods.grad(progData, xkm1)
-        @test optDatak.B_θk ≈ optDatakm1.B_θk
+        if first_acceptance != 1
+            @test optDatak.B_θk ≈ optDatakm1.B_θk 
+        else
+            g0 = OptimizationMethods.grad(progData, x0)
+            @test optDatak.B_θk ≈ optData.c * norm(g0) * Matrix{Float64}(I, 50, 50)
+        end
         @test optDatak.grad_val_hist[iter + 2] == optDatakm1.norm_∇F_ψ
         @test optDatak.δk == optDatakm1.δk
         @test optDatak.τ_lower == optDatakm1.τ_lower
@@ -1233,7 +1236,12 @@ end # end test for monotone
         @test flag
         @test xk == x
         @test optDatak.∇F_θk ≈ OptimizationMethods.grad(progData, xkm1)
-        @test optDatak.B_θk ≈ optDatakm1.B_θk
+        if first_acceptance != 1
+            @test optDatak.B_θk ≈ optDatakm1.B_θk 
+        else
+            g0 = OptimizationMethods.grad(progData, x0)
+            @test optDatak.B_θk ≈ optData.c * norm(g0) * Matrix{Float64}(I, 50, 50)
+        end
         @test optDatak.grad_val_hist[iter + 2] == optDatakm1.norm_∇F_ψ
         @test optDatak.δk == optDatakm1.δk
         @test optDatak.τ_lower == optDatakm1.τ_lower
