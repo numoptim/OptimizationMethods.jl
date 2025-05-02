@@ -7,14 +7,14 @@ module TestFixedStepNLSMaxValGD
 
 using Test, OptimizationMethods, CircularArrays, LinearAlgebra, Random
 
-@testset "Test FixedStepNLSMaxValGD{T} -- Structure" begin
+@testset "Test FixedStepNonmonLSMaxValG{T} -- Structure" begin
 
     ############################################################################
     # Test structure definition
     ############################################################################
 
     # test that the structure is defined
-    @test isdefined(OptimizationMethods, :FixedStepNLSMaxValGD)
+    @test isdefined(OptimizationMethods, :FixedStepNonmonLSMaxValG)
 
     # test optimizer agnostic fields are present
     nonunique_fields = [:name, :threshold, :max_iterations, :iter_hist, 
@@ -26,7 +26,7 @@ using Test, OptimizationMethods, CircularArrays, LinearAlgebra, Random
 
     # test that no other fields are present
     @test length(unique_fields) + length(nonunique_fields) ==
-        length(fieldnames(FixedStepNLSMaxValGD))
+        length(fieldnames(FixedStepNonmonLSMaxValG))
 
     ############################################################################
     # Test the constructor
@@ -65,7 +65,7 @@ using Test, OptimizationMethods, CircularArrays, LinearAlgebra, Random
             max_iterations = rand(1:100) 
 
             # test the field types returned by outer constructor
-            optData = FixedStepNLSMaxValGD(type; x0 = x0, α = α, δ = δ, ρ = ρ,
+            optData = FixedStepNonmonLSMaxValG(type; x0 = x0, α = α, δ = δ, ρ = ρ,
                 window_size = window_size, 
                 line_search_max_iteration = line_search_max_iteration,
                 threshold = threshold,
@@ -95,7 +95,7 @@ using Test, OptimizationMethods, CircularArrays, LinearAlgebra, Random
             max_iterations = rand(1:100)             
 
             # test the field values returned
-            optData = FixedStepNLSMaxValGD(type; x0 = x0, α = α, δ = δ, ρ = ρ,
+            optData = FixedStepNonmonLSMaxValG(type; x0 = x0, α = α, δ = δ, ρ = ρ,
                 window_size = window_size, 
                 line_search_max_iteration = line_search_max_iteration,
                 threshold = threshold,
@@ -146,7 +146,7 @@ using Test, OptimizationMethods, CircularArrays, LinearAlgebra, Random
             window_size = 0
 
             # Test 1: test error occurs
-            @test_throws AssertionError FixedStepNLSMaxValGD(
+            @test_throws AssertionError FixedStepNonmonLSMaxValG(
                 type; x0 = x0, α = α, δ = δ, ρ = ρ,
                 window_size = window_size, 
                 line_search_max_iteration = line_search_max_iteration,
@@ -166,7 +166,7 @@ using Test, OptimizationMethods, CircularArrays, LinearAlgebra, Random
             window_size = -1
 
             # Test 2: test error occurs
-            @test_throws AssertionError FixedStepNLSMaxValGD(
+            @test_throws AssertionError FixedStepNonmonLSMaxValG(
                 type; x0 = x0, α = α, δ = δ, ρ = ρ,
                 window_size = window_size, 
                 line_search_max_iteration = line_search_max_iteration,
@@ -179,7 +179,7 @@ using Test, OptimizationMethods, CircularArrays, LinearAlgebra, Random
 
 end # end test set for structure
 
-@testset "Test FixedStepNLSMaxValGD{T} -- Method" begin
+@testset "Test FixedStepNonmonLSMaxValG{T} -- Method" begin
 
     # initialize a random linear regression problem for testing
     progData = OptimizationMethods.LeastSquares(Float64)
@@ -206,7 +206,7 @@ end # end test set for structure
         threshold = threshold, max_iterations = max_iterations
 
         # initialize optimization data
-        optData = FixedStepNLSMaxValGD(Float64; x0 = x0, α = α, δ = δ,
+        optData = FixedStepNonmonLSMaxValG(Float64; x0 = x0, α = α, δ = δ,
             ρ = ρ, window_size = window_size, 
             line_search_max_iteration = line_search_max_iteration,
             threshold = threshold,
@@ -249,7 +249,7 @@ end # end test set for structure
         threshold = threshold, max_iterations = max_iterations
 
         # initialize optimization data
-        optData = FixedStepNLSMaxValGD(Float64; x0 = x0, α = α, δ = δ,
+        optData = FixedStepNonmonLSMaxValG(Float64; x0 = x0, α = α, δ = δ,
             ρ = ρ, window_size = window_size, 
             line_search_max_iteration = line_search_max_iteration,
             threshold = threshold,
@@ -298,7 +298,7 @@ end # end test set for structure
         threshold = threshold, max_iterations = max_iterations
 
         # initialize optimization data
-        optData = FixedStepNLSMaxValGD(Float64; x0 = x0, α = α, δ = δ,
+        optData = FixedStepNonmonLSMaxValG(Float64; x0 = x0, α = α, δ = δ,
             ρ = ρ, window_size = window_size, 
             line_search_max_iteration = line_search_max_iteration,
             threshold = threshold,

@@ -74,7 +74,7 @@ BacktrackingGD
 ```@docs
 fixed_step_nls_maxval_gd
 
-FixedStepNLSMaxValGD
+FixedStepNonmonLSMaxValG
 ```
 
 # Gradient Descent with Non-sequential Armijo Line Search

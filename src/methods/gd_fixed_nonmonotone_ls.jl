@@ -21,7 +21,7 @@
 ################################################################################
 
 """
-    FixedStepNLSMaxValGD{T} <: AbstractOptimizerData{T}
+    FixedStepNonmonLSMaxValGD{T} <: AbstractOptimizerData{T}
 
 Mutable `struct` that represents gradient descent using non-monotone line search
 where the initial step size for line search is fixed. This `struct` also keeps
@@ -41,8 +41,8 @@ track of values during the optimization procedure implemented in
     to construct the reference objective value for the line search criterion.
 - `line_search_max_iteration::Int64`, maximum number of iterations for
     line search.
-- `objective_hist::Vector{T}`, buffer array of size `window_size` that stores
-    `window_size` previous objective values.
+- `objective_hist::CircularVector{T, Vector{T}}`, buffer array of size 
+    `window_size` that stores `window_size` previous objective values.
 - `max_value::T`, maximum value of `objective_hist`. This is the reference 
     objective value used in the line search procedure.
 - `max_index::Int64`, index of the maximum value that corresponds to the 
@@ -62,16 +62,7 @@ track of values during the optimization procedure implemented in
 
 # Constructors
 
-## Inner Constructor
-    
-    FixedStepNLSMaxValGD{T}(name::String, α::T, δ::T, ρ::T, window_size::Int64,
-        line_search_max_iteration::Int64, threshold::T, max_iterations::Int64,
-        iter_hist::Vector{Vector{T}}, grad_val_hist::Vector{T}, 
-        stop_iteration::Int64)
-
-## Outer Constructor
-
-    FixedStepNLSMaxValGD(::Type{T}; x0::Vector{T}, α::T, δ::T, ρ::T,
+    FixedStepNonmonLSMaxValG(::Type{T}; x0::Vector{T}, α::T, δ::T, ρ::T,
         window_size::Int64, line_search_max_iteration::Int64,
         threshold::T, max_iterations::Int64) where {T}
 
@@ -96,7 +87,7 @@ track of values during the optimization procedure implemented in
 - `max_iterations::Int64`, max number of iterations (gradient steps) taken by 
     the solver.
 """
-mutable struct FixedStepNLSMaxValGD{T} <: AbstractOptimizerData{T}
+mutable struct FixedStepNonmonLSMaxValG{T} <: AbstractOptimizerData{T}
     name::String
     α::T                                        
     δ::T
@@ -113,7 +104,7 @@ mutable struct FixedStepNLSMaxValGD{T} <: AbstractOptimizerData{T}
     stop_iteration::Int64
 
     # inner constructor
-    FixedStepNLSMaxValGD{T}(name, α, δ, ρ, window_size, line_search_max_iteration,
+    FixedStepNonmonLSMaxValG{T}(name, α, δ, ρ, window_size, line_search_max_iteration,
         threshold, max_iterations, iter_hist, grad_val_hist, 
         stop_iteration) where {T} = 
         begin
@@ -123,7 +114,7 @@ mutable struct FixedStepNLSMaxValGD{T} <: AbstractOptimizerData{T}
                 max_iterations, iter_hist, grad_val_hist, stop_iteration)
         end
 end
-function FixedStepNLSMaxValGD(
+function FixedStepNonmonLSMaxValG(
     ::Type{T};
     x0::Vector{T},
     α::T,
@@ -154,13 +145,13 @@ function FixedStepNLSMaxValGD(
     name = "Gradient Descent with non-monotone line search using the max value"*
     " of the previous $(window_size) values" 
 
-    return FixedStepNLSMaxValGD{T}(name, α, δ, ρ, window_size,
+    return FixedStepNonmonLSMaxValG{T}(name, α, δ, ρ, window_size,
         line_search_max_iteration, threshold, max_iterations, 
         iter_hist, grad_val_hist, stop_iteration)
 end
 
 """
-    fixed_step_nls_maxval_gd(optData::FixedStepNLSMaxValGD{T},
+    fixed_step_nls_maxval_gd(optData::FixedStepNonmonLSMaxValG{T},
         progData::P where P <: AbstractNLPModel{T, S}) where {T, S}
 
 Implementation of gradient descent with non-monotone line search using
@@ -191,7 +182,7 @@ where ``||\\cdot||_2`` is the L2-norm, and ``M \\in \\mathbb{N}_{>0}``.
 
 # Arguments
 
-- `optData::FixedStepNLSMaxValGD{T}`, the specification for the optimization 
+- `optData::FixedStepNonmonLSMaxValG{T}`, the specification for the optimization 
     method.
 - `progData<:AbstractNLPModel{T,S}`, the specification for the optimization
     problem. 
@@ -202,7 +193,7 @@ where ``||\\cdot||_2`` is the L2-norm, and ``M \\in \\mathbb{N}_{>0}``.
     a `grad` argument.
 """
 function fixed_step_nls_maxval_gd(
-    optData::FixedStepNLSMaxValGD{T},
+    optData::FixedStepNonmonLSMaxValG{T},
     progData::P where P <: AbstractNLPModel{T, S}
 ) where {T, S}
 
