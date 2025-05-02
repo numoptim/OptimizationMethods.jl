@@ -248,7 +248,17 @@ end # end test set for structure
         line_search_max_iteration = line_search_max_iteration,
         threshold = threshold, max_iterations = max_iterations
 
-        # initialize optimization data
+        # initialize optimization data for k - 1 to get reference value
+        optData = FixedStepNonmonLSMaxValG(Float64; x0 = x0, α = α, δ = δ,
+            ρ = ρ, window_size = window_size, 
+            line_search_max_iteration = line_search_max_iteration,
+            threshold = threshold,
+            max_iterations = max_iterations - 1)
+
+        xkm1 = fixed_step_nls_maxval_gd(optData, progData)
+        rkm1 = optData.max_value
+        
+        # initialize optimization data to get iterate k
         optData = FixedStepNonmonLSMaxValG(Float64; x0 = x0, α = α, δ = δ,
             ρ = ρ, window_size = window_size, 
             line_search_max_iteration = line_search_max_iteration,
@@ -274,11 +284,11 @@ end # end test set for structure
         # test that xk is correct
         xkm1 = copy(optData.iter_hist[max_iterations])
         gkm1 = OptimizationMethods.grad(progData, xkm1)
-        rkm1 = max(F(xkm1), optData.max_value)
         success = OptimizationMethods.backtracking!(xkm1, 
             optData.iter_hist[max_iterations],
             F, gkm1, norm(gkm1) ^ 2, rkm1, α, δ, ρ;
             max_iteration = line_search_max_iteration)
+        @test success
         @test xkm1 ≈ xk
 
         # test that the values stored optData.iter_hist and grad_val_hist
