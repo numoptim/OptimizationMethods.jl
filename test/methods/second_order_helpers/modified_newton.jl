@@ -93,8 +93,7 @@ end # end test for add_identity
         end
 
         # check the returned cholesky 
-        @test L_return' * L_return ≈ 
-            A_copy + (β .* Matrix{Float64}(I, dim, dim))
+        @test L_return' * L_return ≈ A_copy
     end
 
     ## Example will terminate after a couple iterations
@@ -128,10 +127,10 @@ end # end test for add_identity
 
         # test the output of our res and the retunred cholesky 
         @test L_return' * L_return ≈ 
-            A_copy + ((res[1] + β) .* Matrix{Float64}(I, dim, dim))
+            A_copy + (res[1] .* Matrix{Float64}(I, dim, dim))
 
         # test smallest such constant to satisfy our condition
-        B = A_copy + ((res[1]/10 + β) .* Matrix{Float64}(I, dim, dim))
+        B = A_copy + ((res[1]/10) .* Matrix{Float64}(I, dim, dim))
         @test !issuccess(cholesky(Hermitian(B); check = false)) 
     end
     
