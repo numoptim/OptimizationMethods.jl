@@ -102,9 +102,7 @@ function add_identity_until_pd!(
         
         iter += 1
     
-        if issuccess(cholesky(Hermitian(res); check = false))
-            add_identity!(res, β)
-            cholesky!(Hermitian(res); check = false)
+        if issuccess(cholesky!(Hermitian(res); check = false))
             return λ, true
         else
             add_identity!(res, -λ)
