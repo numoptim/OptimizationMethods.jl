@@ -12,7 +12,7 @@ using Test, OptimizationMethods, LinearAlgebra, Random
 @test isdefined(OptimizationMethods, :backtracking!)
 
 ################################################################################
-# Testing of backtracking!(...) v1
+# Testing of backtracking!(...) v1 -- backtracking should be satisfied
 ################################################################################
 
 let dim = 50
@@ -52,7 +52,38 @@ let dim = 50
 end
 
 ################################################################################
-# Testing of backtracing!(...) v2
+# Testing of backtracking!(...) v1 -- backtracking should not be satisfied
+################################################################################
+
+let max_iter = 5
+
+    # Random seed for reproducibility
+    Random.seed!(1010)
+
+    # function test against
+    F(θ) = θ[1]^2
+
+    # parameters
+    θk = zeros(1)
+    θkm1 = Vector{Float64}([1])
+    gkm1 = Vector{Float64}([2])
+    step_direction = -gkm1
+    reference_value = 1.0
+    α = 1.0
+    δ = .5
+    ρ = 1.0
+    
+    backtracking_condition_satisfied = OptimizationMethods.backtracking!(θk, 
+        θkm1, F, gkm1, step_direction, reference_value, α, δ, ρ;
+        max_iteration = max_iter)
+
+    @test typeof(backtracking_condition_satisfied) == Bool
+    @test backtracking_condition_satisfied == false
+    @test θk ≈ θkm1 - (δ ^ (max_iter) * α) .* step_direction
+end
+
+################################################################################
+# Testing of backtracking!(...) v2 -- backtracking should be satisfied
 ################################################################################
 
 let dim = 50
@@ -89,6 +120,37 @@ let dim = 50
             ρ * (δ^(t-1) * α) * norm_gkm1_squared
     end
     @test θk ≈ θkm1 - (δ^t * α) .* gkm1
+end
+
+################################################################################
+# Testing of backtracking!(...) v2 -- backtracking should not be satisfied
+################################################################################
+
+let max_iter = 5
+
+    # Random seed for reproducibility
+    Random.seed!(1010)
+
+    # function test against
+    F(θ) = θ[1]^2
+
+    # parameters
+    θk = zeros(1)
+    θkm1 = Vector{Float64}([1])
+    gkm1 = -Vector{Float64}([2]) ## purposely give wrong gradient so ls fails
+    norm_gkm1_squared = 4.0
+    reference_value = 1.0
+    α = 1.0
+    δ = .5
+    ρ = 1.0
+    
+    backtracking_condition_satisfied = OptimizationMethods.backtracking!(θk, 
+        θkm1, F, gkm1, norm_gkm1_squared, reference_value, α, δ, ρ;
+        max_iteration = max_iter)
+
+    @test typeof(backtracking_condition_satisfied) == Bool
+    @test backtracking_condition_satisfied == false
+    @test θk ≈ θkm1 - (δ ^ (max_iter) * α) .* gkm1
 end
 
 end

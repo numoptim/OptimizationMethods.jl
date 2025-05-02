@@ -39,6 +39,9 @@ Mutable sturcture representing gradient descent using backtracking.
         line_search_max_iteration::Int64, threshold::T, max_iteration::Int64)
         where {T}
 
+Returns a `struct` of type `BacktrackingGD{T}` with all the field initialized to
+    either initialized to the values given, or their default values.
+
 ## Arguments
 
 - `T::DataType`, specific data type used for calculations.
@@ -79,23 +82,23 @@ function BacktrackingGD(
     ρ::T,
     line_search_max_iteration::Int64,
     threshold::T,
-    max_iteration::Int64,
+    max_iterations::Int64,
 ) where {T}
 
     d = length(x0)
 
     # initialization iterate history
     iter_hist = Vector{T}[Vector{T}(undef, d) for i in 
-        1:max_iteration + 1]
+        1:max_iterations + 1]
     iter_hist[1] = x0
 
     # initialization of gradient and dummy value for stop_iteration
-    grad_val_hist = Vector{T}(undef, max_iteration + 1)
+    grad_val_hist = Vector{T}(undef, max_iterations + 1)
     stop_iteration = -1
 
     return BacktrackingGD("Gradient Descent with Backtracking",
         α, δ, ρ, line_search_max_iteration, threshold, 
-        max_iteration, iter_hist, grad_val_hist, stop_iteration)
+        max_iterations, iter_hist, grad_val_hist, stop_iteration)
 end
 
 """
@@ -130,9 +133,8 @@ where ``||\\cdot||_2`` is the L2-norm.
     Theoretically, there exists such a ``t``, but it can be made
     arbitrarily large. Therefore, the line search procedure stops
     searching after `optData.line_search_max_iteration`.
-    The current implementation does not check if the line search
-    methodology terminates successful, and tries to continue
-    regardless.
+    The current implementation terminates the procedure if the backtracking
+    condition is not satisfied, and returns the previous iterate.
 
 # Arguments
 
@@ -170,10 +172,16 @@ function backtracking_gd(
         iter += 1
 
         # backtrack -- solution is stored in x
-        OptimizationMethods.backtracking!(x, optData.iter_hist[iter],
-            F, store.grad, optData.grad_val_hist[iter]^2, F(x), 
-            optData.α, optData.δ, optData.ρ; 
+        backtracking_condition_satisfied = OptimizationMethods.backtracking!(x, 
+            optData.iter_hist[iter], F, store.grad, optData.grad_val_hist[iter]^2, 
+            F(x), optData.α, optData.δ, optData.ρ;  
             max_iteration = optData.line_search_max_iteration)
+
+        # if backtracking is not satisfied returned the previous point
+        if !backtracking_condition_satisfied
+            optData.stop_iteration = (iter-1)
+            return optData.iter_hist[iter]
+        end
         
         # compute the next gradient value
         OptimizationMethods.grad!(progData, precomp, store, x)
