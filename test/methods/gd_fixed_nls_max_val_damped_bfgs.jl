@@ -253,7 +253,6 @@ end # end test cases for the struct
 
         # test δB
         B1 = B0 + optData.δB
-        OptimizationMethods.add_identity(B1, optData.β)
         @test optData.B ≈ B1
         
         # test the gradient history 
@@ -345,7 +344,6 @@ end # end test cases for the struct
 
         # test δB
         Bk = Bkm1 + optData.δB
-        OptimizationMethods.add_identity(Bk, optData.β)
         @test optData.B ≈ Bk
 
         # test the gradient history
@@ -483,7 +481,6 @@ end # end test cases for the function -- monotone
 
         # test δB
         B1 = B0 + optData.δB
-        OptimizationMethods.add_identity(B1, optData.β)
         @test optData.B ≈ B1
         
         # test the gradient history 
@@ -574,7 +571,6 @@ end # end test cases for the function -- monotone
 
         # test δB
         Bk = Bkm1 + optData.δB
-        OptimizationMethods.add_identity(Bk, optData.β)
         @test optData.B ≈ Bk
 
         # test the gradient history
@@ -681,7 +677,6 @@ end # end test cases for the function -- monotone
 
         # test δB
         Bk = Bkm1 + optData.δB
-        OptimizationMethods.add_identity(Bk, optData.β)
         @test optData.B ≈ Bk
 
         # test the gradient history

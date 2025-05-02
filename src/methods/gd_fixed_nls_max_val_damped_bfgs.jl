@@ -296,7 +296,6 @@ function fixed_damped_bfgs_nls_maxval_gd(
         update_success = OptimizationMethods.update_bfgs!(optData.B, 
             optData.r, optData.δB,
             optData.s, optData.y; damped_update = true)
-        OptimizationMethods.add_identity(optData.B, optData.β)
 
         # store values
         optData.iter_hist[iter + 1] .= x
