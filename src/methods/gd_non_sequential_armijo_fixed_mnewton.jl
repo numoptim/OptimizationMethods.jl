@@ -437,7 +437,7 @@ function nonsequential_armijo_mnewton_fixed_gd(
             # accepted case
             optData.acceptance_cnt += 1
             optData.objective_hist[optData.acceptance_cnt] = Fx
-            if (optData.acceptance_cnt % M) + 1 == optData.reference_value_index
+            if ((optData.acceptance_cnt - 1) % M) + 1 == optData.reference_value_index
                 optData.reference_value, optData.reference_value_index =
                 findmax(optData.objective_hist)
             end
