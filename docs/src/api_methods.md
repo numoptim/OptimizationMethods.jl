@@ -61,6 +61,22 @@ OptimizationMethods.inverse_log2k_step_size
 OptimizationMethods.stepdown_100_step_size
 ```
 
+# Gradient Descent with Backtracking
+```@docs
+backtracking_gd
+
+BacktrackingGD
+```
+
+# Gradient Descent with Non-monotone Line Search
+
+## Fixed Step
+```@docs
+fixed_step_nls_maxval_gd
+
+FixedStepNLSMaxValGD
+```
+
 # Non-sequential Armijo Line Search with Event Triggered Objective Evaluations
 
 ## First Order Methods
@@ -87,11 +103,45 @@ OptimizationMethods.inner_loop!
 OptimizationMethods.update_algorithm_parameters!
 ```
 
+# Safeguarded and Globalized Barzilai-Borwein Method
+
+```@docs
+safe_barzilai_borwein_nls_maxval_gd
+
+SafeBarzilaiBorweinNLSMaxValGD
+```
+
+# Safeguarded Modified Newton's Method with Line Search
+```@docs
+fixed_modified_newton_nls_maxval_gd
+
+FixedModifiedNewtonNLSMaxValGD
+```
+
 # Line search Helper Functions
+
+## Backtracking
+```@docs
+OptimizationMethods.backtracking!
+```
 
 ## Non-sequential Armijo Line Search
 ```@docs
 OptimizationMethods.non_sequential_armijo_condition
+```
+
+# Second Order Helper Functions
+
+## Hessian Modification
+```@docs
+OptimizationMethods.add_identity_until_pd!
+```
+
+## Linear System Solvers
+```@docs
+OptimizationMethods.lower_triangle_solve!
+
+OptimizationMethods.upper_triangle_solve!
 ```
 
 # Index 

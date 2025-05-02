@@ -85,12 +85,19 @@ export LipschitzApproxGD, lipschitz_approximation_gd
 export NesterovAcceleratedGD, nesterov_accelerated_gd
 export DiminishingStepGD, diminishing_step_gd
 export WeightedNormDampingGD, weighted_norm_damping_gd
+export BacktrackingGD, backtracking_gd
+export FixedStepNLSMaxValGD, fixed_step_nls_maxval_gd
+export SafeBarzilaiBorweinNLSMaxValGD, safe_barzilai_borwein_nls_maxval_gd
+export FixedModifiedNewtonNLSMaxValGD, fixed_modified_newton_nls_maxval_gd
 export NonsequentialArmijoAdaptiveGD, nonsequential_armijo_adaptive_gd
 export NonsequentialArmijoFixedGD, nonsequential_armijo_fixed_gd
 
 ## Helper functions for optimization methods
 include("methods/stepsize_helpers/diminishing_stepsizes.jl")
+include("methods/line_search_helpers/backtracking.jl")
 include("methods/line_search_helpers/non_sequential_armijo.jl")
+include("methods/second_order_helpers/modified_newton.jl")
+include("methods/second_order_helpers/triangle-solve.jl")
 
 ## Source Code 
 include("methods/gd_barzilai_borwein.jl")
@@ -99,6 +106,10 @@ include("methods/gd_lipschitz_approximation.jl")
 include("methods/gd_nesterov_accelerated.jl")
 include("methods/gd_diminishing.jl")
 include("methods/gd_weighted_norm_damping.jl")
+include("methods/gd_backtracking.jl")
+include("methods/gd_fixed_nls.jl")
+include("methods/gd_safe_bb_nls_max_val.jl")
+include("methods/gd_fixed_nls_max_val_mnewton.jl")
 include("methods/gd_non_sequential_armijo_adaptive.jl")
 include("methods/gd_non_sequential_armijo_fixed.jl")
 
