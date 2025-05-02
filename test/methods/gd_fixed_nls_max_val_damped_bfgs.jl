@@ -253,7 +253,6 @@ end # end test cases for the struct
 
         # test δB
         B1 = B0 + optData.δB
-        OptimizationMethods.add_identity(B1, optData.β)
         @test optData.B ≈ B1
         
         # test the gradient history 
@@ -303,7 +302,7 @@ end # end test cases for the struct
         xkm1 = optData.iter_hist[k]
 
         # test that xk was formed correctly
-        Bkm1 = optData.B - optData.δB - optData.β * Matrix{Float64}(I, dim, dim)
+        Bkm1 = optData.B - optData.δB 
         gkm1 = OptimizationMethods.grad(progData, xkm1)
         stepkm1 = Bkm1 \ gkm1
         
@@ -345,7 +344,6 @@ end # end test cases for the struct
 
         # test δB
         Bk = Bkm1 + optData.δB
-        OptimizationMethods.add_identity(Bk, optData.β)
         @test optData.B ≈ Bk
 
         # test the gradient history
@@ -483,7 +481,6 @@ end # end test cases for the function -- monotone
 
         # test δB
         B1 = B0 + optData.δB
-        OptimizationMethods.add_identity(B1, optData.β)
         @test optData.B ≈ B1
         
         # test the gradient history 
@@ -532,7 +529,7 @@ end # end test cases for the function -- monotone
         xkm1 = optData.iter_hist[k]
 
         # test that xk was formed correctly
-        Bkm1 = optData.B - optData.δB - optData.β * Matrix{Float64}(I, dim, dim)
+        Bkm1 = optData.B - optData.δB 
         gkm1 = OptimizationMethods.grad(progData, xkm1)
         stepkm1 = Bkm1 \ gkm1
         
@@ -574,7 +571,6 @@ end # end test cases for the function -- monotone
 
         # test δB
         Bk = Bkm1 + optData.δB
-        OptimizationMethods.add_identity(Bk, optData.β)
         @test optData.B ≈ Bk
 
         # test the gradient history
@@ -639,7 +635,7 @@ end # end test cases for the function -- monotone
         xkm1 = optData.iter_hist[k]
 
         # test that xk was formed correctly
-        Bkm1 = optData.B - optData.δB - optData.β * Matrix{Float64}(I, dim, dim)
+        Bkm1 = optData.B - optData.δB 
         gkm1 = OptimizationMethods.grad(progData, xkm1)
         stepkm1 = Bkm1 \ gkm1
         
@@ -681,7 +677,6 @@ end # end test cases for the function -- monotone
 
         # test δB
         Bk = Bkm1 + optData.δB
-        OptimizationMethods.add_identity(Bk, optData.β)
         @test optData.B ≈ Bk
 
         # test the gradient history
