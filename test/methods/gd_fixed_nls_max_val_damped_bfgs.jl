@@ -302,7 +302,7 @@ end # end test cases for the struct
         xkm1 = optData.iter_hist[k]
 
         # test that xk was formed correctly
-        Bkm1 = optData.B - optData.δB - optData.β * Matrix{Float64}(I, dim, dim)
+        Bkm1 = optData.B - optData.δB 
         gkm1 = OptimizationMethods.grad(progData, xkm1)
         stepkm1 = Bkm1 \ gkm1
         
@@ -529,7 +529,7 @@ end # end test cases for the function -- monotone
         xkm1 = optData.iter_hist[k]
 
         # test that xk was formed correctly
-        Bkm1 = optData.B - optData.δB - optData.β * Matrix{Float64}(I, dim, dim)
+        Bkm1 = optData.B - optData.δB 
         gkm1 = OptimizationMethods.grad(progData, xkm1)
         stepkm1 = Bkm1 \ gkm1
         
@@ -635,7 +635,7 @@ end # end test cases for the function -- monotone
         xkm1 = optData.iter_hist[k]
 
         # test that xk was formed correctly
-        Bkm1 = optData.B - optData.δB - optData.β * Matrix{Float64}(I, dim, dim)
+        Bkm1 = optData.B - optData.δB 
         gkm1 = OptimizationMethods.grad(progData, xkm1)
         stepkm1 = Bkm1 \ gkm1
         
