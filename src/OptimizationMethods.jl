@@ -92,7 +92,6 @@ export NonsequentialArmijoFixedGD, nonsequential_armijo_fixed_gd
 include("methods/stepsize_helpers/diminishing_stepsizes.jl")
 include("methods/line_search_helpers/non_sequential_armijo.jl")
 include("methods/line_search_helpers/backtracking.jl")
-include("methods/line_search_helpers/watchdog.jl")
 
 ## Source Code 
 include("methods/gd_barzilai_borwein.jl")
