@@ -61,6 +61,16 @@ OptimizationMethods.inverse_log2k_step_size
 OptimizationMethods.stepdown_100_step_size
 ```
 
+# Watchdog Technique with Nonmonotone Line Search
+
+## First Order Methods
+
+```@docs
+watchdog_fixed_gd
+
+WatchdogFixedGD
+```
+
 # Non-sequential Armijo Line Search with Event Triggered Objective Evaluations
 
 ## First Order Methods
@@ -74,8 +84,10 @@ nonsequential_armijo_fixed_gd
 NonsequentialArmijoFixedGD
 ```
 
-The methods above require several utility functions. These are listed
-below.
+The Non-sequential Armijo Line Search Algorithms make use of the following
+helper functions. Additionally, the algorithms under
+[Watchdog Technique with Nonmonotone Line Search](@ref) makes use
+of the [`OptimizationMethods.inner_loop!`](@ref) function.
 
 ```@docs
 OptimizationMethods.update_local_lipschitz_approximation
@@ -86,6 +98,7 @@ OptimizationMethods.inner_loop!
 
 OptimizationMethods.update_algorithm_parameters!
 ```
+
 
 # Line search Helper Functions
 

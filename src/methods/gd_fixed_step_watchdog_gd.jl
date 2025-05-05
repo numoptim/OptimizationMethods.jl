@@ -262,7 +262,9 @@ Implementation of gradient descent with fixed step sizes, negative
 
 # Reference(s)
 
-TODO
+[Grippo L. and Sciandrone M. "Nonmonotone Globalization Techniques
+    for the Barzilai-Borwein Gradient Method". 
+    Computational Optimization and Applications.](@cite grippo2002Nonmonotone)
 
 # Method
 

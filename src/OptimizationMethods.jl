@@ -87,6 +87,7 @@ export DiminishingStepGD, diminishing_step_gd
 export WeightedNormDampingGD, weighted_norm_damping_gd
 export NonsequentialArmijoAdaptiveGD, nonsequential_armijo_adaptive_gd
 export NonsequentialArmijoFixedGD, nonsequential_armijo_fixed_gd
+export WatchdogFixedGD, watchdog_fixed_gd
 
 ## Helper functions for optimization methods
 include("methods/stepsize_helpers/diminishing_stepsizes.jl")
