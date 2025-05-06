@@ -7,25 +7,28 @@
     WatchdogFixedGD{T} <: AbstractOptimizerData{T}
 
 A structure for storing data about gradient descent with fixed step size,
-    using a watchdog technique. The structure also stores values during
-    the progression of its application on an optimization problem.
+    globalized through a watchdog technique. The structure also stores values 
+    during the progression of its application on an optimization problem.
 
 # Fields
 
 - `name::String`, name of the optimizer for reference.
-- `F_θk::T`,
+- `F_θk::T`, objective function value at the beginning of the inner loop
+    for one of the inner loop stopping conditions.
 - `∇F_θk::Vector{T}`, buffer array for the gradient of the initial inner
     loop iterate.
 - `norm_∇F_ψ::T`, norm of the gradient of the current inner loop iterate.
-- `α::T`, step size used in the inner loop.
-- `ρ::T`, parameter used in the non-sequential Armijo condition. Larger
+- `α::T`, step size used in the inner loop. Also used to initalize the
+    line search when the watchdog condition fails.
+- `δ::T`, the step size reduction factor used in line search.
+- `ρ::T`, parameter used in backtracking and the watchdog condition. Larger
     numbers indicate stricter descent conditions. Smaller numbers indicate
     less strict descent conditions.
 - `line_search_max_iterations::Int64`, maximum iteration limit for the
     backtracking routine
 - `max_distance_squared::T`, term used in the watchdog condition. Corresponds
     to the maximum distance between the inner loop iterates and the starting
-    inner loop iteration.
+    inner loop iterate.
 - `η::T`, term used in the stopping conditions for the inner loop.
 - `inner_loop_max_iterations::Int64`, maximum iteration limit
     of the inner loop subroutine.
@@ -62,6 +65,7 @@ A structure for storing data about gradient descent with fixed step size,
 - `x0::Vector{T}`, initial point to start the optimization routine. Saved in
     `iter_hist[1]`.
 - `α::T`, step size used in the inner loop.
+- `δ::T`, the step size reduction factor used in line search.
 - `ρ::T`, parameter used in the non-sequential Armijo condition. Larger
     numbers indicate stricter descent conditions. Smaller numbers indicate
     less strict descent conditions.
@@ -85,6 +89,7 @@ mutable struct WatchdogFixedGD{T} <: AbstractOptimizerData{T}
     norm_∇F_ψ::T
     # line search helpers
     α::T
+    δ::T
     ρ::T
     line_search_max_iterations::Int64
     max_distance_squared::T
@@ -106,6 +111,7 @@ function WatchdogFixedGD(
     ::Type{T};
     x0::Vector{T},
     α::T,
+    δ::T,
     ρ::T,
     window_size::Int64,
     line_search_max_iterations::Int64,
@@ -133,7 +139,8 @@ function WatchdogFixedGD(
         T(0),                                              # F_θk
         zeros(T, d),                                       # ∇F_θk
         T(0),                                              # norm_∇F_ψ
-        α,                                                  
+        α, 
+        δ,                                                 
         ρ,
         line_search_max_iterations,
         T(0),                                              # max_distance_squared
@@ -291,7 +298,7 @@ If the watchdog condition
 
 ```math
     F(\\psi_{j_k}^k) \\leq \\tau_{\\mathrm{obj}}^k - 
-        \\max_{0 \\leq j \\leq j_k} ||\\psi_j^k - \\theta_k||_2^2.
+        \\rho \\max_{0 \\leq j \\leq j_k} ||\\psi_j^k - \\theta_k||_2^2.
 ```
 
 then ``\\theta_{k+1} = \\psi_{j_k}^k``; otherwise, we find a 
@@ -367,7 +374,7 @@ function watchdog_fixed_gd(
         Fx = F(x)
 
         # if watchdog not successful, try to backtrack
-        if Fx > optData.reference_value - optData.max_distance_squared
+        if Fx > optData.reference_value - optData.ρ * optData.max_distance_squared
 
             # backtrack on the previous iterate
             x .= optData.iter_hist[iter]
