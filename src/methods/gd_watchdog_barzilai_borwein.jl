@@ -4,7 +4,7 @@
 # globalized through a watchdog technique
 
 """
-    WatchdogBarzilaiBorweinGD{T} <: AbstractOptimizerData{T}
+    WatchdogSafeBarzilaiBorweinGD{T} <: AbstractOptimizerData{T}
 
 A structure for storing data about gradient descent with Barzilai-Borwein
     step size and negative gradient steps, globalized through the
@@ -37,6 +37,7 @@ A structure for storing data about gradient descent with Barzilai-Borwein
     used to calculate the step size.
 - `grad_diff::Vector{T}`, buffer array for difference between gradients
     used to calculate the step size.
+- `δ::T`, step size reduction parameter used in the line search routine. 
 - `ρ::T`, parameter used in backtracking and the watchdog condition. Larger
     numbers indicate stricter descent conditions. Smaller numbers indicate
     less strict descent conditions.
@@ -65,7 +66,7 @@ A structure for storing data about gradient descent with Barzilai-Borwein
 
 # Constructors
 
-    WatchdogBarzilaiBorweinGD(::Type{T}, x0::Vector{T}, init_stepsize::T,
+    WatchdogSafeBarzilaiBorweinGD(::Type{T}, x0::Vector{T}, init_stepsize::T,
         long_stepsize::Bool, α_lower::T, α_default::T, ρ::T,
         line_search_max_iterations::Int64, η::T,
         inner_loop_max_iterations::Int64, window_size::Int64, threshold::T,
@@ -100,7 +101,7 @@ A structure for storing data about gradient descent with Barzilai-Borwein
 - `max_iterations::Int64`, max number of iterates that are produced, not 
     including the initial iterate.
 """
-mutable struct WatchdogBarzilaiBorweinGD{T} <: AbstractOptimizerData{T}
+mutable struct WatchdogSafeBarzilaiBorweinGD{T} <: AbstractOptimizerData{T}
     name::String
     F_θk::T
     ∇F_θk::Vector{T}
@@ -133,7 +134,7 @@ mutable struct WatchdogBarzilaiBorweinGD{T} <: AbstractOptimizerData{T}
     grad_val_hist::Vector{T}
     stop_iteration::Int64
 end
-function WatchdogBarzilaiBorweinGD(::Type{T},
+function WatchdogSafeBarzilaiBorweinGD(::Type{T},
     x0::Vector{T},
     init_stepsize::T,
     long_stepsize::Bool,
@@ -165,7 +166,7 @@ function WatchdogBarzilaiBorweinGD(::Type{T},
     # initalize step size function
     step_size = long_stepsize ? bb_long_step_size : bb_short_step_size
 
-    return WatchdogBarzilaiBorweinGD{T}(
+    return WatchdogSafeBarzilaiBorweinGD{T}(
         name,
         T(0),
         zeros(T, d),
@@ -197,7 +198,7 @@ end
 
 """
 
-    inner_loop!(ψjk::S, θk::S, optData::WatchdogBarzilaiBorweinGD{T}, 
+    inner_loop!(ψjk::S, θk::S, optData::WatchdogSafeBarzilaiBorweinGD{T}, 
         progData::P1 where P1 <: AbstractNLPModel{T, S}, 
         precomp::P2 where P2 <: AbstractPrecompute{T}, 
         store::P3 where P3 <: AbstractProblemAllocate{T}, k::Int64; 
@@ -280,7 +281,7 @@ changes to the short form of the Barzilai-Borwein step size.
 
 - `ψjk::S`, buffer array for the inner loop iterates.
 - `θk::S`, starting iterate.
-- `optData::WatchdogBarzilaiBorweinGD{T}`, `struct` that specifies the optimization
+- `optData::WatchdogSafeBarzilaiBorweinGD{T}`, `struct` that specifies the optimization
     algorithm. Fields are modified during the inner loop.
 - `progData::P1 where P1 <: AbstractNLPModel{T, S}`, `struct` that specifies the
     optimization problem. Fields are modified during the inner loop.
@@ -304,7 +305,7 @@ changes to the short form of the Barzilai-Borwein step size.
 function inner_loop!(
     ψjk::S,
     θk::S,
-    optData::WatchdogBarzilaiBorweinGD{T}, 
+    optData::WatchdogSafeBarzilaiBorweinGD{T}, 
     progData::P1 where P1 <: AbstractNLPModel{T, S}, 
     precomp::P2 where P2 <: AbstractPrecompute{T}, 
     store::P3 where P3 <: AbstractProblemAllocate{T}, 
@@ -367,7 +368,7 @@ function inner_loop!(
 end
 
 """
-    watchdog_barzilai_borwein_gd(optData::WatchdogBarzilaiBorweinGD{T},
+    watchdog_barzilai_borwein_gd(optData::WatchdogSafeBarzilaiBorweinGD{T},
         progData::P where P <: AbstractNLPModel{T, S}) where {T, S}
 
 Implementation of gradient descent with the Barzilai-Borwein step size and
@@ -394,7 +395,7 @@ Let ``\\psi_0^k = \\theta_k``, and recursively define
 ```
 To see how the inner loop steps are performed for this method, see
     the documentation for [OptimizationMethods.inner_loop!](@ref) for
-    `optData::WatchdogBarzilaiBorweinGD{T}`.
+    `optData::WatchdogSafeBarzilaiBorweinGD{T}`.
 
 Let ``j_k \\in \\mathbb{N}`` be the smallest number for which at least one of the
 conditions are satisfied: 
@@ -427,7 +428,7 @@ routine.
 
 # Arguments
 
-- `optData::WatchdogBarzilaiBorweinGD{T}`, the specification for the optimization 
+- `optData::WatchdogSafeBarzilaiBorweinGD{T}`, the specification for the optimization 
     method.
 - `progData<:AbstractNLPModel{T,S}`, the specification for the optimization
     problem.
@@ -442,7 +443,7 @@ routine.
 - `x::S`, final iterate of the optimization algorithm.
 """
 function watchdog_barzilai_borwein_gd(
-    optData::WatchdogBarzilaiBorweinGD{T},
+    optData::WatchdogSafeBarzilaiBorweinGD{T},
     progData::P where P <: AbstractNLPModel{T, S}
 ) where {T, S}
 
