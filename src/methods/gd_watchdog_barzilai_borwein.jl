@@ -4,6 +4,101 @@
 # globalized through a watchdog technique
 
 """
+    WatchdogBarzilaiBorweinGD{T} <: AbstractOptimizerData{T}
+
+A structure for storing data about gradient descent with barzilai-borwein
+    step size and negative gradient steps, globalized through the
+    watchdog framework. The structure also stores values during the progression
+    of its application on an optimization problem.
+
+# Fields
+
+- `name::String`, name of the optimizer for reference.
+- `F_θk::T`, objective function value at the beginning of the inner loop
+    for the inner loop stopping condition.
+- `∇F_θk::Vector{T}`, buffer array for the gradient of the initial inner
+    loop iterate.
+- `norm_∇F_ψ::T`, norm of the gradient of the current inner loop iterate.
+- `init_stepsize::T`, initial step size used to start the Barzilai-Borwein
+    method.
+- `bb_step_size::Function`, Barzilai-Borwein step size function. See
+    [the long step size function](@ref OptimizationMethods.bb_long_step_size) and
+    [the short step size function](@ref OptimizationMethods.bb_short_step_size).
+- `α_lower::T`, used to compute a safeguard on the Barzilai-Borwein step size.
+- `α_default::T`, If the Barzilai-Borwein step size is smaller than `α_lower` or
+    larger than `1/α_lower`, then it is set to `α_default`.
+- `iter_diff_checkpoint::Vector{T}`, buffer array for difference between
+    iterates before the start of an inner loop. Values are saved because of 
+    potential restarts.
+- `grad_diff_checkpoint::Vector{T}`, buffar array for difference between
+    gradients before the start of an inner loop. Values are saved because of 
+    potential restarts.
+- `iter_diff::Vector{T}`, buffer array for difference between iterates 
+    used to calculate the step size.
+- `grad_diff::Vector{T}`, buffer array for difference between gradients
+    used to calculate the step size.
+- `ρ::T`, parameter used in the non-sequential Armijo condition. Larger
+    numbers indicate stricter descent conditions. Smaller numbers indicate
+    less strict descent conditions.
+- `line_search_max_iterations::Int64`, maximum number of line search
+    iterations
+- `max_distance_squared::T`, maximum distance between the starting
+    and inner loop iterates. Used in the watchdog condition.
+- `η::T`, term used in the stopping conditions for the inner loop.
+- `inner_loop_max_iterations::Int64`, maximum number of iterations in the
+    inner loop.
+- `objective_hist::CircularVector{T, Vector{T}}`, vector of previous accepted 
+    objective values for non-monotone cache update.
+- `reference_value::T`, the maximum objective value in `objective_hist`.
+- `reference_value_index::Int64`, the index of the maximum value in `objective_hist`.
+- `threshold::T`, norm gradient tolerance condition. Induces stopping when norm 
+    is at most `threshold`.
+- `max_iterations::Int64`, max number of iterates that are produced, not 
+    including the initial iterate.
+- `iter_hist::Vector{Vector{T}}`, store the iterate sequence as the algorithm 
+    progresses. The initial iterate is stored in the first position.
+- `grad_val_hist::Vector{T}`, stores the norm gradient values at each iterate. 
+    The norm of the gradient evaluated at the initial iterate is stored in the 
+    first position.
+- `stop_iteration::Int64`, the iteration number the algorithm stopped on. The 
+    iterate that induced stopping is saved at `iter_hist[stop_iteration + 1]`.
+
+# Constructors
+
+    WatchdogBarzilaiBorweinGD(::Type{T}, x0::Vector{T}, init_stepsize::T,
+        long_stepsize::Bool, α_lower::T, α_default::T, ρ::T,
+        line_search_max_iterations::Int64, η::T,
+        inner_loop_max_iterations::Int64, window_size::Int64, threshold::T,
+        max_iterations::Int64) where {T}
+
+## Arguments
+
+- `T::DataType`, specific data type used for calculations.
+
+## Keyword Arguments
+
+- `x0::Vector{T}`, initial point to start the optimization routine. Saved in
+    `iter_hist[1]`.
+- `init_stepsize::T`, initial step size used to start the Barzilai-Borwein
+    method.
+- `long_stepsize::Bool`, if `true` use the long form of the step size,
+    otherwise use the short form.
+- `α_lower::T`, used to compute a safeguard on the Barzilai-Borwein step size.
+- `α_default::T`, If the Barzilai-Borwein step size is smaller than `α_lower` or
+    larger than `1/α_lower`, then it is set to `α_default`.
+- `ρ::T`, parameter used in the non-sequential Armijo condition. Larger
+    numbers indicate stricter descent conditions. Smaller numbers indicate
+    less strict descent conditions.
+- `line_search_max_iterations::Int64`, maximum number of line search
+    iterations
+- `η::T`, term used in the stopping conditions for the inner loop.
+- `inner_loop_max_iterations::Int64`, maximum number of iterations in the
+    inner loop.
+- `window_size::Int64`, size of the objective cache.
+- `threshold::T`, norm gradient tolerance condition. Induces stopping when norm 
+    is at most `threshold`.
+- `max_iterations::Int64`, max number of iterates that are produced, not 
+    including the initial iterate.
 """
 mutable struct WatchdogBarzilaiBorweinGD{T} <: AbstractOptimizerData{T}
     name::String
@@ -36,6 +131,65 @@ mutable struct WatchdogBarzilaiBorweinGD{T} <: AbstractOptimizerData{T}
     iter_hist::Vector{Vector{T}}
     grad_val_hist::Vector{T}
     stop_iteration::Int64
+end
+function WatchdogBarzilaiBorweinGD(::Type{T},
+    x0::Vector{T},
+    init_stepsize::T,
+    long_stepsize::Bool,
+    α_lower::T,
+    α_default::T,
+    ρ::T,
+    line_search_max_iterations::Int64,
+    η::T,
+    inner_loop_max_iterations::Int64,
+    window_size::Int64,
+    threshold::T,
+    max_iterations::Int64
+    ) where {T}
+
+    name::String = "Gradient Descent with Barzilai-Borwein Step Size, Globalized"*
+        " by Watchdog."
+
+    # initialize buffer for history keeping
+    d = length(x0)
+    iter_hist::Vector{Vector{T}} = Vector{Vector{T}}([
+        Vector{T}(undef, d) for i in 1:(max_iterations + 1)
+    ])
+    iter_hist[1] = x0
+
+    grad_val_hist::Vector{T} = Vector{T}(undef, max_iterations + 1)
+    stop_iteration::Int64 = -1 # dummy value
+
+    # initalize step size function
+    step_size = long_stepsize ? bb_long_step_size : bb_short_step_size
+
+    return WatchdogBarzilaiBorweinGD{T}(
+        name,
+        T(0),
+        zeros(T, d),
+        T(0),
+        init_stepsize,
+        step_size,
+        α_lower,
+        α_default,
+        zeros(T, d),
+        zeros(T, d),
+        zeros(T, d),
+        zeros(T, d),
+        ρ,
+        line_search_max_iterations,
+        T(0),
+        η,
+        inner_loop_max_iterations,
+        CircularVector(zeros(T, window_size)),
+        T(0),
+        -1,
+        threshold,
+        max_iterations,
+        iter_hist,
+        grad_val_hist,
+        stop_iteration
+    )
 end
 
 """
