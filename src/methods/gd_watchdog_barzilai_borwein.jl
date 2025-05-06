@@ -193,6 +193,103 @@ function WatchdogBarzilaiBorweinGD(::Type{T},
 end
 
 """
+
+    inner_loop!(ψjk::S, θk::S, optData::WatchdogBarzilaiBorweinGD{T}, 
+        progData::P1 where P1 <: AbstractNLPModel{T, S}, 
+        precomp::P2 where P2 <: AbstractPrecompute{T}, 
+        store::P3 where P3 <: AbstractProblemAllocate{T}, k::Int64; 
+        max_iterations = 100) where {T}
+
+Conduct the inner loop iteration, modifying `ψjk`, `optData`, and `store` in
+    place. `ψjk` gets updated to be the terminal iterate of the inner loop.
+    This inner loop function uses negative gradient directions with a 
+    safeguarded Barzilai-Borwein step size.
+
+# Method
+
+In what follows, we let ``||\\cdot||_2`` denote the L2-norm. 
+Let ``\\theta_{k}`` for ``k + 1 \\in\\mathbb{N}`` be the ``k^{th}`` iterate
+of the optimization algorithm.
+
+Let ``\\psi_0^k = \\theta_k``, then this method returns
+```math
+    \\psi_{j_k}^k = \\psi_0^k - \\sum_{i = 0}^{j_k-1} \\delta_k \\alpha_j^k \\dot F(\\psi_i^k),
+```
+where ``j_k \\in \\mathbb{N}`` is the smallest iteration for which at least one of the
+conditions are satisfied: 
+
+1. ``j_k == `` `optData.inner_loop_max_iterations`
+2. ``||\\dot F(\\psi_{j_k}^k)||_2 \\leq \\eta (1 + |F(\\theta_k)|)`` and
+    ``|F(\\psi_{j_k}^k| \\leq `` `optData.reference_value`.
+
+The step size ``\\alpha_j^k`` is calculated using the safeguarded Barzilai-
+Borwein method. To explain the step size computation, define
+
+Suppose that `long_stepsize = true` and let ``k + 1 \\in \\mathbb{N}``. We
+now describe how the initial step size for each inner loop is calculated, and
+then subsequent step sizes.
+The initial step size ``\\alpha_0^0`` is `optData.init_stepsize`.
+
+For ``k > 0``, if the watchdog condition was satisfied at ``\\psi_{j_{k-1}}^k``,
+then
+```math
+    \\gamma_0^k = 
+        \\frac{
+        ||\\psi_{j_{k-1}}^{k-1} - \\psi_{j_{k-1} - 1}^{k-1}||_2^2} 
+        {(\\psi_{j_{k-1}}^{k-1} - \\psi_{j_{k-1} - 1}^{k-1})^\\intercal 
+        (\\dot F(\\psi_{j_{k-1}}^{k-1}) - 
+        \\dot F(\\psi_{j_{k-1} - 1}^{k-1}))},
+```
+otherwise, ``\\theta_{k}`` was produced by backtracking on ``\\theta_{k-1}``
+and 
+```math
+    \\gamma_0^k = 
+        \\frac{
+        ||\\theta_{k} - \\theta_{k-1}||_2^2} 
+        {(\\theta_{k} - \\theta_{k-1})^\\intercal 
+        (\\dot F(\\theta_{k}) - \\dot F(\\theta_{k-1}))},
+```
+then if ``\\gamma_0^k \\in [\\underline{\\alpha}, 1/\\underline{\\alpha}]`` then
+``\\alpha_0^k = \\gamma_0^k``, otherwise ``\\alpha_0^k = \\alpha``.
+
+In all cases, for ``j \\in \\mathbb{N}`` and ``k + 1 \\in \\mathbb{N}``
+```math
+    \\gamma_j^k = 
+        \\frac{
+        ||\\psi_j^k - \\psi_{j-1}^k||_2^2}{ 
+        (\\psi_j^k - \\psi_{j-1}^k)^\\intercal 
+        (\\dot F(\\psi_j^k) - \\dot F(\\psi_{j-1}^k))},
+```
+and if ``\\gamma_j^k \\in [\\underline{\\alpha}, 1/\\underline{\\alpha}]`` then
+``\\alpha_j^k = \\gamma_j^k``, otherwise ``\\alpha_0^k = \\alpha``.
+
+When `long_stepsize = false`, the cases remain the same but the step size formula
+changes to the short form of the Barzilai-Borwein step size.
+
+# Arguments
+
+- `ψjk::S`, buffer array for the inner loop iterates.
+- `θk::S`, starting iterate.
+- `optData::WatchdogBarzilaiBorweinGD{T}`, `struct` that specifies the optimization
+    algorithm. Fields are modified during the inner loop.
+- `progData::P1 where P1 <: AbstractNLPModel{T, S}`, `struct` that specifies the
+    optimization problem. Fields are modified during the inner loop.
+- `precomp::P2 where P2 <: AbstractPrecompute{T}`, `struct` that has precomputed
+    values. Required to take advantage of this during the gradient computation.
+- `store::P3 where P3 <: AbstractProblemAllocate{T}`, `struct` that contains
+    buffer arrays for computation.
+- `k::Int64`, outer loop iteration for computation of the local Lipschitz
+    approximation scheme.
+
+## Optional Keyword Arguments
+
+- `max_iteration = 100`, maximum number of allowable iteration of the inner loop.
+    Should be kept at `100` as that is what is specified in the paper, but
+    is useful to change for testing.
+
+# Returns
+
+- `j::Int64`, the iteration for which a triggering event evaluated to true.
 """
 function inner_loop!(
     ψjk::S,
