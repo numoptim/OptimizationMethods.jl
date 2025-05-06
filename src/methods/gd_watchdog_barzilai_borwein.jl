@@ -213,7 +213,7 @@ of the optimization algorithm.
 
 Let ``\\psi_0^k = \\theta_k``, then this method returns
 ```math
-    \\psi_{j_k}^k = \\psi_0^k - \\sum_{i = 0}^{j_k-1} \\delta_k \\alpha_j^k \\dot F(\\psi_i^k),
+    \\psi_{j_k}^k = \\psi_0^k - \\sum_{i = 0}^{j_k-1} \\alpha_j^k \\dot F(\\psi_i^k),
 ```
 where ``j_k \\in \\mathbb{N}`` is the smallest iteration for which at least one of the
 conditions are satisfied: 
@@ -357,6 +357,78 @@ function inner_loop!(
 end
 
 """
+    watchdog_barzilai_borwein_gd(optData::WatchdogBarzilaiBorweinGD{T},
+        progData::P where P <: AbstractNLPModel{T, S}) where {T, S}
+
+Implementation of gradient descent with the Barzilai-Borwein step size and
+    negative gradient directions, which is globalized through the
+    watchdog technique. The optimization algorithm is specified
+    through `optData`, and applied to the problem `progData`.
+
+# Reference(s)
+
+[Grippo L. and Sciandrone M. "Nonmonotone Globalization Techniques
+    for the Barzilai-Borwein Gradient Method". 
+    Computational Optimization and Applications.](@cite grippo2002Nonmonotone)
+
+# Method
+
+In what follows, we let ``||\\cdot||_2`` denote the L2-norm. 
+Let ``\\theta_{k}`` for ``k + 1 \\in\\mathbb{N}`` be the ``k^{th}`` iterate
+of the optimization algorithm.
+
+Let ``\\psi_0^k = \\theta_k``, and recursively define
+```math
+    \\psi_{j}^k = \\psi_0^k - \\sum_{i = 0}^{j_k-1} \\alpha_j^k \\dot F(\\psi_i^k),
+```
+To see how the inner loop steps are performed for this method, see
+    the documentation for [OptimizationMethods.inner_loop!](@ref) for
+    `optData::WatchdogBarzilaiBorweinGD{T}`.
+
+Let ``j_k \\in \\mathbb{N}`` be the smallest iteration for which at least one of the
+conditions are satisfied: 
+
+1. ``j_k == `` `optData.inner_loop_max_iterations`
+2. ``||\\dot F(\\psi_{j_k}^k)||_2 \\leq \\eta (1 + |F(\\theta_k)|)`` and
+    ``|F(\\psi_{j_k}^k| \\leq `` `optData.reference_value`.
+
+Let 
+``\\tau_{\\mathrm{obj}}^k = \\max_{0 \\leq i \\leq max(0, M - 1)} F(\\theta_{k - i})``.
+
+If the watchdog condition
+
+```math
+    F(\\psi_{j_k}^k) \\leq \\tau_{\\mathrm{obj}}^k - 
+        \\max_{0 \\leq j \\leq j_k} ||\\psi_j^k - \\theta_k||_2^2.
+```
+
+then ``\\theta_{k+1} = \\psi_{j_k}^k``; otherwise, we find a 
+``t + 1 \\in \\mathbb{N}`` such that the following condition is satisfied
+
+```math
+    F(\\theta_{k} - \\delta^t \\alpha \\dot F(\\theta_k)) \\leq
+    \\tau_{\\mathrm{obj}}^k - \\rho\\delta^t\\alpha||\\dot F(\\theta_k)||_2^2,
+```
+
+and set ``\\theta_{k} = \\theta_{k} - \\delta^t \\alpha \\dot F(\\theta_k)``.
+That is, the algorithm tries to find the next iterate through a backtracking
+routine. 
+
+# Arguments
+
+- `optData::WatchdogBarzilaiBorweinGD{T}`, the specification for the optimization 
+    method.
+- `progData<:AbstractNLPModel{T,S}`, the specification for the optimization
+    problem.
+
+!!! warning
+    `progData` must have an `initialize` function that returns subtypes of
+    `AbstractPrecompute` and `AbstractProblemAllocate`, where the latter has
+    a `grad` argument.
+
+# Return
+
+- `x::S`, final iterate of the optimization algorithm.
 """
 function watchdog_barzilai_borwein_gd(
     optData::WatchdogBarzilaiBorweinGD{T},
