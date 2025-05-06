@@ -454,16 +454,12 @@ function watchdog_barzilai_borwein_gd(
     # initial iteration
     iter = 0
     x = copy(optData.iter_hist[1])
-    OptimizationMethods.grad!(progData, precomp, store, optData.iter_hist[1])
+    OptimizationMethods.grad!(progData, precomp, store, x)
     optData.grad_val_hist[1] = norm(store.grad)
-
-    # update constants needed for triggering events
-    optData.τ_lower = optData.grad_val_hist[1] / sqrt(2)  
-    optData.τ_upper = sqrt(10) * optData.grad_val_hist[1]   
 
     # Initialize the objective history
     M = length(optData.objective_hist)
-    optData.objective_hist[1] = F(optData.iter_hist[1]) 
+    optData.objective_hist[1] = F(x) 
     optData.reference_value, optData.reference_value_index = 
         optData.objective_hist[1], 1
 
