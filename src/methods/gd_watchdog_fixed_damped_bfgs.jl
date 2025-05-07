@@ -8,8 +8,10 @@ mutable struct WatchdogFixedDampedBFGSGD{T} <: AbstractOptimizerData{T}
     name::String
     F_θk::T
     ∇F_θk::Vector{T}
+    B_θk::Matrix{T}
     norm_∇F_ψ::T
     # Quantities involved in damped BFGS update
+    c::T
     Bjk::Matrix{T}
     δBjk::Matrix{T}
     rjk::Vector{T}
@@ -39,6 +41,7 @@ mutable struct WatchdogFixedDampedBFGSGD{T} <: AbstractOptimizerData{T}
 end
 function WatchdogFixedDampedBFGSGD(
     ::Type{T};
+    c::T,
     α::T,
     δ::T,
     ρ::T,
@@ -70,6 +73,7 @@ function WatchdogFixedDampedBFGSGD(
         name,
         T(0),
         zeros(T, d),
+        zeros(T, d, d),
         T(0),
         zeros(T, d, d),
         zeros(T, d, d),
@@ -162,4 +166,102 @@ function watchdog_fixed_damped_bfgs_gd(
     optData::WatchdogFixedDampedBFGSGD{T},
     progData::P where P <: AbstractNLPModel{T, S}
 ) where {T, S}
+
+    # initialize the problem data nd save initial values
+    precomp, store = OptimizationMethods.initialize(progData)
+    F(θ) = OptimizationMethods.obj(progData, precomp, store, θ)
+    
+    # initial iteration
+    iter = 0
+    x = copy(optData.iter_hist[1])
+    OptimizationMethods.grad!(progData, precomp, store, s)
+    optData.grad_val_hist[1] = norm(store.grad) 
+
+    # Initialize hessian approximation
+    fill!(optData.Bjk, 0)
+    OptimizationMethods.add_identity(optData.Bjk,
+        optData.c * optData.grad_val_hist[iter + 1])
+
+    # Initialize the objective history
+    M = length(optData.objective_hist)
+    optData.objective_hist[1] = F(optData.iter_hist[1]) 
+    optData.reference_value, optData.reference_value_index = 
+        optData.objective_hist[1], 1
+
+    while (iter < optData.max_iterations) && 
+        (optData.grad_val_hist[iter + 1] > optData.threshold)
+
+        # Increment iteration counter
+        iter += 1
+
+        # inner loop
+        optData.F_θk = optData.objective_hist[iter]
+        optData.∇F_θk .= store.grad
+        optData.B_θk .= optData.Bjk
+        inner_loop!(x, optData.iter_hist[iter], optData, progData,
+            precomp, store, iter; 
+            max_iterations = optData.inner_loop_max_iterations)
+        Fx = F(x)
+
+        # if watchdog not successful, try to backtrack
+        if Fx > optData.reference_value - optData.ρ * optData.max_distance_squared
+
+            # revert to previous iterate and approximation (for update)
+            optData.Bjk .= optData.B_θk
+            x .= optData.iter_hist[iter]
+
+            # update iter_diff and grad_diff
+            optData.sjk .= -x
+            optData.yjk .= -optData.∇F_θk
+
+            # backtrack on the previous iterate
+            backtrack_success = OptimizationMethods.backtracking!(
+                x,
+                optData.iter_hist[iter],
+                F,
+                optData.∇F_θk,
+                optData.d0k,
+                optData.reference_value,
+                optData.α,
+                optData.δ,
+                optData.ρ;
+                max_iteration = optData.line_search_max_iterations)
+
+            # if backtrack not successful terminate algorithm
+            if !backtrack_success
+                optData.stop_iteration = (iter - 1)
+                return optData.iter_hist[iter]
+            end
+
+            # update iter_diff and grad_diff
+            OptimizationMethods.grad!(progData, precomp, store, x)
+            optData.grad_val_hist[iter + 1] = norm(store.grad)
+
+            # update BFGS approximation
+            optData.sjk .+= x
+            optData.yjk .+= store.grad
+            update_success = OptimizationMethods.update_bfgs!(
+                optData.Bjk, optData.rjk, optData.δBjk,
+                optData.sjk, optData.yjk; damped_update = true)
+
+            Fx = F(x)
+        else
+            OptimizationMethods.grad!(progData, precomp, store, x)
+            optData.grad_val_hist[iter + 1] = norm(store.grad)
+        end
+
+        # update the objective_hist
+        optData.objective_hist[iter + 1] = Fx
+        if (iter % M) + 1 == optData.reference_value_index
+            optData.reference_value, optData.reference_value_index =
+                findmax(optData.objective_hist)
+        end
+
+        # update iter and grad value history
+        optData.iter_hist[iter + 1] .= x
+    end
+
+    optData.stop_iteration = iter
+
+    return x
 end
