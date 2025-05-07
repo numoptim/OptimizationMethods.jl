@@ -98,7 +98,62 @@ end
 
 """
 """
-function inner_loop!()
+function inner_loop!(
+    ψjk::S,
+    θk::S,
+    optData::WatchdogFixedDampedBFGSGD{T}, 
+    progData::P1 where P1 <: AbstractNLPModel{T, S}, 
+    precomp::P2 where P2 <: AbstractPrecompute{T}, 
+    store::P3 where P3 <: AbstractProblemAllocate{T}, 
+    k::Int64; 
+    max_iterations = 100
+) where {T}
+
+    # initialization for inner loop
+    j::Int64 = 0
+    dist::T = T(0)
+    optData.max_distance_squared = T(0)
+    optData.norm_∇F_ψ = optData.grad_val_hist[k]
+
+    # stopping conditions
+    while j < max_iterations
+
+        # Increment the inner loop counter
+        j += 1
+
+        # store values for update
+        optData.sjk .= -ψjk
+        optData.yjk .= -store.grad
+
+        # compute step
+        optData.djk .= optData.Bjk \ store.grad
+
+        # take step
+        ψjk .-= optData.Bjk \ store.grad
+
+        dist = norm(ψjk - θk)
+        optData.max_distance_squared = max(dist^2, optData.max_distance_squared)
+
+        # store values for next iteration
+        OptimizationMethods.grad!(progData, precomp, store, ψjk)
+        optData.norm_∇F_ψ = norm(store.grad)
+
+        # update approximation
+        optData.sjk .+= ψjk
+        optData.yjk .+= store.grad
+        update_success = OptimizationMethods.update_bfgs!(
+            optData.Bjk, optData.rjk, optData.δBjk,
+            optData.sjk, optData.yjk; damped_update = true)
+
+        # check other stopping condition
+        if optData.norm_∇F_ψ <= optData.η * (1 + abs(optData.F_θk))
+            if OptimizationMethods.obj!(progData, precomp, store, ψjk) <= optData.reference_value
+                return j
+            end
+        end
+    end
+
+    return j
 end
 
 """
