@@ -68,6 +68,15 @@ backtracking_gd
 BacktrackingGD
 ```
 
+# Gradient Descent with Non-monotone Line Search
+
+## Fixed Step
+```@docs
+fixed_step_nls_maxval_gd
+
+FixedStepNonmonLSMaxValG
+```
+
 # Gradient Descent with Non-sequential Armijo Line Search
 ```@docs
 NonsequentialArmijoGD
