@@ -71,27 +71,28 @@ function WatchdogFixedDampedBFGSGD(
 
     return WatchdogFixedDampedBFGSGD{T}(
         name,
-        T(0),
-        zeros(T, d),
-        zeros(T, d, d),
-        T(0),
-        zeros(T, d, d),
-        zeros(T, d, d),
-        zeros(T, d),
-        zeros(T, d),
-        zeros(T, d),
-        zeros(T, d),
-        zeros(T, d),
-        α,
+        T(0),                                                   # F_θk
+        zeros(T, d),                                            # ∇F_θk
+        zeros(T, d, d),                                         # B_θk
+        T(0),                                                   # norm_∇F_ψ
+        c,                                                      
+        zeros(T, d, d),                                         # Bjk
+        zeros(T, d, d),                                         # δBjk
+        zeros(T, d),                                            # rjk
+        zeros(T, d),                                            # sjk
+        zeros(T, d),                                            # yjk
+        zeros(T, d),                                            # d0k
+        zeros(T, d),                                            # djk
+        α,                                                      
         δ,
         ρ,
         line_search_max_iterations,
-        T(0),
+        T(0),                                                   # max_distance_squared
         η,
         inner_loop_max_iterations,
         objective_hist,
-        T(0),
-        -1,
+        T(0),                                                   # reference_value
+        -1,                                                     # reference_value_index
         threshold,
         max_iterations,
         iter_hist,
@@ -246,8 +247,7 @@ function watchdog_fixed_damped_bfgs_gd(
 
             Fx = F(x)
         else
-            OptimizationMethods.grad!(progData, precomp, store, x)
-            optData.grad_val_hist[iter + 1] = norm(store.grad)
+            optData.grad_val_hist[iter + 1] = optData.norm_∇F_ψ
         end
 
         # update the objective_hist
