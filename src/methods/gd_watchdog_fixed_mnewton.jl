@@ -196,7 +196,7 @@ of the optimization algorithm. Let ``\\alpha =`` `optData.α`.
 
 Let ``\\psi_0^k = \\theta_k``, then this method returns
 ```math
-    \\psi_{j_k}^k = \\psi_0^k - \\sum_{i = 0}^{j_k-1} \\alpha_j^k d_i^k,
+    \\psi_{j_k}^k = \\psi_0^k - \\sum_{i = 0}^{j_k-1} \\alpha_i^k d_i^k,
 ```
 where ``j_k \\in \\mathbb{N}`` is the smallest iteration for which 
 at least one of the conditions are satisfied: 
@@ -307,6 +307,72 @@ function inner_loop!(
 end
 
 """
+    watchdog_fixed_mnewton_gd(optData::WatchdogFixedMNewtonGD{T},
+        progData::P where P <: AbstractNLPModel{T, S}) where {T, S}
+
+# Reference(s)
+
+[Grippo L. and Sciandrone M. "Nonmonotone Globalization Techniques
+    for the Barzilai-Borwein Gradient Method". 
+    Computational Optimization and Applications.](@cite grippo2002Nonmonotone)
+
+[Nocedal and Wright. "Numerical Optimization". Edition 2, Springer, 2006, 
+    Page 51.](@cite nocedal2006Numerical)
+
+# Method
+
+In what follows, we let ``||\\cdot||_2`` denote the L2-norm. 
+Let ``\\theta_{k}`` for ``k + 1 \\in\\mathbb{N}`` be the ``k^{th}`` iterate
+of the optimization algorithm. Let ``\\alpha =`` `optData.α`, 
+``\\rho =`` `optData.ρ`, and ``\\delta=`` `optData.δ`.
+
+Let ``\\psi_0^k = \\theta_k``, and recursively define
+```math
+    \\psi_{j}^k = \\psi_0^k - \\sum_{i = 0}^{j-1} \\alpha_i^k d_i^k.
+```
+For more information on ``d_i^k``, see the documentation for
+[OptimizationMethods.inner_loop!](@ref) when
+`optData::WatchdogFixedMNewtonGD{T}`.
+
+Let ``j_k \\in \\mathbb{N}`` is the smallest iteration for which 
+at least one of the conditions are satisfied: 
+
+1. ``j_k == `` `optData.inner_loop_max_iterations`
+2. ``||\\dot F(\\psi_{j_k}^k)||_2 \\leq \\eta (1 + |F(\\theta_k)|)`` and
+    ``|F(\\psi_{j_k}^k| \\leq `` `optData.reference_value`.
+
+Let 
+``\\tau_{\\mathrm{obj}}^k = \\max_{0 \\leq i \\leq max(0, M - 1)} F(\\theta_{k - i})``.
+
+If the watchdog condition
+
+```math
+    F(\\psi_{j_k}^k) \\leq \\tau_{\\mathrm{obj}}^k - 
+        \\rho \\max_{0 \\leq j \\leq j_k} ||\\psi_j^k - \\theta_k||_2^2.
+```
+
+then ``\\theta_{k+1} = \\psi_{j_k}^k``; otherwise, we find a 
+``t + 1 \\in \\mathbb{N}`` such that the following condition is satisfied
+
+```math
+    F(\\theta_{k} - \\delta^t \\alpha \\dot F(\\theta_k)) \\leq
+    \\tau_{\\mathrm{obj}}^k - \\rho\\delta^t\\alpha||\\dot F(\\theta_k)||_2^2,
+```
+
+and set ``\\theta_{k} = \\theta_{k} - \\delta^t \\alpha \\dot F(\\theta_k)``.
+That is, the algorithm tries to find the next iterate through a backtracking
+routine. 
+
+# Arguments
+
+- `optData::WatchdogFixedMNewtonGD{T}`, the specification for the optimization 
+    method.
+- `progData<:AbstractNLPModel{T,S}`, the specification for the optimization
+    problem.
+
+# Return
+
+- `x::S`, final iterate of the optimization algorithm.
 """
 function watchdog_fixed_mnewton_gd(
     optData::WatchdogFixedMNewtonGD{T},
