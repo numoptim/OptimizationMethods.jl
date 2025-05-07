@@ -5,11 +5,12 @@
 
 
 """
-    NonsequentialArmijoGD{T} <: AbstractOptimizerData{T}
+    NonsequentialArmijoAdaptiveGD{T} <: AbstractOptimizerData{T}
 
 A mutable struct that represents gradient descent with non-sequential armijo
-    line search and triggering events. It stores the specification for the
-    method and records values during iteration.
+    line search and triggering events. The inner loop carries uses an
+    adaptive step size and negative gradient steps. This struct stores the 
+    specification for the method and records values during iteration.
 
 # Fields
 
@@ -44,10 +45,10 @@ A mutable struct that represents gradient descent with non-sequential armijo
 
 # Constructors
 
-    NonsequentialArmijoGD(::Type{T}; x0::Vector{T}, δ0::T, δ_upper::T, ρ::T,
+    NonsequentialArmijoAdaptiveGD(::Type{T}; x0::Vector{T}, δ0::T, δ_upper::T, ρ::T,
         threshold::T, max_iterations::Int64) where {T}
 
-Constructs an instance of type `NonsequentialArmijoGD{T}`.
+Constructs an instance of type `NonsequentialArmijoAdaptiveGD{T}`.
 
 ## Arguments
 
@@ -68,7 +69,7 @@ Constructs an instance of type `NonsequentialArmijoGD{T}`.
     including the initial iterate.
 
 """
-mutable struct NonsequentialArmijoGD{T} <: AbstractOptimizerData{T}
+mutable struct NonsequentialArmijoAdaptiveGD{T} <: AbstractOptimizerData{T}
     name::String
     ∇F_θk::Vector{T}
     norm_∇F_ψ::T
@@ -87,7 +88,7 @@ mutable struct NonsequentialArmijoGD{T} <: AbstractOptimizerData{T}
     grad_val_hist::Vector{T}
     stop_iteration::Int64
 end
-function NonsequentialArmijoGD(
+function NonsequentialArmijoAdaptiveGD(
     ::Type{T};
     x0::Vector{T},
     δ0::T,
@@ -116,7 +117,7 @@ function NonsequentialArmijoGD(
     grad_val_hist::Vector{T} = Vector{T}(undef, max_iterations + 1)
     stop_iteration::Int64 = -1 # dummy value
 
-    return NonsequentialArmijoGD(
+    return NonsequentialArmijoAdaptiveGD(
         name,                       # name
         zeros(T, d),                # ∇F_θk
         T(0),                       # norm_∇F_ψ
@@ -281,22 +282,46 @@ function compute_step_size(τ_lower::T, norm_grad::T, local_lipschitz_estimate::
 end
 
 """
-    inner_loop!(ψjk::S, θk::S, optData::NonsequentialArmijoGD{T}, 
+    inner_loop!(ψjk::S, θk::S, optData::NonsequentialArmijoAdaptiveGD{T}, 
         progData::P1 where P1 <: AbstractNLPModel{T, S}, 
         precomp::P2 where P2 <: AbstractPrecompute{T}, 
         store::P3 where P3 <: AbstractProblemAllocate{T}, 
-        past_acceptance::Bool, k::Int64; max_iteration = 100) where {T, S}
+        past_acceptance::Bool, k::Int64; 
+        radius = 10, max_iteration = 100) where {T, S}
 
 Conduct the inner loop iteration, modifying `ψjk`, `optData`, and
 `store` in place. `ψjk` gets updated to be the terminal iterate of the inner loop;
 the fields `local_lipschitz_estimate`, `norm_∇F_ψ`, and `prev_∇F_ψ` are updated in
 `optData`; the fields `grad` in `store` gets updated to be the gradient at `ψjk`.
 
+# Method
+
+In what follows, we let ``||\\cdot||_2`` denote the L2-norm. 
+Let ``\\theta_{k}`` for ``k + 1 \\in\\mathbb{N}`` be the ``k^{th}`` iterate
+of the optimization algorithm. Let ``\\delta_{k}, 
+\\tau_{\\mathrm{grad},\\mathrm{lower}}^k, \\tau_{\\mathrm{grad},\\mathrm{upper}}^k``
+be the ``k^{th}`` parameters for the optimization method. 
+
+Let ``\\psi_0^k = \\theta_k``, then this method computes
+```math
+    \\psi_{j_k}^k = \\psi_0^k - \\sum_{i = 0}^{j_k-1} \\delta_k \\alpha_i^k \\dot F(\\psi_i^k),
+```
+where ``j_k \\in \\mathbb{N}`` is the smallest iteration for which at least one of the
+conditions are satisfied: 
+
+1. ``||\\psi_{j_k}^k - \\theta_k||_2 > 10``, 
+2. ``||\\dot F(\\psi_{j_k}^k)||_2 \\not\\in (\\tau_{\\mathrm{grad},\\mathrm{lower}}^k,
+    \\tau_{\\mathrm{grad},\\mathrm{upper}}^k)``, 
+3. ``j_k == 100``.
+
+The step size ``\\alpha_{i}^k`` for all ``i + 1 \\in \\mathbb{N}`` is computed
+by `compute_step_size(...)`.
+
 # Arguments
 
 - `ψjk::S`, buffer array for the inner loop iterates.
 - `θk::S`, starting iterate.
-- `optData::NonsequentialArmijoGD{T}`, `struct` that specifies the optimization
+- `optData::NonsequentialArmijoAdaptiveGD{T}`, `struct` that specifies the optimization
     algorithm. Fields are modified during the inner loop.
 - `progData::P1 where P1 <: AbstractNLPModel{T, S}`, `struct` that specifies the
     optimization problem. Fields are modified during the inner loop.
@@ -311,6 +336,8 @@ the fields `local_lipschitz_estimate`, `norm_∇F_ψ`, and `prev_∇F_ψ` are up
 
 ## Optional Keyword Arguments
 
+- `radius = 10`, the radius of the bounding ball event. Should be kept at `10`,
+    however we allow it to be a parameter for future purposes.
 - `max_iteration = 100`, maximum number of allowable iteration of the inner loop.
     Should be kept at `100` as that is what is specified in the paper, but
     is useful to change for testing.
@@ -322,12 +349,13 @@ the fields `local_lipschitz_estimate`, `norm_∇F_ψ`, and `prev_∇F_ψ` are up
 function inner_loop!(
     ψjk::S,
     θk::S,
-    optData::NonsequentialArmijoGD{T}, 
+    optData::NonsequentialArmijoAdaptiveGD{T}, 
     progData::P1 where P1 <: AbstractNLPModel{T, S}, 
     precomp::P2 where P2 <: AbstractPrecompute{T}, 
     store::P3 where P3 <: AbstractProblemAllocate{T}, 
     past_acceptance::Bool, 
-    k::Int64; 
+    k::Int64;
+    radius = 10, 
     max_iteration = 100) where {T, S}
 
     # inner loop
@@ -335,7 +363,7 @@ function inner_loop!(
     αjk::T = T(0)
     optData.norm_∇F_ψ = optData.grad_val_hist[k]
     optData.prev_norm_step = T(0)
-    while ((norm(ψjk - θk) <= 10) &&
+    while ((norm(ψjk - θk) <= radius) &&
         (optData.τ_lower < optData.norm_∇F_ψ && optData.norm_∇F_ψ < optData.τ_upper) &&
         (j < max_iteration))
 
@@ -374,54 +402,7 @@ function inner_loop!(
 end
 
 """
-    update_algorithm_parameters!(θkp1::S, optData::NonsequentialArmijoGD{T},
-        achieved_descent::Bool, iter::Int64) where {T, S}
-
-Given that the non-sequential Armijo condition is checked, update the parameters
-    the optimization method. The method updates the following variables in place.
-    
-- `θkp1` is updated to be the next outer loop iterate.
-- `optData` has (potentially) the following fields updated: `δk`, `τ_lower`,
-    `τ_upper`.
-
-# Arguments
-
-- `θkp1::S`, buffer array for the storage of the next iterate.
-- `optData::NonsequentialArmijoGD{T}`, `struct` that specifies the optimization
-    algorithm. 
-- `achieved_descent::Bool`, boolean flag indicating whether or not the
-    descent condition was achieved.
-- `iter::Int64`, the current iteration of the method. The outer loop iteration.
-    This is requried as it is used to overwrite `θkp1` with the previous iterate.
-
-# Returns
-
-- A boolean flag equal to `achieved_descent` to indicate whether `θkp1` is 
-    modified in-place.
-"""
-function update_algorithm_parameters!(θkp1::S, optData::NonsequentialArmijoGD{T},
-    achieved_descent::Bool, iter::Int64) where {T, S}
-    if !achieved_descent
-        θkp1 .= optData.iter_hist[iter]
-        optData.δk *= .5
-        return false 
-    elseif optData.norm_∇F_ψ <= optData.τ_lower
-        optData.τ_lower = optData.norm_∇F_ψ/sqrt(2) 
-        optData.τ_upper = sqrt(10) * optData.norm_∇F_ψ
-        return true
-    elseif optData.norm_∇F_ψ >= optData.τ_upper
-        optData.δk = min(1.5 * optData.δk, optData.δ_upper)
-        optData.τ_lower = optData.norm_∇F_ψ/sqrt(2) 
-        optData.τ_upper = sqrt(10) * optData.norm_∇F_ψ
-        return true
-    else
-        optData.δk = min(1.5 * optData.δk, optData.δ_upper)
-        return true
-    end 
-end
-
-"""
-    nonsequential_armijo_gd(optData::NonsequentialArmijoGD{T},
+    nonsequential_armijo_adaptive_gd(optData::NonsequentialArmijoAdaptiveGD{T},
         progData::P where P <: AbstractNLPModel{T, S}) where {T, S}
 
 Implementation of gradient descent with non-sequential armijo and triggering
@@ -479,7 +460,7 @@ When this condition is satisfied, the following quantities are updated.
 
 # Arguments
 
-- `optData::NesterovAcceleratedGD{T}`, the specification for the optimization 
+- `optData::NonsequentialArmijoAdaptiveGD{T}`, the specification for the optimization 
     method.
 - `progData<:AbstractNLPModel{T,S}`, the specification for the optimization
     problem.
@@ -493,8 +474,8 @@ When this condition is satisfied, the following quantities are updated.
 
 - `x::S`, final iterate of the optimization algorithm.
 """
-function nonsequential_armijo_gd(
-    optData::NonsequentialArmijoGD{T},
+function nonsequential_armijo_adaptive_gd(
+    optData::NonsequentialArmijoAdaptiveGD{T},
     progData::P where P <: AbstractNLPModel{T, S}
 ) where {T, S}
 

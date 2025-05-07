@@ -12,8 +12,9 @@ methods/gd_lipschitz_approximation.jl
 methods/gd_weighted_norm_damping.jl
 methods/gd_nesterov_accelerated.jl
 methods/gd_diminishing.jl
-methods/gd_non_sequential_armijo.jl
 methods/gd_fixed_nonmonotone_ls.jl
+methods/gd_non_sequential_armijo_adaptive.jl
+methods/gd_non_sequential_armijo_fixed.jl
 problems/regression_helpers/link_functions.jl
 problems/regression_helpers/link_function_derivatives.jl
 problems/regression_helpers/variance_functions.jl

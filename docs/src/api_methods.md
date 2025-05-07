@@ -42,9 +42,9 @@ NesterovAcceleratedGD
 
 # Gradient Descent with Diminishing Step Size
 ```@docs
-DiminishingStepGD
-
 diminishing_step_gd
+
+DiminishingStepGD
 ```
 
 Below is a list of step size functions that are in the library.
@@ -77,14 +77,20 @@ fixed_step_nls_maxval_gd
 FixedStepNonmonLSMaxValG
 ```
 
-# Gradient Descent with Non-sequential Armijo Line Search
-```@docs
-NonsequentialArmijoGD
+# Non-sequential Armijo Line Search with Event Triggered Objective Evaluations
 
-nonsequential_armijo_gd
+## First Order Methods
+```@docs
+nonsequential_armijo_adaptive_gd
+
+NonsequentialArmijoAdaptiveGD
+
+nonsequential_armijo_fixed_gd
+
+NonsequentialArmijoFixedGD
 ```
 
-The method above requires several utility functions. These are listed
+The methods above require several utility functions. These are listed
 below.
 
 ```@docs
@@ -104,7 +110,7 @@ OptimizationMethods.update_algorithm_parameters!
 OptimizationMethods.backtracking!
 ```
 
-## Non-sequential Armijo
+## Non-sequential Armijo Line Search
 ```@docs
 OptimizationMethods.non_sequential_armijo_condition
 ```
