@@ -52,9 +52,9 @@ A structure for storing data about gradient descent with fixed step size,
 
 # Constructors
 
-    WatchdogFixedGD(::Type{T}; x0::Vector{T}, α::T, ρ::T, window_size::Int64,
-        line_search_max_iterations::Int64, η::T, threshold::T,
-        max_iterations::Int64) where {T}
+    WatchdogFixedGD(::Type{T}; x0::Vector{T}, α::T, δ::T, ρ::T, window_size::Int64,
+        η::T, line_search_max_iterations::Int64, inner_loop_max_iterations::Int64,
+        threshold::T, max_iterations::Int64) where {T}
 
 ## Arguments
 
@@ -71,16 +71,15 @@ A structure for storing data about gradient descent with fixed step size,
     less strict descent conditions.
 - `window_size::Int64`, number of objective function considered in the
     computation of the reference value (i.e., size of `objective_hist`).
+- `η::T`, term used in the stopping conditions for the inner loop.
 - `line_search_max_iterations::Int64`, maximum iteration limit for the
     backtracking routine
-- `η::T`, term used in the stopping conditions for the inner loop.
 - `inner_loop_max_iterations::Int64`, maximum iteration limit
     of the inner loop subroutine.
 - `threshold::T`, norm gradient tolerance condition. Induces stopping when norm 
     is at most `threshold`.
 - `max_iterations::Int64`, max number of iterates that are produced, not 
     including the initial iterate.
-
 """
 mutable struct WatchdogFixedGD{T} <: AbstractOptimizerData{T}
     name::String
@@ -113,8 +112,8 @@ function WatchdogFixedGD(
     α::T,
     δ::T,
     ρ::T,
-    window_size::Int64,
     line_search_max_iterations::Int64,
+    window_size::Int64,
     η::T,
     inner_loop_max_iterations::Int64,
     threshold::T,
@@ -157,10 +156,6 @@ function WatchdogFixedGD(
     ) 
 end
 
-################################################################################
-# Utility
-################################################################################
-
 """
     inner_loop!(ψjk::S, θk::S, optData::WatchdogFixedGD{T}, 
         progData::P1 where P1 <: AbstractNLPModel{T, S}, 
@@ -170,9 +165,10 @@ end
 
 Inner loop iteration, modifying `ψjk`, `optData`, and `store` in place.
 `ψjk` get updated to be the terminal iterate of the inner loop;
-the fields `norm_∇F_ψ` and `max_distance`
+the fields `norm_∇F_ψ` and `max_distance_squared`
 are updated in `optData`; the fields `grad` and potentially 
-`obj` in `store` gets updated to be the gradient at `ψjk`
+`obj` in `store` gets updated to be the gradient and objective at an inner
+loop iterate.
 
 # Method
 
@@ -249,17 +245,19 @@ function inner_loop!(
 
         # other stopping condition
         if optData.norm_∇F_ψ <= optData.η * (1 + abs(optData.F_θk))
-            if OptimizationMethods.obj!(progData, precomp, store, ψjk) <= optData.reference_value
+            if OptimizationMethods.obj(progData, precomp, store, ψjk) <= 
+                    optData.reference_value
                 return j
             end
         end
+
     end
 
     return j
 end
 
 """
-    watchdog_fixed_gd( optData::WatchdogFixedGD{T},
+    watchdog_fixed_gd(optData::WatchdogFixedGD{T},
         progData::P where P <: AbstractNLPModel{T, S}) where {T, S}
 
 Implementation of gradient descent with fixed step sizes, negative
@@ -278,13 +276,15 @@ Implementation of gradient descent with fixed step sizes, negative
 In what follows, we let ``||\\cdot||_2`` denote the L2-norm. 
 Let ``\\theta_{k}`` for ``k + 1 \\in\\mathbb{N}`` be the ``k^{th}`` iterate
 of the optimization algorithm. Let ``\\alpha \\in \\mathbb{R},~\\alpha > 0``
-be stored in `optData.α`.
+be stored in `optData.α`, let ``\\rho=`` `optData.ρ`, and ``\\delta=``
+`optData.δ`.
 
-Let ``\\psi_0^k = \\theta_k``, and recursively define
+Let ``\\psi_0^k = \\theta_k``, and recursively define for ``j \\in \\mathbb{N}``
 ```math
-    \\psi_{j_k}^k = \\psi_0^k - \\sum_{i = 0}^{j_k-1} \\alpha \\dot F(\\psi_i^k),
+    \\psi_{j}^k = \\psi_0^k - \\sum_{i = 0}^{j-1} \\alpha \\dot F(\\psi_i^k).
 ```
-where ``j_k \\in \\mathbb{N}`` is the smallest iteration for which at least one of the
+
+Let ``j_k \\in \\mathbb{N}`` is the smallest iteration for which at least one of the
 conditions are satisfied: 
 
 1. ``j_k == `` `optData.inner_loop_max_iterations`
@@ -392,7 +392,15 @@ function watchdog_fixed_gd(
                 return optData.iter_hist[iter]
             end
 
+            # get new objective for history
             Fx = F(x)
+
+            # update history of gradient
+            OptimizationMethods.grad!(progData, precomp, store, x)
+            optData.grad_val_hist[iter + 1] = norm(store.grad)
+        else
+            # update history of gradient as the iterate was accepted
+            optData.grad_val_hist[iter + 1] = optData.norm_∇F_ψ
         end
 
         # update the objective_hist
@@ -404,9 +412,6 @@ function watchdog_fixed_gd(
 
         # update iter and grad value history
         optData.iter_hist[iter + 1] .= x
-        
-        OptimizationMethods.grad!(progData, precomp, store, x)
-        optData.grad_val_hist[iter + 1] = norm(store.grad)
     end
 
     optData.stop_iteration = iter
