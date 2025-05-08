@@ -343,7 +343,160 @@ end
 
 end
 
-@testset "Test Method: WatchdogFixedGD{T}" begin
+@testset "Test Method: WatchdogFixedGD{T} Monotone" begin
+
+    # Random parameters
+    T = Float64
+    dim = 50
+    x0 = randn(T, dim)
+    α = 1e-5 * rand(T)
+    δ = rand(T)
+    ρ = rand(T)
+    window_size = 1
+    η = rand(T)
+    line_search_max_iterations = rand(1:100)
+    inner_loop_max_iterations = rand(1:100)
+    threshold = rand(T)
+    max_iterations = rand(1:100) 
+
+    # first inner loop fails
+    let dim = dim, x0 = x0, α = α, δ = δ, ρ = ρ, window_size = window_size,
+        η = η, line_search_max_iterations = line_search_max_iterations, 
+        inner_loop_max_iterations = inner_loop_max_iterations,
+        threshold = threshold, max_iterations = max_iterations
+        
+        # struct
+        optData = WatchdogFixedGD(
+            T;
+            x0 = x0,
+            α = 10.0,
+            δ = δ,
+            ρ = ρ, 
+            line_search_max_iterations = 100,
+            window_size = window_size, 
+            η = η,
+            inner_loop_max_iterations = 1,
+            threshold = threshold,
+            max_iterations = 1
+        )
+
+        # get random problem
+        progData = OptimizationMethods.LeastSquares(Float64, nvar=dim)
+
+        # run method
+        x = watchdog_fixed_gd(optData, progData)
+
+        # that x was formed through a backtrack
+        x1 = copy(x0)
+        F(θ) = OptimizationMethods.obj(progData, θ)
+        g0 = OptimizationMethods.grad(progData, x0)
+        backtrack_success = OptimizationMethods.backtracking!(
+                x1,
+                x0,
+                F,
+                g0,
+                norm(g0)^2,
+                F(x0),
+                optData.α,
+                optData.δ,
+                optData.ρ;
+                max_iteration = optData.line_search_max_iterations)
+        
+        @test backtrack_success
+        @test x1 ≈ x
+
+        # check the θk checkpoints
+        @test optData.F_θk == F(x0)
+        @test optData.∇F_θk ≈ g0
+
+        # check histories
+        g1 = OptimizationMethods.grad(progData, x1)
+        @test optData.grad_val_hist[2] ≈ norm(g1)
+        @test optData.iter_hist[2] ≈ x1
+
+        # check objective hist
+        @test optData.objective_hist[1] ≈ F(x1)
+        @test optData.reference_value ≈ F(x1)
+        @test optData.reference_value_index ≈ 1
+
+        # check stop iteration
+        @test optData.stop_iteration == 1
+    end
+
+    # first inner loop succeeds
+    let dim = dim, x0 = x0, α = α, δ = δ, ρ = ρ, window_size = window_size,
+        η = η, line_search_max_iterations = line_search_max_iterations, 
+        inner_loop_max_iterations = inner_loop_max_iterations,
+        threshold = threshold, max_iterations = max_iterations
+        
+        # struct
+        optData = WatchdogFixedGD(
+            T;
+            x0 = x0,
+            α = 1e-10,
+            δ = δ,
+            ρ = ρ, 
+            line_search_max_iterations = line_search_max_iterations,
+            window_size = window_size, 
+            η = η,
+            inner_loop_max_iterations = inner_loop_max_iterations,
+            threshold = threshold,
+            max_iterations = 1
+        )
+
+        # get random problem
+        progData = OptimizationMethods.LeastSquares(Float64, nvar=dim)
+
+        # run method
+        x1 = watchdog_fixed_gd(optData, progData)
+
+        optData_0 = WatchdogFixedGD(
+            T;
+            x0 = x0,
+            α = 1e-10,
+            δ = δ,
+            ρ = ρ, 
+            line_search_max_iterations = line_search_max_iterations,
+            window_size = window_size, 
+            η = η,
+            inner_loop_max_iterations = inner_loop_max_iterations,
+            threshold = threshold,
+            max_iterations = 0
+        )
+        x_0 = watchdog_fixed_gd(optData_0, progData) 
+
+        # set up for the inner loop
+        precomp, store = OptimizationMethods.initialize(progData)
+        F(θ) = OptimizationMethods.obj(progData, precomp, store, θ)
+        G(θ) = OptimizationMethods.grad!(progData, precomp, store, θ)
+        optData_0.F_θk = F(x_0)
+
+        G(x_0)
+        optData_0.∇F_θk = store.grad
+
+        # conduct inner loop
+        OptimizationMethods.inner_loop!(x_0, x0, optData_0, progData, 
+            precomp, store, 1; 
+            max_iterations = optData_0.inner_loop_max_iterations)
+        
+        
+        @test x1 ≈ x_0
+
+        # test gradient history of optData
+        G(x1)
+        @test optData.grad_val_hist[2] ≈ norm(store.grad)
+        @test optData.objective_hist[1] ≈ F(x1)
+        @test optData.reference_value ≈ F(x1)
+        @test optData.reference_value_index == 1
+    end
+
+    # test arbitrary inner loop (all fails)
+
+    # test arbitrary inner loop 
+
+end
+
+@testset "Test Method: WatchdogFixedGD{T} Nonmonotone" begin
 end
 
 end
