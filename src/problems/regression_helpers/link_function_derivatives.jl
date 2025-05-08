@@ -17,6 +17,9 @@ where `T` is a scalar type.
 - `η::T`, scalar. In the regression context this is the linear effect.
 """
 function dlogistic(η::T) where {T}
+    if -η > 709
+        @warn "The input to this function is large, therefore a NaN will be produced."
+    end 
     return exp(-η)/((1 + exp(-η))^2)
 end
 

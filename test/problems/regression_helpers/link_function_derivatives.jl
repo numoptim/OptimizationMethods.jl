@@ -30,6 +30,19 @@ using Test, ForwardDiff, OptimizationMethods, Random
                 @test g ≈ grad_forward_diff(x) atol = toler
             end
         end
+
+        # test NaN cut off
+        @test isnan(OptimizationMethods.dlogistic(-710))
+        @test !isnan(OptimizationMethods.dlogistic(-709))
+
+        # test the warning and no warnings
+        msg = "The input to this function is large, therefore a NaN will be produced." 
+        @test_warn msg OptimizationMethods.dlogistic(-710)
+        
+        @test_nowarn OptimizationMethods.dlogistic(-709)
+        @test_nowarn OptimizationMethods.dlogistic(Inf)
+        @test OptimizationMethods.dlogistic(Inf) == 0.0 
+        
     end
 end
 
