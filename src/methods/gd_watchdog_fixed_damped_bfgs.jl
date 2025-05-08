@@ -3,6 +3,97 @@
 # Purpose: Implementation of damped BFGS
 
 """
+    WatchdogFixedDampedBFGSGD{T} <: AbstractOptimizerData{T}
+
+Mutable structure that parameterizes gradient descent with fixed
+    step size and damped BFGS directions. The structure also stores and tracks
+    values during the progress of applying the method to an optimization
+    problem.
+
+# Fields
+
+- `name::String`, name of the optimizer for reference.
+- `F_θk::T`, objective function value at the beginning of the inner loop
+    for one of the inner loop stopping condition.
+- `∇F_θk::Vector{T}`, buffer array for the gradient of the initial inner
+    loop iterate.
+- `B_θk::Matrix{T}`, buffer matrix for the BFGS approximation prior to the
+    start of the inner loop. This is saved in case bactracking is required,
+    making the next approximation dependent on this value.
+- `norm_∇F_ψ::T`, norm of the gradient of the current inner loop iterate.
+- `c::T`, initial factor used in the approximation of the Hessian.
+- `Bjk::Matrix{T}`, buffer matrix for the damped BFGS approximation in the
+    inner loop.
+- `δBjk::Matrix{T}`, buffer matrix for the update term added to the BFGS 
+    approximation.
+- `rjk::Vector{T}`, buffer vector for the update term in the damped BFGS
+    approximation.
+- `sjk::Vector{T}`, buffer vector for a term used in the damped BFGS approximation.
+    Should correspond to the difference of consecutive iterates in the 
+    inner loop.
+- `yjk::Vector{T}`, buffer vector for a term used in the damped BFGS approximation.
+    Should correspond to the difference of gradient values between 
+    consecutive iterates in the inner loop.
+- `djk::Vector{T}`, buffer vector used to store the step used in the inner
+    loop.
+- `α::T`, fixed step size used in the inner loop.
+- `δ::T`, step size reduction parameter used in the line search routine. 
+- `ρ::T`, parameter used in backtracking and the watchdog condition. Larger
+    numbers indicate stricter descent conditions. Smaller numbers indicate
+    less strict descent conditions.
+- `line_search_max_iterations::Int64`, maximum number of line search
+    iterations
+- `max_distance_squared::T`, maximum distance between the starting inner loop
+    iterates and the rest of the inner loop iterates. Used in the watchdog condition.
+- `η::T`, term used in the stopping conditions for the inner loop.
+- `inner_loop_max_iterations::Int64`, maximum number of iterations in the
+    inner loop.
+- `objective_hist::CircularVector{T, Vector{T}}`, vector of previous accepted 
+    objective values for non-monotone cache update.
+- `reference_value::T`, the maximum objective value in `objective_hist`.
+- `reference_value_index::Int64`, the index of the maximum value in `objective_hist`.
+- `threshold::T`, norm gradient tolerance condition. Induces stopping when norm 
+    is at most `threshold`.
+- `max_iterations::Int64`, max number of iterates that are produced, not 
+    including the initial iterate.
+- `iter_hist::Vector{Vector{T}}`, store the iterate sequence as the algorithm 
+    progresses. The initial iterate is stored in the first position.
+- `grad_val_hist::Vector{T}`, stores the norm gradient values at each iterate. 
+    The norm of the gradient evaluated at the initial iterate is stored in the 
+    first position.
+- `stop_iteration::Int64`, the iteration number the algorithm stopped on. The 
+    iterate that induced stopping is saved at `iter_hist[stop_iteration + 1]`.
+
+# Constructors
+
+    WatchdogFixedDampedBFGSGD(::Type{T}; c::T, α::T, δ::T, ρ::T,
+        line_search_max_iterations::Int64, η::T, 
+        inner_loop_max_iterations::Int64, window_size::Int64,
+        threshold::T, max_iterations::Int64) where {T}
+
+## Arguments
+
+- `T::DataType`, specific data type used for calculations.
+
+## Keyword Arguments
+
+- `c::T`, initial factor used in the approximation of the Hessian.
+- `α::T`, fixed step size used in the inner loop.
+- `δ::T`, step size reduction parameter used in the line search routine. 
+- `ρ::T`, parameter used in backtracking and the watchdog condition. Larger
+    numbers indicate stricter descent conditions. Smaller numbers indicate
+    less strict descent conditions.
+- `line_search_max_iterations::Int64`, maximum number of line search
+    iterations
+- `η::T`, term used in the stopping conditions for the inner loop.
+- `inner_loop_max_iterations::Int64`, maximum number of iterations in the
+    inner loop.
+- `window_size::Int64`, size of the objective cache.
+- `threshold::T`, norm gradient tolerance condition. Induces stopping when norm 
+    is at most `threshold`.
+- `max_iterations::Int64`, max number of iterates that are produced, not 
+    including the initial iterate.
+
 """
 mutable struct WatchdogFixedDampedBFGSGD{T} <: AbstractOptimizerData{T}
     name::String
