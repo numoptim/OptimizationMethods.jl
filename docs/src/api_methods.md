@@ -11,6 +11,14 @@ barzilai_borwein_gd
 BarzilaiBorweinGD
 ```
 
+This method relies on two utility functions.
+
+```@docs
+OptimizationMethods.bb_long_step_size
+
+OptimizationMethods.bb_short_step_size
+```
+
 # Gradient Descent with Fixed Step Size
 
 ```@docs
@@ -72,6 +80,10 @@ NonsequentialArmijoAdaptiveGD
 nonsequential_armijo_fixed_gd
 
 NonsequentialArmijoFixedGD
+
+nonsequential_armijo_safe_bb_gd
+
+NonsequentialArmijoSafeBBGD
 ```
 
 The methods above require several utility functions. These are listed
