@@ -8,11 +8,15 @@ CircularArrays = "7a955b69-7140-5f4e-a0ed-f168c5e2e749"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 NLPModels = "a4795742-8479-5a88-8948-cc11e1c8c1a6"
+OptimizationModels = "1e8ba084-2b82-410e-94da-52931dd80093"
+OptimizationProblems = "cedb96af-b716-49a9-8995-d784cce4c15f"
 QuadGK = "1fd47b50-473d-5c70-9696-f719f8f3bcdc"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 
 [compat]
 CircularArrays = "1.4.0"
+OptimizationModels = "0.1.0"
+OptimizationProblems = "0.1.1"
 QuadGK = "2.11.2"
 julia = "1"
 
