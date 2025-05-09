@@ -325,7 +325,8 @@ function inner_loop!(
     step_size::T = (optData.second_acceptance_occurred) ?
         optData.bb_step_size(optData.iter_diff, optData.grad_diff) : 
         optData.init_stepsize 
-    if step_size < optData.α_lower || step_size > (1/optData.α_lower)
+    if step_size < optData.α_lower || step_size > (1/optData.α_lower) ||
+        isnan(step_size)
         step_size = optData.α_default
     end
     optData.α0k = step_size
@@ -358,7 +359,8 @@ function inner_loop!(
 
         # compute step size for next iteration
         step_size = optData.bb_step_size(optData.iter_diff, optData.grad_diff)
-        if step_size < optData.α_lower || step_size > (1/optData.α_lower)
+        if step_size < optData.α_lower || step_size > (1/optData.α_lower) ||
+            isnan(step_size)
             step_size = optData.α_default
         end
     end
