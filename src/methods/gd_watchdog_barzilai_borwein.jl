@@ -6,7 +6,7 @@
 """
     WatchdogSafeBarzilaiBorweinGD{T} <: AbstractOptimizerData{T}
 
-A structure for storing data about gradient descent with Barzilai-Borwein
+A structure that parameterizes gradient descent with Barzilai-Borwein
     step size and negative gradient steps, globalized through the
     watchdog framework. The structure also stores values during the progression
     of its application on an optimization problem.
@@ -27,12 +27,8 @@ A structure for storing data about gradient descent with Barzilai-Borwein
 - `α_lower::T`, used to compute a safeguard on the Barzilai-Borwein step size.
 - `α_default::T`, If the Barzilai-Borwein step size is smaller than `α_lower` or
     larger than `1/α_lower`, then it is set to `α_default`.
-- `iter_diff_checkpoint::Vector{T}`, buffer array for difference between
-    iterates before the start of an inner loop. Values are saved because of 
-    potential restarts.
-- `grad_diff_checkpoint::Vector{T}`, buffar array for difference between
-    gradients before the start of an inner loop. Values are saved because of 
-    potential restarts.
+- `α0k::T`, the initial step size used in the inner loop. Used to as an 
+    initial value when the inner loop fails the watchdog condition.
 - `iter_diff::Vector{T}`, buffer array for difference between iterates 
     used to calculate the step size.
 - `grad_diff::Vector{T}`, buffer array for difference between gradients
@@ -51,7 +47,8 @@ A structure for storing data about gradient descent with Barzilai-Borwein
 - `objective_hist::CircularVector{T, Vector{T}}`, vector of previous accepted 
     objective values for non-monotone cache update.
 - `reference_value::T`, the maximum objective value in `objective_hist`.
-- `reference_value_index::Int64`, the index of the maximum value in `objective_hist`.
+- `reference_value_index::Int64`, the index of the maximum value in
+    `objective_hist`.
 - `threshold::T`, norm gradient tolerance condition. Induces stopping when norm 
     is at most `threshold`.
 - `max_iterations::Int64`, max number of iterates that are produced, not 
@@ -67,7 +64,7 @@ A structure for storing data about gradient descent with Barzilai-Borwein
 # Constructors
 
     WatchdogSafeBarzilaiBorweinGD(::Type{T}, x0::Vector{T}, init_stepsize::T,
-        long_stepsize::Bool, α_lower::T, α_default::T, ρ::T,
+        long_stepsize::Bool, α_lower::T, α_default::T, δ::T, ρ::T,
         line_search_max_iterations::Int64, η::T,
         inner_loop_max_iterations::Int64, window_size::Int64, threshold::T,
         max_iterations::Int64) where {T}
@@ -87,6 +84,7 @@ A structure for storing data about gradient descent with Barzilai-Borwein
 - `α_lower::T`, used to compute a safeguard on the Barzilai-Borwein step size.
 - `α_default::T`, If the Barzilai-Borwein step size is smaller than `α_lower` or
     larger than `1/α_lower`, then it is set to `α_default`.
+- `δ::T`, step size reduction parameter used in the line search routine. 
 - `ρ::T`, parameter used in backtracking and the watchdog condition. Larger
     numbers indicate stricter descent conditions. Smaller numbers indicate
     less strict descent conditions.
@@ -111,8 +109,7 @@ mutable struct WatchdogSafeBarzilaiBorweinGD{T} <: AbstractOptimizerData{T}
     bb_step_size::Function
     α_lower::T
     α_default::T
-    iter_diff_checkpoint::Vector{T}
-    grad_diff_checkpoint::Vector{T}
+    α0k::T
     iter_diff::Vector{T}
     grad_diff::Vector{T}
     # line search parameters
@@ -175,8 +172,7 @@ function WatchdogSafeBarzilaiBorweinGD(::Type{T},
         step_size,
         α_lower,
         α_default,
-        zeros(T, d),
-        zeros(T, d),
+        T(0),
         zeros(T, d),
         zeros(T, d),
         δ,
@@ -197,7 +193,6 @@ function WatchdogSafeBarzilaiBorweinGD(::Type{T},
 end
 
 """
-
     inner_loop!(ψjk::S, θk::S, optData::WatchdogSafeBarzilaiBorweinGD{T}, 
         progData::P1 where P1 <: AbstractNLPModel{T, S}, 
         precomp::P2 where P2 <: AbstractPrecompute{T}, 
@@ -209,31 +204,30 @@ Conduct the inner loop iteration, modifying `ψjk`, `optData`, and `store` in
     This inner loop function uses negative gradient directions with a 
     safeguarded Barzilai-Borwein step size.
 
-# Reference(s)
-
-[Grippo L. and Sciandrone M. "Nonmonotone Globalization Techniques
-    for the Barzilai-Borwein Gradient Method". 
-    Computational Optimization and Applications.](@cite grippo2002Nonmonotone)
-
 # Method
 
 In what follows, we let ``||\\cdot||_2`` denote the L2-norm. 
 Let ``\\theta_{k}`` for ``k + 1 \\in\\mathbb{N}`` be the ``k^{th}`` iterate
-of the optimization algorithm. Let ``\\alpha =`` `optData.α_default`.
+of the optimization algorithm. Let ``\\alpha =`` `optData.α_default` 
+be a positive real number and
+``\\underline\\alpha = `` `optData.α_lower` be a number in ``(0, 1]``.
 
 Let ``\\psi_0^k = \\theta_k``, then this method returns
 ```math
-    \\psi_{j_k}^k = \\psi_0^k - \\sum_{i = 0}^{j_k-1} \\alpha_j^k \\dot F(\\psi_i^k),
+    \\psi_{j_k}^k = \\psi_0^k - \\sum_{i = 0}^{j_k-1} \\alpha_i^k 
+    \\dot F(\\psi_i^k),
 ```
-where ``j_k \\in \\mathbb{N}`` is the smallest iteration for which at least one of the
-conditions are satisfied: 
+where ``j_k \\in \\mathbb{N}`` is the smallest iteration for which 
+at least one of the conditions are satisfied: 
 
 1. ``j_k == `` `optData.inner_loop_max_iterations`
 2. ``||\\dot F(\\psi_{j_k}^k)||_2 \\leq \\eta (1 + |F(\\theta_k)|)`` and
     ``|F(\\psi_{j_k}^k| \\leq `` `optData.reference_value`.
 
-The step size ``\\alpha_j^k`` is calculated using the safeguarded Barzilai-
-Borwein method. To explain the step size computation, define
+The step size ``\\alpha_i^k`` is calculated using the safeguarded Barzilai-
+Borwein method. 
+
+## Step Size Computation
 
 Suppose that `long_stepsize = true` and let ``k + 1 \\in \\mathbb{N}``. We
 now describe how the initial step size for each inner loop is calculated, and
@@ -241,8 +235,8 @@ then subsequent step sizes, which depends on ``k`` and whether the watchdog
 condition was satisfied previously.
 When ``k = 0``, the initial step size ``\\alpha_0^0`` is `optData.init_stepsize`.
 
-For ``k > 0``, if the watchdog condition was satisfied at ``\\psi_{j_{k-1}}^k``,
-then
+For ``k > 0``, if the watchdog condition was satisfied at 
+``\\psi_{j_{k-1}}^{k-1}``, then let 
 ```math
     \\gamma_0^k = 
         \\frac{
@@ -265,14 +259,14 @@ If ``\\gamma_0^k \\in [\\underline{\\alpha}, 1/\\underline{\\alpha}]`` then
 
 In all cases, for ``j \\in \\mathbb{N}`` and ``k + 1 \\in \\mathbb{N}``
 ```math
-    \\gamma_j^k = 
+    \\gamma_i^k = 
         \\frac{
-        ||\\psi_j^k - \\psi_{j-1}^k||_2^2}{ 
-        (\\psi_j^k - \\psi_{j-1}^k)^\\intercal 
-        (\\dot F(\\psi_j^k) - \\dot F(\\psi_{j-1}^k))},
+        ||\\psi_i^k - \\psi_{i-1}^k||_2^2}{ 
+        (\\psi_i^k - \\psi_{i-1}^k)^\\intercal 
+        (\\dot F(\\psi_i^k) - \\dot F(\\psi_{i-1}^k))},
 ```
-and if ``\\gamma_j^k \\in [\\underline{\\alpha}, 1/\\underline{\\alpha}]`` then
-``\\alpha_j^k = \\gamma_j^k``, otherwise ``\\alpha_0^k = \\alpha``.
+and if ``\\gamma_i^k \\in [\\underline{\\alpha}, 1/\\underline{\\alpha}]`` then
+``\\alpha_i^k = \\gamma_i^k``, otherwise ``\\alpha_i^k = \\alpha``.
 
 When `long_stepsize = false`, the cases remain the same but the step size formula
 changes to the short form of the Barzilai-Borwein step size.
@@ -295,8 +289,6 @@ changes to the short form of the Barzilai-Borwein step size.
 ## Optional Keyword Arguments
 
 - `max_iteration = 100`, maximum number of allowable iteration of the inner loop.
-    Should be kept at `100` as that is what is specified in the paper, but
-    is useful to change for testing.
 
 # Returns
 
@@ -324,6 +316,7 @@ function inner_loop!(
     if step_size < optData.α_lower || step_size > (1/optData.α_lower)
         step_size = optData.α_default
     end
+    optData.α0k = step_size
 
     # stopping conditions
     while j < max_iterations
@@ -368,7 +361,7 @@ function inner_loop!(
 end
 
 """
-    watchdog_barzilai_borwein_gd(optData::WatchdogSafeBarzilaiBorweinGD{T},
+    watchdog_safe_barzilai_borwein_gd(optData::WatchdogSafeBarzilaiBorweinGD{T},
         progData::P where P <: AbstractNLPModel{T, S}) where {T, S}
 
 Implementation of gradient descent with the Barzilai-Borwein step size and
@@ -382,6 +375,9 @@ Implementation of gradient descent with the Barzilai-Borwein step size and
     for the Barzilai-Borwein Gradient Method". 
     Computational Optimization and Applications.](@cite grippo2002Nonmonotone)
 
+[Barzilai and Borwein. "Two-Point Step Size Gradient Methods". IMA Journal of 
+    Numerical Analysis.](@cite barzilai1988Twopoint)
+
 # Method
 
 In what follows, we let ``||\\cdot||_2`` denote the L2-norm. 
@@ -389,9 +385,9 @@ Let ``\\theta_{k}`` for ``k + 1 \\in\\mathbb{N}`` be the ``k^{th}`` iterate
 of the optimization algorithm. Let ``\\rho =`` `optData.ρ` and 
 ``\\delta=`` `optData.δ`.
 
-Let ``\\psi_0^k = \\theta_k``, and recursively define
+Let ``\\psi_0^k = \\theta_k``, and recursively define for all ``j \\in \\mathbb{N}``
 ```math
-    \\psi_{j}^k = \\psi_0^k - \\sum_{i = 0}^{j-1} \\alpha_j^k \\dot F(\\psi_i^k),
+    \\psi_{j}^k = \\psi_0^k - \\sum_{i = 0}^{j-1} \\alpha_i^k \\dot F(\\psi_i^k),
 ```
 To see how the inner loop steps are performed for this method, see
     the documentation for [OptimizationMethods.inner_loop!](@ref) for
@@ -405,7 +401,7 @@ conditions are satisfied:
     ``|F(\\psi_{j_k}^k| \\leq `` `optData.reference_value`.
 
 Let 
-``\\tau_{\\mathrm{obj}}^k = \\max_{0 \\leq i \\leq max(0, M - 1)} F(\\theta_{k - i})``.
+``\\tau_{\\mathrm{obj}}^k = \\max_{max(0, k - M + 1) \\leq i \\leq k} F(\\theta_{i})``.
 
 If the watchdog condition
 
@@ -442,7 +438,7 @@ routine.
 
 - `x::S`, final iterate of the optimization algorithm.
 """
-function watchdog_barzilai_borwein_gd(
+function watchdog_safe_barzilai_borwein_gd(
     optData::WatchdogSafeBarzilaiBorweinGD{T},
     progData::P where P <: AbstractNLPModel{T, S}
 ) where {T, S}
@@ -472,8 +468,6 @@ function watchdog_barzilai_borwein_gd(
         # inner loop
         optData.F_θk = optData.objective_hist[iter]
         optData.∇F_θk .= store.grad
-        optData.iter_diff_checkpoint .= optData.iter_diff
-        optData.grad_diff_checkpoint .= optData.grad_diff
         inner_loop!(x, optData.iter_hist[iter], optData, progData,
             precomp, store, iter; 
             max_iterations = optData.inner_loop_max_iterations)
@@ -484,14 +478,6 @@ function watchdog_barzilai_borwein_gd(
 
             # revert to previous iterate
             x .= optData.iter_hist[iter]
-
-            # compute the initial step size
-            step_size = (iter == 1) ? optData.init_stepsize : 
-                optData.bb_step_size(optData.iter_diff_checkpoint, 
-                    optData.grad_diff_checkpoint)
-            if step_size < optData.α_lower || step_size > (1/optData.α_lower)
-                step_size = optData.α_default
-            end
 
             # update iter_diff and grad_diff
             optData.iter_diff .= -x
@@ -505,7 +491,7 @@ function watchdog_barzilai_borwein_gd(
                 optData.∇F_θk,
                 optData.grad_val_hist[iter] ^ 2,
                 optData.reference_value,
-                step_size,
+                optData.α0k,
                 optData.δ,
                 optData.ρ;
                 max_iteration = optData.line_search_max_iterations)

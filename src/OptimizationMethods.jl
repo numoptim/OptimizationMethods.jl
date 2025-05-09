@@ -88,6 +88,7 @@ export WeightedNormDampingGD, weighted_norm_damping_gd
 export NonsequentialArmijoAdaptiveGD, nonsequential_armijo_adaptive_gd
 export NonsequentialArmijoFixedGD, nonsequential_armijo_fixed_gd
 export NonsequentialArmijoSafeBBGD, nonsequential_armijo_safe_bb_gd
+export WatchdogSafeBarzilaiBorweinGD, watchdog_safe_barzilai_borwein_gd
 
 ## Helper functions for optimization methods
 include("methods/stepsize_helpers/diminishing_stepsizes.jl")
@@ -103,5 +104,6 @@ include("methods/gd_weighted_norm_damping.jl")
 include("methods/gd_non_sequential_armijo_adaptive.jl")
 include("methods/gd_non_sequential_armijo_fixed.jl")
 include("methods/gd_non_sequential_armijo_safe_bb.jl")
+include("methods/gd_watchdog_barzilai_borwein.jl")
 
 end
