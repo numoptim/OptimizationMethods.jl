@@ -248,7 +248,7 @@ function inner_loop!(
     precomp::P2 where P2 <: AbstractPrecompute{T}, 
     store::P3 where P3 <: AbstractProblemAllocate{T}, 
     k::Int64; 
-    max_iterations = 100) where {T}
+    max_iterations = 100) where {T, S}
 
     # initialization for inner loop
     j::Int64 = 0
@@ -295,7 +295,7 @@ function inner_loop!(
 
         # check other stopping condition
         if optData.norm_∇F_ψ <= optData.η * (1 + abs(optData.F_θk))
-            if OptimizationMethods.obj!(progData, precomp, store, ψjk) <= optData.reference_value
+            if OptimizationMethods.obj(progData, precomp, store, ψjk) <= optData.reference_value
                 return j
             end
         end
