@@ -435,7 +435,13 @@ function watchdog_fixed_mnewton_gd(
                 return optData.iter_hist[iter]
             end
 
+            OptimizationMethods.grad!(progData, precomp, store, x)
+            optData.grad_val_hist[iter + 1] = norm(store.grad)
+
             Fx = F(x)
+        else
+            optData.grad_val_hist[iter + 1] = 
+                optData.norm_∇F_ψ
         end
 
         # update the objective_hist
@@ -446,9 +452,7 @@ function watchdog_fixed_mnewton_gd(
         end
 
         # update iter and grad value history
-        OptimizationMethods.grad!(progData, precomp, store, ψjk)
-        OptimizationMethods.hess!(progData, precomp, store, ψjk)
-        optData.grad_val_hist = norm(store.grad)
+        OptimizationMethods.hess!(progData, precomp, store, x)
         optData.iter_hist[iter + 1] .= x
     end
 

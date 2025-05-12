@@ -201,13 +201,13 @@ end
     x0 = randn(T, dim)
     β = rand(T)
     λ = rand(T)
-    hessian_modification_max_iteration = rand(1:100)
+    hessian_modification_max_iteration = rand(10:15)
     α = rand(T)
     δ = rand(T)
     ρ = rand(T)
-    line_search_max_iterations = rand(1:100)
+    line_search_max_iterations = rand(10:100)
     η = rand(T)
-    inner_loop_max_iterations = rand(1:100)
+    inner_loop_max_iterations = rand(10:100)
     window_size = rand(1:100)
     threshold = rand(T)
     max_iterations = rand(1:100)
@@ -495,13 +495,599 @@ end
         @test optData.d0k ≈ OptimizationMethods.grad(progData, x0) 
     end
 
-
 end # end of test for inner loop
 
 @testset "Test WatchdogFixedMNewtonGD{T} Method Monotone" begin
+
+    # generate random arguments and struct
+    T = Float64
+    dim = rand(50:100)
+    x0 = randn(T, dim)
+    β = rand(T)
+    λ = rand(T)
+    hessian_modification_max_iteration = rand(10:15)
+    α = rand(T)
+    δ = rand(T)
+    ρ = rand(T)
+    line_search_max_iterations = rand(10:100)
+    η = rand(T)
+    inner_loop_max_iterations = rand(10:100)
+    window_size = 1
+    threshold = rand(T)
+    max_iterations = rand(1:100)
+
+    # first inner loop fails -- line search succeeds
+    let dim = dim, x0 = x0, β = β, λ = λ,
+        hessian_modification_max_iteration = hessian_modification_max_iteration,
+        α = α, δ = δ, ρ = ρ, 
+        line_search_max_iterations = line_search_max_iterations,
+        η = η, inner_loop_max_iterations = inner_loop_max_iterations,
+        window_size = window_size, threshold = threshold, 
+        max_iterations = max_iterations
+        
+        # struct
+        optData = WatchdogFixedMNewtonGD(T;
+        x0 = x0,
+        β = β,
+        λ = λ, 
+        hessian_modification_max_iteration = hessian_modification_max_iteration,
+        α = 10.0,
+        δ = δ,
+        ρ = ρ,
+        line_search_max_iterations = 100,
+        η = η,
+        inner_loop_max_iterations = 1,
+        window_size = window_size,
+        threshold = threshold,
+        max_iterations = 1)
+
+        # get random problem
+        progData = OptimizationMethods.LogisticRegression(Float64, nvar=dim)
+
+        # run method
+        x = watchdog_fixed_mnewton_gd(optData, progData)
+
+        # that x was formed through a backtrack
+        x1 = copy(x0)
+        F(θ) = OptimizationMethods.obj(progData, θ)
+        g0 = OptimizationMethods.grad(progData, x0)
+        H0 = OptimizationMethods
+        backtrack_success = OptimizationMethods.backtracking!(
+                x1,
+                x0,
+                F,
+                optData.∇F_θk,
+                optData.d0k,
+                F(x0),
+                optData.α,
+                optData.δ,
+                optData.ρ;
+                max_iteration = optData.line_search_max_iterations)
+        
+        @test backtrack_success
+        @test x1 ≈ x
+
+        # check the θk checkpoints
+        @test optData.F_θk == F(x0)
+        @test optData.∇F_θk ≈ g0
+
+        # check histories
+        g1 = OptimizationMethods.grad(progData, x1)
+        @test optData.grad_val_hist[2] ≈ norm(g1)
+        @test optData.iter_hist[2] ≈ x1
+
+        # check objective hist
+        @test optData.objective_hist[1] ≈ F(x1)
+        @test optData.reference_value ≈ F(x1)
+        @test optData.reference_value_index ≈ 1
+
+        # check stop iteration
+        @test optData.stop_iteration == 1
+    end
+
+    # first inner loop fails -- line search fails
+    let dim = dim, x0 = x0, β = β, λ = λ,
+        hessian_modification_max_iteration = hessian_modification_max_iteration,
+        α = α, δ = δ, ρ = ρ, 
+        line_search_max_iterations = line_search_max_iterations,
+        η = η, inner_loop_max_iterations = inner_loop_max_iterations,
+        window_size = window_size, threshold = threshold, 
+        max_iterations = max_iterations
+
+        # struct
+        optData = WatchdogFixedMNewtonGD(T;
+        x0 = x0,
+        β = β,
+        λ = λ, 
+        hessian_modification_max_iteration = hessian_modification_max_iteration,
+        α = 10.0,
+        δ = δ,
+        ρ = ρ,
+        line_search_max_iterations = 0,
+        η = η,
+        inner_loop_max_iterations = 1,
+        window_size = window_size,
+        threshold = threshold,
+        max_iterations = 1)
+
+        # get random problem
+        progData = OptimizationMethods.LogisticRegression(Float64, nvar=dim)
+
+        # run method
+        x = watchdog_fixed_mnewton_gd(optData, progData)
+
+        # check that we return x0
+        @test x ≈ x0
+
+        # check stop iteration
+        @test optData.stop_iteration == 0
+    end
+
+    # first inner loop succeeds
+    let dim = dim, x0 = x0, β = β, λ = λ,
+        hessian_modification_max_iteration = hessian_modification_max_iteration,
+        α = α, δ = δ, ρ = ρ, 
+        line_search_max_iterations = line_search_max_iterations,
+        η = η, inner_loop_max_iterations = inner_loop_max_iterations,
+        window_size = window_size, threshold = threshold, 
+        max_iterations = max_iterations
+
+        # struct
+        optData = WatchdogFixedMNewtonGD(T;
+        x0 = x0,
+        β = β,
+        λ = λ, 
+        hessian_modification_max_iteration = hessian_modification_max_iteration,
+        α = 1e-10,
+        δ = δ,
+        ρ = ρ,
+        line_search_max_iterations = line_search_max_iterations,
+        η = η,
+        inner_loop_max_iterations = inner_loop_max_iterations,
+        window_size = window_size,
+        threshold = threshold,
+        max_iterations = 1)
+
+        # get random problem
+        progData = OptimizationMethods.LogisticRegression(Float64, nvar=dim)
+
+        # run method
+        x1 = watchdog_fixed_mnewton_gd(optData, progData)
+
+        optData_0 = WatchdogFixedMNewtonGD(T;
+        x0 = x0,
+        β = β,
+        λ = λ, 
+        hessian_modification_max_iteration = hessian_modification_max_iteration,
+        α = 1e-10,
+        δ = δ,
+        ρ = ρ,
+        line_search_max_iterations = line_search_max_iterations,
+        η = η,
+        inner_loop_max_iterations = inner_loop_max_iterations,
+        window_size = window_size,
+        threshold = threshold,
+        max_iterations = 0)
+        x_0 = watchdog_fixed_mnewton_gd(optData_0, progData) 
+
+        # set up for the inner loop
+        precomp, store = OptimizationMethods.initialize(progData)
+        F(θ) = OptimizationMethods.obj(progData, precomp, store, θ)
+        G(θ) = OptimizationMethods.grad!(progData, precomp, store, θ)
+        H(θ) = OptimizationMethods.hess!(progData, precomp, store, θ)
+        optData_0.F_θk = F(x_0)
+
+        G(x_0)
+        H(x_0)
+        optData_0.∇F_θk = store.grad
+
+        # conduct inner loop
+        OptimizationMethods.inner_loop!(x_0, x0, optData_0, progData, 
+            precomp, store, 1; 
+            max_iterations = optData_0.inner_loop_max_iterations)
+        
+        
+        @test x1 ≈ x_0
+
+        # test gradient history of optData
+        G(x1)
+        @test optData.grad_val_hist[2] ≈ norm(store.grad)
+        @test optData.objective_hist[1] ≈ F(x1)
+        @test optData.reference_value ≈ F(x1)
+        @test optData.reference_value_index == 1
+
+        @test optData.iter_hist[1] ≈ x0
+        @test optData.iter_hist[2] ≈ x1
+    end
+
+    # test arbitrary inner loop
+    let dim = dim, x0 = x0, β = β, λ = λ,
+        hessian_modification_max_iteration = hessian_modification_max_iteration,
+        α = α, δ = δ, ρ = ρ, 
+        line_search_max_iterations = line_search_max_iterations,
+        η = η, inner_loop_max_iterations = inner_loop_max_iterations,
+        window_size = window_size, threshold = 0.0, 
+        max_iterations = 10
+
+        # struct
+        optData = WatchdogFixedMNewtonGD(T;
+        x0 = x0,
+        β = β,
+        λ = λ, 
+        hessian_modification_max_iteration = hessian_modification_max_iteration,
+        α = α,
+        δ = δ,
+        ρ = ρ,
+        line_search_max_iterations = line_search_max_iterations,
+        η = η,
+        inner_loop_max_iterations = inner_loop_max_iterations,
+        window_size = window_size,
+        threshold = threshold,
+        max_iterations = max_iterations)
+
+        # get random problem
+        progData = OptimizationMethods.LogisticRegression(Float64, nvar=dim)
+
+        # run method
+        xk = watchdog_fixed_mnewton_gd(optData, progData)
+
+        optData_km1 = WatchdogFixedMNewtonGD(T;
+        x0 = x0,
+        β = β,
+        λ = λ, 
+        hessian_modification_max_iteration = hessian_modification_max_iteration,
+        α = α,
+        δ = δ,
+        ρ = ρ,
+        line_search_max_iterations = line_search_max_iterations,
+        η = η,
+        inner_loop_max_iterations = inner_loop_max_iterations,
+        window_size = window_size,
+        threshold = threshold,
+        max_iterations = max_iterations - 1)
+
+        xkm1 = watchdog_fixed_mnewton_gd(optData_km1, progData) 
+        τkm1 = optData_km1.reference_value
+
+        # set up for the inner loop
+        precomp, store = OptimizationMethods.initialize(progData)
+        F(θ) = OptimizationMethods.obj(progData, precomp, store, θ)
+        G(θ) = OptimizationMethods.grad!(progData, precomp, store, θ)
+        H(θ) = OptimizationMethods.hess!(progData, precomp, store, θ)
+        optData_km1.F_θk = F(xkm1)
+
+        G(xkm1)
+        optData_km1.∇F_θk = store.grad
+
+        # conduct inner loop
+        H(xkm1)
+        OptimizationMethods.inner_loop!(xkm1, optData_km1.iter_hist[max_iterations], 
+            optData_km1, progData, precomp, store, max_iterations; 
+            max_iterations = optData_km1.inner_loop_max_iterations)        
+
+        if F(xkm1) <= F(optData_km1.iter_hist[max_iterations]) - 
+                optData_km1.ρ * optData_km1.max_distance_squared
+            @test xkm1 ≈ xk
+        else
+            xkm1 = copy(optData_km1.iter_hist[max_iterations])
+            backtrack_success = OptimizationMethods.backtracking!(
+                xkm1,
+                optData_km1.iter_hist[max_iterations],
+                F,
+                optData_km1.∇F_θk,
+                optData_km1.d0k,
+                τkm1,
+                optData.α,
+                optData.δ,
+                optData.ρ;
+                max_iteration = optData.line_search_max_iterations)
+            @test xkm1 ≈ xk
+        end
+
+        # test gradient history of optData
+        G(xkm1)
+        @test optData.grad_val_hist[max_iterations + 1] ≈ norm(store.grad)
+        @test optData.objective_hist[1] ≈ F(xk)
+        @test optData.reference_value ≈ F(xk)
+        @test optData.reference_value_index == 1
+    end
 end
 
 @testset "Test WatchdogFixedMNewtonGD{T} Method Nonmonotone" begin
+
+    # generate random arguments and struct
+    T = Float64
+    dim = rand(50:100)
+    x0 = randn(T, dim)
+    β = rand(T)
+    λ = rand(T)
+    hessian_modification_max_iteration = rand(10:15)
+    α = rand(T)
+    δ = rand(T)
+    ρ = rand(T)
+    line_search_max_iterations = rand(10:100)
+    η = rand(T)
+    inner_loop_max_iterations = rand(10:100)
+    window_size = rand(2:10)
+    threshold = rand(T)
+    max_iterations = rand(1:100)
+
+    # first inner loop fails -- line search succeeds
+    let dim = dim, x0 = x0, β = β, λ = λ,
+        hessian_modification_max_iteration = hessian_modification_max_iteration,
+        α = α, δ = δ, ρ = ρ, 
+        line_search_max_iterations = line_search_max_iterations,
+        η = η, inner_loop_max_iterations = inner_loop_max_iterations,
+        window_size = window_size, threshold = threshold, 
+        max_iterations = max_iterations
+        
+        # struct
+        optData = WatchdogFixedMNewtonGD(T;
+        x0 = x0,
+        β = β,
+        λ = λ, 
+        hessian_modification_max_iteration = hessian_modification_max_iteration,
+        α = 10.0,
+        δ = δ,
+        ρ = ρ,
+        line_search_max_iterations = 100,
+        η = η,
+        inner_loop_max_iterations = 1,
+        window_size = window_size,
+        threshold = threshold,
+        max_iterations = 1)
+
+        # get random problem
+        progData = OptimizationMethods.LogisticRegression(Float64, nvar=dim)
+
+        # run method
+        x = watchdog_fixed_mnewton_gd(optData, progData)
+
+        # that x was formed through a backtrack
+        x1 = copy(x0)
+        F(θ) = OptimizationMethods.obj(progData, θ)
+        g0 = OptimizationMethods.grad(progData, x0)
+        H0 = OptimizationMethods
+        backtrack_success = OptimizationMethods.backtracking!(
+                x1,
+                x0,
+                F,
+                optData.∇F_θk,
+                optData.d0k,
+                F(x0),
+                optData.α,
+                optData.δ,
+                optData.ρ;
+                max_iteration = optData.line_search_max_iterations)
+        
+        @test backtrack_success
+        @test x1 ≈ x
+
+        # check the θk checkpoints
+        @test optData.F_θk == F(x0)
+        @test optData.∇F_θk ≈ g0
+
+        # check histories
+        g1 = OptimizationMethods.grad(progData, x1)
+        @test optData.grad_val_hist[2] ≈ norm(g1)
+        @test optData.iter_hist[2] ≈ x1
+
+        # check objective hist
+        @test optData.objective_hist[2] ≈ F(x1)
+        @test optData.reference_value ≈ F(x0)
+        @test optData.reference_value_index ≈ 1
+
+        # check stop iteration
+        @test optData.stop_iteration == 1
+    end
+
+    # first inner loop fails -- line search fails
+    let dim = dim, x0 = x0, β = β, λ = λ,
+        hessian_modification_max_iteration = hessian_modification_max_iteration,
+        α = α, δ = δ, ρ = ρ, 
+        line_search_max_iterations = line_search_max_iterations,
+        η = η, inner_loop_max_iterations = inner_loop_max_iterations,
+        window_size = window_size, threshold = threshold, 
+        max_iterations = max_iterations
+
+        # struct
+        optData = WatchdogFixedMNewtonGD(T;
+        x0 = x0,
+        β = β,
+        λ = λ, 
+        hessian_modification_max_iteration = hessian_modification_max_iteration,
+        α = 10.0,
+        δ = δ,
+        ρ = ρ,
+        line_search_max_iterations = 0,
+        η = η,
+        inner_loop_max_iterations = 1,
+        window_size = window_size,
+        threshold = threshold,
+        max_iterations = 1)
+
+        # get random problem
+        progData = OptimizationMethods.LogisticRegression(Float64, nvar=dim)
+
+        # run method
+        x = watchdog_fixed_mnewton_gd(optData, progData)
+
+        # check that we return x0
+        @test x ≈ x0
+
+        # check stop iteration
+        @test optData.stop_iteration == 0
+    end
+
+    # first inner loop succeeds
+    let dim = dim, x0 = x0, β = β, λ = λ,
+        hessian_modification_max_iteration = hessian_modification_max_iteration,
+        α = α, δ = δ, ρ = ρ, 
+        line_search_max_iterations = line_search_max_iterations,
+        η = η, inner_loop_max_iterations = inner_loop_max_iterations,
+        window_size = window_size, threshold = threshold, 
+        max_iterations = max_iterations
+
+        # struct
+        optData = WatchdogFixedMNewtonGD(T;
+        x0 = x0,
+        β = β,
+        λ = λ, 
+        hessian_modification_max_iteration = hessian_modification_max_iteration,
+        α = 1e-10,
+        δ = δ,
+        ρ = ρ,
+        line_search_max_iterations = line_search_max_iterations,
+        η = η,
+        inner_loop_max_iterations = inner_loop_max_iterations,
+        window_size = window_size,
+        threshold = threshold,
+        max_iterations = 1)
+
+        # get random problem
+        progData = OptimizationMethods.LogisticRegression(Float64, nvar=dim)
+
+        # run method
+        x1 = watchdog_fixed_mnewton_gd(optData, progData)
+
+        optData_0 = WatchdogFixedMNewtonGD(T;
+        x0 = x0,
+        β = β,
+        λ = λ, 
+        hessian_modification_max_iteration = hessian_modification_max_iteration,
+        α = 1e-10,
+        δ = δ,
+        ρ = ρ,
+        line_search_max_iterations = line_search_max_iterations,
+        η = η,
+        inner_loop_max_iterations = inner_loop_max_iterations,
+        window_size = window_size,
+        threshold = threshold,
+        max_iterations = 0)
+        x_0 = watchdog_fixed_mnewton_gd(optData_0, progData) 
+
+        # set up for the inner loop
+        precomp, store = OptimizationMethods.initialize(progData)
+        F(θ) = OptimizationMethods.obj(progData, precomp, store, θ)
+        G(θ) = OptimizationMethods.grad!(progData, precomp, store, θ)
+        H(θ) = OptimizationMethods.hess!(progData, precomp, store, θ)
+        optData_0.F_θk = F(x_0)
+
+        G(x_0)
+        H(x_0)
+        optData_0.∇F_θk = store.grad
+
+        # conduct inner loop
+        OptimizationMethods.inner_loop!(x_0, x0, optData_0, progData, 
+            precomp, store, 1; 
+            max_iterations = optData_0.inner_loop_max_iterations)
+        
+        
+        @test x1 ≈ x_0
+
+        # test gradient history of optData
+        G(x1)
+        @test optData.grad_val_hist[2] ≈ norm(store.grad)
+        @test optData.objective_hist[2] ≈ F(x1)
+        @test optData.reference_value ≈ F(x0)
+        @test optData.reference_value_index == 1
+
+        @test optData.iter_hist[1] ≈ x0
+        @test optData.iter_hist[2] ≈ x1
+    end
+
+    # test arbitrary inner loop
+    let dim = dim, x0 = x0, β = β, λ = λ,
+        hessian_modification_max_iteration = hessian_modification_max_iteration,
+        α = α, δ = δ, ρ = ρ, 
+        line_search_max_iterations = line_search_max_iterations,
+        η = η, inner_loop_max_iterations = inner_loop_max_iterations,
+        window_size = window_size, threshold = 0.0, 
+        max_iterations = 10
+
+        # struct
+        optData = WatchdogFixedMNewtonGD(T;
+        x0 = x0,
+        β = β,
+        λ = λ, 
+        hessian_modification_max_iteration = hessian_modification_max_iteration,
+        α = α,
+        δ = δ,
+        ρ = ρ,
+        line_search_max_iterations = line_search_max_iterations,
+        η = η,
+        inner_loop_max_iterations = inner_loop_max_iterations,
+        window_size = window_size,
+        threshold = threshold,
+        max_iterations = max_iterations)
+
+        # get random problem
+        progData = OptimizationMethods.LogisticRegression(Float64, nvar=dim)
+
+        # run method
+        xk = watchdog_fixed_mnewton_gd(optData, progData)
+
+        optData_km1 = WatchdogFixedMNewtonGD(T;
+        x0 = x0,
+        β = β,
+        λ = λ, 
+        hessian_modification_max_iteration = hessian_modification_max_iteration,
+        α = α,
+        δ = δ,
+        ρ = ρ,
+        line_search_max_iterations = line_search_max_iterations,
+        η = η,
+        inner_loop_max_iterations = inner_loop_max_iterations,
+        window_size = window_size,
+        threshold = threshold,
+        max_iterations = max_iterations - 1)
+
+        xkm1 = watchdog_fixed_mnewton_gd(optData_km1, progData) 
+        τkm1 = optData_km1.reference_value
+
+        # set up for the inner loop
+        precomp, store = OptimizationMethods.initialize(progData)
+        F(θ) = OptimizationMethods.obj(progData, precomp, store, θ)
+        G(θ) = OptimizationMethods.grad!(progData, precomp, store, θ)
+        H(θ) = OptimizationMethods.hess!(progData, precomp, store, θ)
+        optData_km1.F_θk = F(xkm1)
+
+        G(xkm1)
+        optData_km1.∇F_θk = store.grad
+
+        # conduct inner loop
+        H(xkm1)
+        OptimizationMethods.inner_loop!(xkm1, optData_km1.iter_hist[max_iterations], 
+            optData_km1, progData, precomp, store, max_iterations; 
+            max_iterations = optData_km1.inner_loop_max_iterations)        
+
+        if F(xkm1) <= F(optData_km1.iter_hist[max_iterations]) - 
+                optData_km1.ρ * optData_km1.max_distance_squared
+            @test xkm1 ≈ xk
+        else
+            xkm1 = copy(optData_km1.iter_hist[max_iterations])
+            backtrack_success = OptimizationMethods.backtracking!(
+                xkm1,
+                optData_km1.iter_hist[max_iterations],
+                F,
+                optData_km1.∇F_θk,
+                optData_km1.d0k,
+                τkm1,
+                optData.α,
+                optData.δ,
+                optData.ρ;
+                max_iteration = optData.line_search_max_iterations)
+            @test xkm1 ≈ xk
+        end
+
+        # test gradient history of optData
+        G(xkm1)
+        max_val, max_ind = findmax(optData.objective_hist)
+        @test optData.grad_val_hist[max_iterations + 1] ≈ norm(store.grad)
+        @test optData.objective_hist[optData.reference_value_index] ≈ max_val
+        @test optData.reference_value ≈ max_val
+    end
+    
 end
 
 end
