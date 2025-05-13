@@ -399,9 +399,482 @@ end
 end
 
 @testset "Test WatchdogFixedDampedBFGSGD{T} Method Monotone" begin
+
+    # generate random arguments for constructor
+    T = Float64
+    dim = rand(50:100)
+    x0 = randn(T, dim)
+    c = rand(T)
+    α = rand(T)
+    δ = rand(T)
+    ρ = rand(T)
+    line_search_max_iterations = rand(1:100)
+    η = rand(T)
+    inner_loop_max_iterations = rand(1:100)
+    window_size = 1
+    threshold = rand(T)
+    max_iterations = rand(1:100)
+
+    # first inner loop fails -- line search succeeds
+    let dim = dim, x0 = x0, c = c, α = α, δ = δ, ρ = ρ, 
+        line_search_max_iterations = line_search_max_iterations,
+        η = η, inner_loop_max_iterations = inner_loop_max_iterations,
+        window_size = window_size, threshold = threshold, 
+        max_iterations = max_iterations
+        
+        # struct
+        optData = WatchdogFixedDampedBFGSGD(
+        T;
+        x0 = x0,
+        c = c,
+        α = 10.0,
+        δ = δ,
+        ρ = ρ,
+        line_search_max_iterations = 100,
+        η = η,
+        inner_loop_max_iterations = 1,
+        window_size = window_size,
+        threshold = threshold,
+        max_iterations = 1
+        )
+
+        # get random problem
+        progData = OptimizationMethods.LogisticRegression(Float64, nvar=dim)
+
+        # run method
+        x = watchdog_fixed_damped_bfgs_gd(optData, progData)
+
+        # that x was formed through a backtrack
+        x1 = copy(x0)
+        F(θ) = OptimizationMethods.obj(progData, θ)
+        g0 = OptimizationMethods.grad(progData, x0)
+        B00 = optData.c * norm(g0) * Matrix{Float64}(I, dim, dim)
+        backtrack_success = OptimizationMethods.backtracking!(
+                x1,
+                x0,
+                F,
+                optData.∇F_θk,
+                optData.d0k,
+                F(x0),
+                optData.α,
+                optData.δ,
+                optData.ρ;
+                max_iteration = optData.line_search_max_iterations)
+        
+        @test backtrack_success
+        @test x1 ≈ x
+
+        # check the θk checkpoints
+        @test optData.F_θk == F(x0)
+        @test optData.∇F_θk ≈ g0
+
+        # check histories
+        g1 = OptimizationMethods.grad(progData, x1)
+        @test optData.grad_val_hist[2] ≈ norm(g1)
+        @test optData.iter_hist[2] ≈ x1
+        @test optData.iter_hist[1] ≈ x0
+
+        # check BFGS approximations
+        @test optData.sjk ≈ x1 - x0
+        @test optData.yjk ≈ OptimizationMethods.grad(progData, x1) -
+            OptimizationMethods.grad(progData, x0)
+        @test optData.Bjk ≈ B00 + optData.δBjk
+        
+        δB00 = zeros(dim, dim)
+        OptimizationMethods.update_bfgs!(
+                B00, optData.rjk, δB00,
+                optData.sjk, optData.yjk; damped_update = true)
+        @test δB00 ≈ optData.δBjk
+
+        # check objective hist
+        @test optData.objective_hist[1] ≈ F(x1)
+        @test optData.reference_value ≈ F(x1)
+        @test optData.reference_value_index ≈ 1
+
+        # check stop iteration
+        @test optData.stop_iteration == 1
+    end
+
+    # first inner loop fails -- line search fails
+    let dim = dim, x0 = x0, c = c, α = α, δ = δ, ρ = ρ, 
+        line_search_max_iterations = line_search_max_iterations,
+        η = η, inner_loop_max_iterations = inner_loop_max_iterations,
+        window_size = window_size, threshold = threshold, 
+        max_iterations = max_iterations
+        
+        # struct
+        optData = WatchdogFixedDampedBFGSGD(
+        T;
+        x0 = x0,
+        c = c,
+        α = 10.0,
+        δ = δ,
+        ρ = ρ,
+        line_search_max_iterations = 0,
+        η = η,
+        inner_loop_max_iterations = 1,
+        window_size = window_size,
+        threshold = threshold,
+        max_iterations = 1
+        )
+
+        # get random problem
+        progData = OptimizationMethods.LogisticRegression(Float64, nvar=dim)
+
+        # run method
+        x = watchdog_fixed_damped_bfgs_gd(optData, progData)
+
+        # check that we return x0
+        @test x ≈ x0
+
+        # check stop iteration
+        @test optData.stop_iteration == 0
+
+        g0 = OptimizationMethods.grad(progData, x0)
+        B00 = optData.c * norm(g0) * Matrix{Float64}(I, dim, dim)
+        @test optData.Bjk ≈ B00
+    end
+
+    # test arbitrary inner loop
+    let dim = dim, x0 = x0, c = c, α = α, δ = δ, ρ = ρ, 
+        line_search_max_iterations = line_search_max_iterations,
+        η = η, inner_loop_max_iterations = inner_loop_max_iterations,
+        window_size = window_size, threshold = 0.0, 
+        max_iterations = 10
+
+        # struct
+        optData = WatchdogFixedDampedBFGSGD(
+        T;
+        x0 = x0,
+        c = c,
+        α = α,
+        δ = δ,
+        ρ = ρ,
+        line_search_max_iterations = line_search_max_iterations,
+        η = η,
+        inner_loop_max_iterations = inner_loop_max_iterations,
+        window_size = window_size,
+        threshold = threshold,
+        max_iterations = max_iterations
+        )
+
+        # get random problem
+        progData = OptimizationMethods.LogisticRegression(Float64, nvar=dim)
+
+        # run method
+        xk = watchdog_fixed_damped_bfgs_gd(optData, progData)
+
+        optData_km1 = WatchdogFixedDampedBFGSGD(
+            T;
+            x0 = x0,
+            c = c,
+            α = α,
+            δ = δ,
+            ρ = ρ,
+            line_search_max_iterations = line_search_max_iterations,
+            η = η,
+            inner_loop_max_iterations = inner_loop_max_iterations,
+            window_size = window_size,
+            threshold = threshold,
+            max_iterations = max_iterations - 1
+            )
+
+        xkm1 = watchdog_fixed_damped_bfgs_gd(optData_km1, progData) 
+        τkm1 = optData_km1.reference_value
+        B_θkm1 = copy(optData.Bjk)
+
+        # set up for the inner loop
+        precomp, store = OptimizationMethods.initialize(progData)
+        F(θ) = OptimizationMethods.obj(progData, precomp, store, θ)
+        G(θ) = OptimizationMethods.grad!(progData, precomp, store, θ)
+        optData_km1.F_θk = F(xkm1)
+
+        G(xkm1)
+        optData_km1.∇F_θk = store.grad
+
+        # conduct inner loop
+        OptimizationMethods.inner_loop!(xkm1, optData_km1.iter_hist[max_iterations], 
+            optData_km1, progData, precomp, store, max_iterations; 
+            max_iterations = optData_km1.inner_loop_max_iterations)        
+
+        if F(xkm1) <= F(optData_km1.iter_hist[max_iterations]) - 
+                optData_km1.ρ * optData_km1.max_distance_squared
+            @test xkm1 ≈ xk
+            @test optData_km1.Bjk ≈ optData.Bjk
+        else
+            xkm1 = copy(optData_km1.iter_hist[max_iterations])
+            backtrack_success = OptimizationMethods.backtracking!(
+                xkm1,
+                optData_km1.iter_hist[max_iterations],
+                F,
+                optData_km1.∇F_θk,
+                optData_km1.d0k,
+                τkm1,
+                optData.α,
+                optData.δ,
+                optData.ρ;
+                max_iteration = optData.line_search_max_iterations)
+            @test xkm1 ≈ xk
+            @test optData.sjk ≈ xkm1 - optData_km1.iter_hist[max_iterations]
+            @test optData.yjk ≈ OptimizationMethods.grad(progData, xkm1) - 
+                OptimizationMethods.grad(progData, optData_km1.iter_hist[max_iterations]) 
+
+            update_success = OptimizationMethods.update_bfgs!(
+                    optData_km1.Bjk, optData_km1.rjk, optData_km1.δBjk,
+                    optData.sjk, optData.yjk; damped_update = true)
+
+            @test optData_km1.Bjk ≈ optData.Bjk
+        end
+
+        # test gradient history of optData
+        G(xkm1)
+        @test optData.grad_val_hist[max_iterations + 1] ≈ norm(store.grad)
+        @test optData.iter_hist[max_iterations + 1] == xkm1
+        @test optData.objective_hist[1] ≈ F(xk)
+        @test optData.reference_value ≈ F(xk)
+        @test optData.reference_value_index == 1
+    end
 end
 
 @testset "Test WatchdogFixedDampedBFGSGD{T} Method Nonmonotone" begin
+
+    # generate random arguments for constructor
+    T = Float64
+    dim = rand(50:100)
+    x0 = randn(T, dim)
+    c = rand(T)
+    α = rand(T)
+    δ = rand(T)
+    ρ = rand(T)
+    line_search_max_iterations = rand(1:100)
+    η = rand(T)
+    inner_loop_max_iterations = rand(1:100)
+    window_size = rand(2:10)
+    threshold = rand(T)
+    max_iterations = rand(1:100)
+
+    # first inner loop fails -- line search succeeds
+    let dim = dim, x0 = x0, c = c, α = α, δ = δ, ρ = ρ, 
+        line_search_max_iterations = line_search_max_iterations,
+        η = η, inner_loop_max_iterations = inner_loop_max_iterations,
+        window_size = window_size, threshold = threshold, 
+        max_iterations = max_iterations
+        
+        # struct
+        optData = WatchdogFixedDampedBFGSGD(
+        T;
+        x0 = x0,
+        c = c,
+        α = 10.0,
+        δ = δ,
+        ρ = ρ,
+        line_search_max_iterations = 100,
+        η = η,
+        inner_loop_max_iterations = 1,
+        window_size = window_size,
+        threshold = threshold,
+        max_iterations = 1
+        )
+
+        # get random problem
+        progData = OptimizationMethods.LogisticRegression(Float64, nvar=dim)
+
+        # run method
+        x = watchdog_fixed_damped_bfgs_gd(optData, progData)
+
+        # that x was formed through a backtrack
+        x1 = copy(x0)
+        F(θ) = OptimizationMethods.obj(progData, θ)
+        g0 = OptimizationMethods.grad(progData, x0)
+        B00 = optData.c * norm(g0) * Matrix{Float64}(I, dim, dim)
+        backtrack_success = OptimizationMethods.backtracking!(
+                x1,
+                x0,
+                F,
+                optData.∇F_θk,
+                optData.d0k,
+                F(x0),
+                optData.α,
+                optData.δ,
+                optData.ρ;
+                max_iteration = optData.line_search_max_iterations)
+        
+        @test backtrack_success
+        @test x1 ≈ x
+
+        # check the θk checkpoints
+        @test optData.F_θk == F(x0)
+        @test optData.∇F_θk ≈ g0
+
+        # check histories
+        g1 = OptimizationMethods.grad(progData, x1)
+        @test optData.grad_val_hist[2] ≈ norm(g1)
+        @test optData.iter_hist[2] ≈ x1
+        @test optData.iter_hist[1] ≈ x0
+
+        # check BFGS approximations
+        @test optData.sjk ≈ x1 - x0
+        @test optData.yjk ≈ OptimizationMethods.grad(progData, x1) -
+            OptimizationMethods.grad(progData, x0)
+        @test optData.Bjk ≈ B00 + optData.δBjk
+        
+        δB00 = zeros(dim, dim)
+        OptimizationMethods.update_bfgs!(
+                B00, optData.rjk, δB00,
+                optData.sjk, optData.yjk; damped_update = true)
+        @test δB00 ≈ optData.δBjk
+
+        # check objective hist
+        @test optData.objective_hist[2] ≈ F(x1)
+        @test optData.reference_value ≈ F(x0)
+        @test optData.reference_value_index ≈ 1
+
+        # check stop iteration
+        @test optData.stop_iteration == 1
+    end
+
+    # first inner loop fails -- line search fails
+    let dim = dim, x0 = x0, c = c, α = α, δ = δ, ρ = ρ, 
+        line_search_max_iterations = line_search_max_iterations,
+        η = η, inner_loop_max_iterations = inner_loop_max_iterations,
+        window_size = window_size, threshold = threshold, 
+        max_iterations = max_iterations
+        
+        # struct
+        optData = WatchdogFixedDampedBFGSGD(
+        T;
+        x0 = x0,
+        c = c,
+        α = 10.0,
+        δ = δ,
+        ρ = ρ,
+        line_search_max_iterations = 0,
+        η = η,
+        inner_loop_max_iterations = 1,
+        window_size = window_size,
+        threshold = threshold,
+        max_iterations = 1
+        )
+
+        # get random problem
+        progData = OptimizationMethods.LogisticRegression(Float64, nvar=dim)
+
+        # run method
+        x = watchdog_fixed_damped_bfgs_gd(optData, progData)
+
+        # check that we return x0
+        @test x ≈ x0
+
+        # check stop iteration
+        @test optData.stop_iteration == 0
+
+        g0 = OptimizationMethods.grad(progData, x0)
+        B00 = optData.c * norm(g0) * Matrix{Float64}(I, dim, dim)
+        @test optData.Bjk ≈ B00
+
+        @test optData.objective_hist[1] == OptimizationMethods.obj(progData, x0)
+    end
+
+    # test arbitrary inner loop
+    let dim = dim, x0 = x0, c = c, α = α, δ = δ, ρ = ρ, 
+        line_search_max_iterations = line_search_max_iterations,
+        η = η, inner_loop_max_iterations = inner_loop_max_iterations,
+        window_size = window_size, threshold = 0.0, 
+        max_iterations = 10
+
+        # struct
+        optData = WatchdogFixedDampedBFGSGD(
+        T;
+        x0 = x0,
+        c = c,
+        α = α,
+        δ = δ,
+        ρ = ρ,
+        line_search_max_iterations = line_search_max_iterations,
+        η = η,
+        inner_loop_max_iterations = inner_loop_max_iterations,
+        window_size = window_size,
+        threshold = threshold,
+        max_iterations = max_iterations
+        )
+
+        # get random problem
+        progData = OptimizationMethods.LogisticRegression(Float64, nvar=dim)
+
+        # run method
+        xk = watchdog_fixed_damped_bfgs_gd(optData, progData)
+
+        optData_km1 = WatchdogFixedDampedBFGSGD(
+            T;
+            x0 = x0,
+            c = c,
+            α = α,
+            δ = δ,
+            ρ = ρ,
+            line_search_max_iterations = line_search_max_iterations,
+            η = η,
+            inner_loop_max_iterations = inner_loop_max_iterations,
+            window_size = window_size,
+            threshold = threshold,
+            max_iterations = max_iterations - 1
+            )
+
+        xkm1 = watchdog_fixed_damped_bfgs_gd(optData_km1, progData) 
+        τkm1 = optData_km1.reference_value
+        B_θkm1 = copy(optData.Bjk)
+
+        # set up for the inner loop
+        precomp, store = OptimizationMethods.initialize(progData)
+        F(θ) = OptimizationMethods.obj(progData, precomp, store, θ)
+        G(θ) = OptimizationMethods.grad!(progData, precomp, store, θ)
+        optData_km1.F_θk = F(xkm1)
+
+        G(xkm1)
+        optData_km1.∇F_θk = store.grad
+
+        # conduct inner loop
+        OptimizationMethods.inner_loop!(xkm1, optData_km1.iter_hist[max_iterations], 
+            optData_km1, progData, precomp, store, max_iterations; 
+            max_iterations = optData_km1.inner_loop_max_iterations)        
+
+        if F(xkm1) <= F(optData_km1.iter_hist[max_iterations]) - 
+                optData_km1.ρ * optData_km1.max_distance_squared
+            @test xkm1 ≈ xk
+            @test optData_km1.Bjk ≈ optData.Bjk
+        else
+            xkm1 = copy(optData_km1.iter_hist[max_iterations])
+            backtrack_success = OptimizationMethods.backtracking!(
+                xkm1,
+                optData_km1.iter_hist[max_iterations],
+                F,
+                optData_km1.∇F_θk,
+                optData_km1.d0k,
+                τkm1,
+                optData.α,
+                optData.δ,
+                optData.ρ;
+                max_iteration = optData.line_search_max_iterations)
+            @test xkm1 ≈ xk
+            @test optData.sjk ≈ xkm1 - optData_km1.iter_hist[max_iterations]
+            @test optData.yjk ≈ OptimizationMethods.grad(progData, xkm1) - 
+                OptimizationMethods.grad(progData, optData_km1.iter_hist[max_iterations]) 
+
+            update_success = OptimizationMethods.update_bfgs!(
+                    optData_km1.Bjk, optData_km1.rjk, optData_km1.δBjk,
+                    optData.sjk, optData.yjk; damped_update = true)
+
+            @test optData_km1.Bjk ≈ optData.Bjk
+        end
+
+        # test gradient history of optData
+        G(xkm1)
+        max_val, max_ind = findmax(optData.objective_hist)
+        @test optData.grad_val_hist[max_iterations + 1] ≈ norm(store.grad)
+        @test optData.objective_hist[optData.reference_value_index] ≈ max_val
+        @test optData.reference_value ≈ max_val
+        @test optData.iter_hist[max_iterations + 1] == xkm1
+    end
+
 end
 
 end

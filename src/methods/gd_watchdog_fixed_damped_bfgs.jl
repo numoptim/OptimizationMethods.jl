@@ -405,7 +405,7 @@ function watchdog_fixed_damped_bfgs_gd(
     # initial iteration
     iter = 0
     x = copy(optData.iter_hist[1])
-    OptimizationMethods.grad!(progData, precomp, store, s)
+    OptimizationMethods.grad!(progData, precomp, store, x)
     optData.grad_val_hist[1] = norm(store.grad) 
 
     # Initialize hessian approximation
