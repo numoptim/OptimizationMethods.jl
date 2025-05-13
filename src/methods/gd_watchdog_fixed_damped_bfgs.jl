@@ -292,7 +292,7 @@ function inner_loop!(
         end
 
         # take step
-        ψjk .-= optData.Bjk \ store.grad
+        ψjk .-= optData.α * optData.djk
 
         dist = norm(ψjk - θk)
         optData.max_distance_squared = max(dist^2, optData.max_distance_squared)
@@ -310,7 +310,7 @@ function inner_loop!(
 
         # check other stopping condition
         if optData.norm_∇F_ψ <= optData.η * (1 + abs(optData.F_θk))
-            if OptimizationMethods.obj!(progData, precomp, store, ψjk) <= optData.reference_value
+            if OptimizationMethods.obj(progData, precomp, store, ψjk) <= optData.reference_value
                 return j
             end
         end

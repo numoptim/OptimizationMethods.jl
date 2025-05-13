@@ -223,6 +223,179 @@ using Test, OptimizationMethods, LinearAlgebra, CircularArrays
 end
 
 @testset "Test WatchdogFixedDampedBFGSGD{T} Inner Loop" begin
+
+    # generate random arguments for constructor
+    T = Float64
+    dim = rand(50:100)
+    x0 = randn(T, dim)
+    c = rand(T)
+    α = rand(T)
+    δ = rand(T)
+    ρ = rand(T)
+    line_search_max_iterations = rand(1:100)
+    η = rand(T)
+    inner_loop_max_iterations = rand(1:100)
+    window_size = rand(1:100)
+    threshold = rand(T)
+    max_iterations = rand(1:100)
+
+    # construct
+    optData = WatchdogFixedDampedBFGSGD(
+        T;
+        x0 = x0,
+        c = c,
+        α = α,
+        δ = δ,
+        ρ = ρ,
+        line_search_max_iterations = line_search_max_iterations,
+        η = η,
+        inner_loop_max_iterations = inner_loop_max_iterations,
+        window_size = window_size,
+        threshold = threshold,
+        max_iterations = max_iterations
+    )
+
+    # problem 
+    progData = OptimizationMethods.LogisticRegression(Float64, nvar=dim)
+    precomp, store = OptimizationMethods.initialize(progData)
+
+    # test first event: max iterations 
+    let optData = optData, progData = progData, precomp = precomp, 
+        store = store, ψjk = copy(x0)
+        
+        k = rand(1:optData.max_iterations)
+        j = OptimizationMethods.inner_loop!(ψjk, x0, optData, progData, precomp,
+            store, k; max_iterations = 0)
+
+        @test ψjk == x0
+        @test j == 0
+        @test optData.max_distance_squared == 0
+    end
+
+    # test second event: gradient and objective -- hessian works
+    let optData = optData, progData = progData, precomp = precomp,
+        store = store, ψjk = copy(x0)
+
+        k = rand(1:optData.max_iterations)
+
+        # reset values for the methd
+        optData.F_θk = OptimizationMethods.obj(progData, x0)
+
+        optData.reference_value = OptimizationMethods.obj(progData, x0)
+        OptimizationMethods.grad!(progData, precomp, store, x0)
+        
+        # start approximation
+        fill!(optData.Bjk, 0)
+        OptimizationMethods.add_identity(optData.Bjk,
+            optData.c * norm(store.grad))
+        Bjk = copy(optData.Bjk)
+
+        # set values to trigger the second event
+        optData.η = 1e16                        
+        optData.α = 1e-10
+
+        # run inner loop 
+        j = OptimizationMethods.inner_loop!(ψjk, x0, optData, progData, precomp,
+            store, k; max_iterations = 100)
+
+        # test that the inner loop terminated after one iteration
+        @test j == 1
+
+        # test values
+        g0 = OptimizationMethods.grad(progData, x0) 
+        @test ψjk == x0 - optData.α * optData.d0k
+        @test ψjk == x0 - optData.α * optData.djk
+        @test optData.max_distance_squared == norm(ψjk - x0)^2
+        @test optData.norm_∇F_ψ ≈
+            norm(OptimizationMethods.grad(progData, ψjk))
+        @test optData.d0k ≈ Bjk \ g0
+        @test optData.sjk ≈ ψjk - x0
+        @test optData.yjk ≈ OptimizationMethods.grad(progData, ψjk) -
+            OptimizationMethods.grad(progData, x0)
+    end
+
+    # test random iteration
+    let optData = optData, progData = progData, precomp = precomp,
+        store = store, ψjk = copy(x0)
+
+        k = rand(1:optData.max_iterations)
+
+        # reset values for the methd
+        optData.F_θk = OptimizationMethods.obj(progData, x0)
+        optData.reference_value = OptimizationMethods.obj(progData, x0)
+        OptimizationMethods.grad!(progData, precomp, store, x0)       
+        optData.α = optData.α
+        optData.grad_val_hist[k] = norm(store.grad)
+        max_iterations = rand(2:100)
+
+        # Initial approximation
+        fill!(optData.Bjk, 0)
+        OptimizationMethods.add_identity(optData.Bjk,
+            optData.c * norm(store.grad))
+        B00 = copy(optData.Bjk)
+        g0 = copy(store.grad)
+
+
+        # run inner loop to get exit iterations
+        j = OptimizationMethods.inner_loop!(ψjk, x0, optData, progData, precomp,
+            store, k; max_iterations = max_iterations)
+
+        # reset
+        optData.F_θk = OptimizationMethods.obj(progData, x0)
+        optData.reference_value = OptimizationMethods.obj(progData, x0)
+        OptimizationMethods.grad!(progData, precomp, store, x0)       
+        OptimizationMethods.hess!(progData, precomp, store, x0)
+        optData.α = optData.α
+        k = rand(1:optData.max_iterations)
+        optData.grad_val_hist[k] = norm(store.grad)
+
+        # Initial approximation
+        fill!(optData.Bjk, 0)
+        OptimizationMethods.add_identity(optData.Bjk,
+            optData.c * norm(store.grad))
+
+        ψjk = copy(x0)
+
+        OptimizationMethods.inner_loop!(ψjk, x0, optData, progData, precomp,
+            store, k; max_iterations = j-1)
+
+        ψ_jm1_k = copy(ψjk)
+        maxdist = optData.max_distance_squared
+        g_jm1_k = copy(store.grad)
+        B_jm1_k = copy(optData.Bjk)
+        step = optData.α * (B_jm1_k \ g_jm1_k)
+
+        # reset
+        optData.F_θk = OptimizationMethods.obj(progData, x0)
+        optData.reference_value = OptimizationMethods.obj(progData, x0)
+        OptimizationMethods.grad!(progData, precomp, store, x0)       
+        OptimizationMethods.hess!(progData, precomp, store, x0)
+        optData.α = optData.α
+        k = rand(1:optData.max_iterations)
+        optData.grad_val_hist[k] = norm(store.grad)
+
+        # Initial approximation
+        fill!(optData.Bjk, 0)
+        OptimizationMethods.add_identity(optData.Bjk,
+            optData.c * norm(store.grad))
+
+        ψjk = copy(x0)
+
+        j = OptimizationMethods.inner_loop!(ψjk, x0, optData, progData, precomp,
+            store, k; max_iterations = j)
+
+        @test ψjk ≈ ψ_jm1_k - step
+        @test optData.max_distance_squared == max(norm(ψjk - x0)^2, maxdist)
+        @test optData.norm_∇F_ψ ≈
+            norm(OptimizationMethods.grad(progData, ψjk))
+        @test store.grad ≈ OptimizationMethods.grad(progData, ψjk)
+
+        @test optData.djk ≈ (B_jm1_k \ g_jm1_k)
+        @test optData.d0k ≈ B00 \ g0
+        @test optData.sjk ≈ ψjk - ψ_jm1_k
+        @test optData.yjk ≈ OptimizationMethods.grad(progData, ψjk) -
+            OptimizationMethods.grad(progData, ψ_jm1_k) 
+    end
 end
 
 @testset "Test WatchdogFixedDampedBFGSGD{T} Method Monotone" begin
