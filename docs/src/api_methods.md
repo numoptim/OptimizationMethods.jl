@@ -132,6 +132,13 @@ fixed_damped_bfgs_nls_maxval_gd
 FixedDampedBFGSNLSMaxValGD
 ```
 
+# Watchdog Damped BFGS Quasi-Newton's Method
+```@docs
+watchdog_fixed_damped_bfgs_gd
+
+WatchdogFixedDampedBFGSGD
+```
+
 # Line search Helper Functions
 
 ## Backtracking

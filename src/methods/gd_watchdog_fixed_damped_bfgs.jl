@@ -219,7 +219,7 @@ at least one of the conditions are satisfied:
 
 1. ``j_k == `` `optData.inner_loop_max_iterations`
 2. ``||\\dot F(\\psi_{j_k}^k)||_2 \\leq \\eta (1 + |F(\\theta_k)|)`` and
-    ``|F(\\psi_{j_k}^k| \\leq `` `optData.reference_value`.
+    ``|F(\\psi_{j_k}^k)| \\leq `` `optData.reference_value`.
 
 The step direction ``d_i^k`` is the damped BFGS step. In particular, let
 ``B_i^k`` be the damped BFGS approximation to the Hessian using
