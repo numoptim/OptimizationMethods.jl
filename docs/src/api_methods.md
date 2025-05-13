@@ -69,6 +69,15 @@ OptimizationMethods.inverse_log2k_step_size
 OptimizationMethods.stepdown_100_step_size
 ```
 
+# Watchdog Technique with Nonmonotone Line Search
+
+## Second Order Helpers
+```@docs
+watchdog_fixed_damped_bfgs_gd
+
+WatchdogFixedDampedBFGSGD
+```
+
 # Non-sequential Armijo Line Search with Event Triggered Objective Evaluations
 
 ## First Order Methods
