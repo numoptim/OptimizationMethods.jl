@@ -21,8 +21,8 @@ Mutable structure that parameterizes gradient descent with fixed step sizes
 - `norm_∇F_ψ::T`, norm of the gradient of the current inner loop iterate.
 - `β::T`, argument for the function used to modify the hessian.
 - `λ::T`, argument for the function used to modify the hessian.
-- `hessian_modification_max_iteration::Int64`, max number of attempts
-    at modifying the hessian per-step.
+- `hessian_modification_max_iteration::Int64`, max iteration for the hessian
+    modification routine.
 - `d0k::Vector{T}`, buffer array for the first step of the inner loop.
     Saved in case the inner loop fails and backtracking using this step
     is required.
@@ -72,8 +72,8 @@ Mutable structure that parameterizes gradient descent with fixed step sizes
     `iter_hist[1]`.
 - `β::T`, argument for the function used to modify the hessian.
 - `λ::T`, argument for the function used to modify the hessian.
-- `hessian_modification_max_iteration::Int64`, max number of attempts
-    at modifying the hessian per-step.
+- `hessian_modification_max_iteration::Int64`, max iteration for the hessian
+    modification routine.
 - `α::T`, fixed step size used in the inner loop.
 - `δ::T`, step size reduction parameter used in the line search routine. 
 - `ρ::T`, parameter used in backtracking and the watchdog condition. Larger
@@ -186,7 +186,7 @@ end
 Conduct the inner loop iteration, modifying `ψjk`, `optData`, and `store` in
     place. `ψjk` gets updated to be the terminal iterate of the inner loop.
     This inner loop function uses fixed step sizes with modified Newton
-    directions.
+    directions (see [OptimizationMethods.add_identity_until_pd!](@ref)).
 
 # Method
 
@@ -209,13 +209,14 @@ The step direction ``d_i^k`` is one of the following. Let ``\\ddot F(\\psi_i^k)`
 be the hessian matrix of ``F`` at ``\\psi_i^k`` for ``i + 1 \\in \\mathbb{N}``
 and ``k + 1 \\in \\mathbb{N}``. Then, if 
 [OptimizationMethods.add_identity_until_pd!](@ref) successful modifies
-``\\ddot F(\\psi_i^k)``, returning ``H_i^k``, then
+``\\ddot F(\\psi_i^k)`` to be positive definite, returning ``H_i^k``, then
 
 ```math
     d_i^k = (H_i^k)^{-1} \\dot F(\\psi_i^k).
 ```
 
-Otherwise, if this routine is not successful ``d_i^k = \\dot F(\\psi_i^k)``.
+When this routine is not successful, the method defaults to
+``d_i^k = \\dot F(\\psi_i^k)``.
 
 # Arguments
 
@@ -326,7 +327,7 @@ Let ``\\theta_{k}`` for ``k + 1 \\in\\mathbb{N}`` be the ``k^{th}`` iterate
 of the optimization algorithm. Let ``\\alpha =`` `optData.α`, 
 ``\\rho =`` `optData.ρ`, and ``\\delta=`` `optData.δ`.
 
-Let ``\\psi_0^k = \\theta_k``, and recursively define
+Let ``\\psi_0^k = \\theta_k``, and recursively define for ``j \\in \\mathbb{N}``
 ```math
     \\psi_{j}^k = \\psi_0^k - \\sum_{i = 0}^{j-1} \\alpha_i^k d_i^k.
 ```
@@ -342,7 +343,7 @@ at least one of the conditions are satisfied:
     ``|F(\\psi_{j_k}^k| \\leq `` `optData.reference_value`.
 
 Let 
-``\\tau_{\\mathrm{obj}}^k = \\max_{0 \\leq i \\leq max(0, M - 1)} F(\\theta_{k - i})``.
+``\\tau_{\\mathrm{obj}}^k = \\max_{\\max{k - M + 1, 0} \\leq i \\leq k} F(\\theta_{i})``.
 
 If the watchdog condition
 
@@ -359,7 +360,7 @@ then ``\\theta_{k+1} = \\psi_{j_k}^k``; otherwise, we find a
     \\tau_{\\mathrm{obj}}^k - \\rho\\delta^t\\alpha||\\dot F(\\theta_k)||_2^2,
 ```
 
-and set ``\\theta_{k} = \\theta_{k} - \\delta^t \\alpha \\dot F(\\theta_k)``.
+and set ``\\theta_{k+1} = \\theta_{k} - \\delta^t \\alpha \\dot F(\\theta_k)``.
 That is, the algorithm tries to find the next iterate through a backtracking
 routine. 
 
