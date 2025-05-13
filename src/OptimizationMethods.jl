@@ -93,6 +93,7 @@ export NonsequentialArmijoAdaptiveGD, nonsequential_armijo_adaptive_gd
 export NonsequentialArmijoFixedGD, nonsequential_armijo_fixed_gd
 export FixedDampedBFGSNLSMaxValGD, fixed_damped_bfgs_nls_maxval_gd
 export NonsequentialArmijoFixedDampedBFGSGD, nonsequential_armijo_fixed_damped_bfgs
+export WatchdogFixedDampedBFGSGD, watchdog_fixed_damped_bfgs_gd
 
 ## Helper functions for optimization methods
 include("methods/stepsize_helpers/diminishing_stepsizes.jl")
@@ -117,5 +118,6 @@ include("methods/gd_non_sequential_armijo_adaptive.jl")
 include("methods/gd_non_sequential_armijo_fixed.jl")
 include("methods/gd_non_sequential_armijo_fixed_damped_bfgs.jl")
 include("methods/gd_fixed_nls_max_val_damped_bfgs.jl")
+include("methods/gd_watchdog_fixed_damped_bfgs.jl")
 
 end

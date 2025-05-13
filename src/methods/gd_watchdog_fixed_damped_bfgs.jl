@@ -66,7 +66,7 @@ Mutable structure that parameterizes gradient descent with fixed
 
 # Constructors
 
-    WatchdogFixedDampedBFGSGD(::Type{T}; c::T, α::T, δ::T, ρ::T,
+    WatchdogFixedDampedBFGSGD(::Type{T}; x0::Vector{T}, c::T, α::T, δ::T, ρ::T,
         line_search_max_iterations::Int64, η::T, 
         inner_loop_max_iterations::Int64, window_size::Int64,
         threshold::T, max_iterations::Int64) where {T}
@@ -132,6 +132,7 @@ mutable struct WatchdogFixedDampedBFGSGD{T} <: AbstractOptimizerData{T}
 end
 function WatchdogFixedDampedBFGSGD(
     ::Type{T};
+    x0::Vector{T},
     c::T,
     α::T,
     δ::T,
@@ -266,7 +267,7 @@ function inner_loop!(
     store::P3 where P3 <: AbstractProblemAllocate{T}, 
     k::Int64; 
     max_iterations = 100
-) where {T}
+) where {T, S}
 
     # initialization for inner loop
     j::Int64 = 0
@@ -286,6 +287,9 @@ function inner_loop!(
 
         # compute step
         optData.djk .= optData.Bjk \ store.grad
+        if j == 1
+            optData.d0k .= optData.djk
+        end
 
         # take step
         ψjk .-= optData.Bjk \ store.grad
