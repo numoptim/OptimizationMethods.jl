@@ -140,21 +140,23 @@ using Test, OptimizationMethods, CircularArrays, LinearAlgebra, Random
         end
     end
 
-    # test struct initializations
-    let
+    # test struct initializations -- long_stepsize = true
+    x0 = randn(10)
+    long_stepsize = true
+    α_lower = abs(rand())
+    α_default = 1.0
+    init_stepsize = (α_lower + 1/α_lower)/2
+    δ0 = abs(rand())
+    δ_upper = δ0 + 1
+    ρ = rand()
+    M = rand(1:100)
+    threshold = abs(rand())
+    max_iterations = rand(1:100) 
 
-        # random field values -- long_stepsize = true
-        x0 = randn(10)
-        long_stepsize = true
-        α_lower = abs(rand())
-        α_default = 1.0
-        init_stepsize = (α_lower + 1/α_lower)/2
-        δ0 = abs(rand())
-        δ_upper = δ0 + 1
-        ρ = rand()
-        M = rand(1:100)
-        threshold = abs(rand())
-        max_iterations = rand(1:100) 
+    let x0 = x0, long_stepsize = long_stepsize, α_lower = α_lower, 
+        α_default = α_default, init_stepsize = init_stepsize, 
+        δ0 = δ0, δ_upper = δ_upper, ρ = ρ, M = M, threshold = threshold,
+        max_iterations = max_iterations
 
         optData = NonsequentialArmijoSafeBBGD(Float64; 
             x0 = x0,
@@ -182,19 +184,25 @@ using Test, OptimizationMethods, CircularArrays, LinearAlgebra, Random
         @test length(optData.objective_hist) == M
         @test optData.threshold == threshold
         @test optData.max_iterations == max_iterations
-        
-        # random field values -- long_stepsize = false
-        x0 = randn(10)
-        long_stepsize = false
-        α_lower = abs(rand())
-        α_default = 1.0
-        init_stepsize = (α_lower + 1/α_lower)/2
-        δ0 = abs(rand())
-        δ_upper = δ0 + 1
-        ρ = rand()
-        M = rand(1:100)
-        threshold = abs(rand())
-        max_iterations = rand(1:100) 
+    end
+    
+    # random field values -- long_stepsize = false
+    x0 = randn(10)
+    long_stepsize = false
+    α_lower = abs(rand())
+    α_default = 1.0
+    init_stepsize = (α_lower + 1/α_lower)/2
+    δ0 = abs(rand())
+    δ_upper = δ0 + 1
+    ρ = rand()
+    M = rand(1:100)
+    threshold = abs(rand())
+    max_iterations = rand(1:100)
+    
+    let x0 = x0, long_stepsize = long_stepsize, α_lower = α_lower, 
+        α_default = α_default, init_stepsize = init_stepsize, 
+        δ0 = δ0, δ_upper = δ_upper, ρ = ρ, M = M, threshold = threshold,
+        max_iterations = max_iterations
 
         optData = NonsequentialArmijoSafeBBGD(Float64; 
             x0 = x0,
@@ -223,32 +231,34 @@ using Test, OptimizationMethods, CircularArrays, LinearAlgebra, Random
         @test optData.threshold == threshold
         @test optData.max_iterations == max_iterations
         @test optData.second_acceptance_occurred == false
-
-    end 
+    end
 
     # test struct error
-    let
+    x0 = randn(10)
+    long_stepsize = true
+    α_lower = abs(rand())
+    α_default = 1.0
+    init_stepsize = (α_lower + 1/α_lower)/2
+    δ0 = abs(rand())
+    δ_upper = δ0 + 1
+    ρ = rand()
+    M = rand(1:100)
+    threshold = abs(rand())
+    max_iterations = rand(1:100) 
+
+    let x0 = x0, long_stepsize = long_stepsize, α_lower = α_lower, 
+        α_default = α_default, init_stepsize = init_stepsize, 
+        δ0 = δ0, δ_upper = δ_upper, ρ = ρ, M = M, threshold = threshold,
+        max_iterations = max_iterations
 
         # random field values -- error: δ0 < 0
-        x0 = randn(10)
-        long_stepsize = true
-        α_lower = abs(rand())
-        α_default = 1.0
-        init_stepsize = (α_lower + 1/α_lower)/2
-        δ0 = -abs(rand())
-        δ_upper = δ0 + 1
-        ρ = rand()
-        M = rand(1:100)
-        threshold = abs(rand())
-        max_iterations = rand(1:100) 
-
         @test_throws AssertionError NonsequentialArmijoSafeBBGD(Float64; 
             x0 = x0,
             init_stepsize = init_stepsize, 
             long_stepsize = long_stepsize, 
             α_lower = α_lower,
             α_default = α_default,
-            δ0 = δ0,
+            δ0 = -δ0,
             δ_upper = δ_upper,
             ρ = ρ, 
             M = M,
@@ -256,23 +266,25 @@ using Test, OptimizationMethods, CircularArrays, LinearAlgebra, Random
             max_iterations = max_iterations)
         
         # random field values -- error δ_upper > δ0
-        x0 = randn(10)
-        long_stepsize = false
-        α_lower = abs(rand())
-        α_default = α_lower + 1
-        init_stepsize = ((1/α_lower) + α_lower)/2
-        δ0 = abs(rand())
-        δ_upper = δ0 - 1                        # δ_upper < δ0
-        ρ = rand()
-        M = rand(1:100)
-        threshold = abs(rand())
-        max_iterations = rand(1:100)
-
         @test_throws AssertionError NonsequentialArmijoSafeBBGD(Float64; 
             x0 = x0,
             init_stepsize = init_stepsize, 
             long_stepsize = long_stepsize, 
             α_lower = α_lower,
+            α_default = α_default,
+            δ0 = δ0 - 1,
+            δ_upper = δ_upper,
+            ρ = ρ, 
+            M = M,
+            threshold = threshold,
+            max_iterations = max_iterations)
+
+        # random field values -- error: α_lower <= 0
+        @test_throws AssertionError NonsequentialArmijoSafeBBGD(Float64; 
+            x0 = x0,
+            init_stepsize = init_stepsize, 
+            long_stepsize = long_stepsize, 
+            α_lower = 0.0,
             α_default = α_default,
             δ0 = δ0,
             δ_upper = δ_upper,
@@ -282,49 +294,11 @@ using Test, OptimizationMethods, CircularArrays, LinearAlgebra, Random
             max_iterations = max_iterations)
 
         # random field values -- error: α_lower <= 0
-        x0 = randn(10)
-        long_stepsize = false
-        α_lower = 0.0
-        α_default = α_lower + 1
-        init_stepsize = (α_lower + 1/α_lower)/2
-        δ0 = abs(rand())
-        δ_upper = δ0 + 1
-        ρ = rand()
-        M = rand(1:100)
-        threshold = abs(rand())
-        max_iterations = rand(1:100)
-
         @test_throws AssertionError NonsequentialArmijoSafeBBGD(Float64; 
             x0 = x0,
             init_stepsize = init_stepsize, 
             long_stepsize = long_stepsize, 
-            α_lower = α_lower,
-            α_default = α_default,
-            δ0 = δ0,
-            δ_upper = δ_upper,
-            ρ = ρ, 
-            M = M,
-            threshold = threshold,
-            max_iterations = max_iterations)
-
-        # random field values -- error: α_lower <= 0
-        x0 = randn(10)
-        long_stepsize = false
-        α_lower = -1.0
-        α_default = α_lower + 1
-        init_stepsize = (α_lower + 1/α_lower)/2
-        δ0 = abs(rand())
-        δ_upper = δ0 + 1
-        ρ = rand()
-        M = rand(1:100)
-        threshold = abs(rand())
-        max_iterations = rand(1:100)
-
-        @test_throws AssertionError NonsequentialArmijoSafeBBGD(Float64; 
-            x0 = x0,
-            init_stepsize = init_stepsize, 
-            long_stepsize = long_stepsize, 
-            α_lower = α_lower,
+            α_lower = -1.0,
             α_default = α_default,
             δ0 = δ0,
             δ_upper = δ_upper,
@@ -334,24 +308,12 @@ using Test, OptimizationMethods, CircularArrays, LinearAlgebra, Random
             max_iterations = max_iterations)
 
         # random field values -- error: α_default <= 0
-        x0 = randn(10)
-        long_stepsize = false
-        α_lower = abs(rand())
-        α_default = 0.0
-        init_stepsize = (α_lower + 1/α_lower)/2
-        δ0 = abs(rand())
-        δ_upper = δ0 + 1
-        ρ = rand()
-        M = rand(1:100)
-        threshold = abs(rand())
-        max_iterations = rand(1:100)
-
         @test_throws AssertionError NonsequentialArmijoSafeBBGD(Float64; 
             x0 = x0,
             init_stepsize = init_stepsize, 
             long_stepsize = long_stepsize, 
             α_lower = α_lower,
-            α_default = α_default,
+            α_default = 0.0,
             δ0 = δ0,
             δ_upper = δ_upper,
             ρ = ρ, 
@@ -360,24 +322,12 @@ using Test, OptimizationMethods, CircularArrays, LinearAlgebra, Random
             max_iterations = max_iterations)
         
         # random field values -- error: α_default <= 0
-        x0 = randn(10)
-        long_stepsize = false
-        α_lower = abs(rand())
-        α_default = -1.0
-        init_stepsize = (α_lower + 1/α_lower)/2
-        δ0 = abs(rand())
-        δ_upper = δ0 + 1
-        ρ = rand()
-        M = rand(1:100)
-        threshold = abs(rand())
-        max_iterations = rand(1:100)
-
         @test_throws AssertionError NonsequentialArmijoSafeBBGD(Float64; 
             x0 = x0,
             init_stepsize = init_stepsize, 
             long_stepsize = long_stepsize, 
             α_lower = α_lower,
-            α_default = α_default,
+            α_default = -1.0,
             δ0 = δ0,
             δ_upper = δ_upper,
             ρ = ρ, 
@@ -386,21 +336,9 @@ using Test, OptimizationMethods, CircularArrays, LinearAlgebra, Random
             max_iterations = max_iterations)
 
         # random field values -- error: init_stepsize outside interval
-        x0 = randn(10)
-        long_stepsize = false
-        α_lower = abs(rand())
-        α_default = α_lower + 1
-        init_stepsize = -1.0
-        δ0 = abs(rand())
-        δ_upper = δ0 + 1
-        ρ = rand()
-        M = rand(1:100)
-        threshold = abs(rand())
-        max_iterations = rand(1:100)
-
         @test_throws AssertionError NonsequentialArmijoSafeBBGD(Float64; 
             x0 = x0,
-            init_stepsize = init_stepsize, 
+            init_stepsize = -1.0, 
             long_stepsize = long_stepsize, 
             α_lower = α_lower,
             α_default = α_default,
