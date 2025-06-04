@@ -61,6 +61,22 @@ OptimizationMethods.inverse_log2k_step_size
 OptimizationMethods.stepdown_100_step_size
 ```
 
+# Gradient Descent with Backtracking
+```@docs
+backtracking_gd
+
+BacktrackingGD
+```
+
+# Gradient Descent with Non-monotone Line Search
+
+## Fixed Step
+```@docs
+fixed_step_nls_maxval_gd
+
+FixedStepNonmonLSMaxValG
+```
+
 # Non-sequential Armijo Line Search with Event Triggered Objective Evaluations
 
 ## First Order Methods
@@ -88,6 +104,11 @@ OptimizationMethods.update_algorithm_parameters!
 ```
 
 # Line search Helper Functions
+
+## Backtracking
+```@docs
+OptimizationMethods.backtracking!
+```
 
 ## Non-sequential Armijo Line Search
 ```@docs
