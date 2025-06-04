@@ -90,6 +90,13 @@ nonsequential_armijo_fixed_gd
 NonsequentialArmijoFixedGD
 ```
 
+## Second Order Methods
+```@docs
+nonsequential_armijo_mnewton_fixed_gd
+
+NonsequentialArmijoFixedMNewtonGD
+```
+
 The methods above require several utility functions. These are listed
 below.
 

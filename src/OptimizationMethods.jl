@@ -89,12 +89,17 @@ export BacktrackingGD, backtracking_gd
 export FixedStepNonmonLSMaxValG, fixed_step_nls_maxval_gd
 export NonsequentialArmijoAdaptiveGD, nonsequential_armijo_adaptive_gd
 export NonsequentialArmijoFixedGD, nonsequential_armijo_fixed_gd
+export NonsequentialArmijoFixedMNewtonGD, nonsequential_armijo_mnewton_fixed_gd
 
 
 ## Helper functions for optimization methods
 include("methods/stepsize_helpers/diminishing_stepsizes.jl")
 include("methods/line_search_helpers/backtracking.jl")
 include("methods/line_search_helpers/non_sequential_armijo.jl")
+
+### Helper functions for second order optimization methods
+include("methods/second_order_helpers/modified_newton.jl")
+include("methods/second_order_helpers/triangle_solve.jl")
 
 ## Source Code 
 include("methods/gd_barzilai_borwein.jl")
@@ -107,5 +112,6 @@ include("methods/gd_backtracking.jl")
 include("methods/gd_fixed_nonmonotone_ls.jl")
 include("methods/gd_non_sequential_armijo_adaptive.jl")
 include("methods/gd_non_sequential_armijo_fixed.jl")
+include("methods/gd_non_sequential_armijo_fixed_mnewton.jl")
 
 end
