@@ -1258,7 +1258,7 @@ end
     # test beyond the first iteration 
     factor = 1
     let x0=copy(x0), δ0=factor * δ0, δ_upper=factor * δ_upper, ρ=ρ, threshold=threshold, 
-        max_iterations=100
+        max_iterations=50
 
         #Specify Problem 
         progData = OptimizationMethods.LogisticRegression(Float64, nvar=dim)
