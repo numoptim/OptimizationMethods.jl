@@ -1180,12 +1180,12 @@ end
     α_lower = abs(rand())
     α_default = α_lower + 1
     init_stepsize = (α_lower + 1/α_lower)/2
-    δ0 = abs(randn())
-    δ_upper = δ0 + 1
-    ρ = abs(randn())
+    δ0 = rand()
+    δ_upper = 1.0
+    ρ = rand()
     M = rand(3:10)
-    threshold = abs(randn())
-    max_iterations = M + 1
+    threshold = 0.0
+    max_iterations = 100
 
     # Should exit on iteration 0 because max_iterations is 0
     let x0=copy(x0), δ0=δ0, δ_upper=δ_upper, ρ=ρ, threshold=threshold, 
