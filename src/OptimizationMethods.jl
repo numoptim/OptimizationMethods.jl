@@ -89,6 +89,7 @@ export BacktrackingGD, backtracking_gd
 export FixedStepNonmonLSMaxValG, fixed_step_nls_maxval_gd
 export NonsequentialArmijoAdaptiveGD, nonsequential_armijo_adaptive_gd
 export NonsequentialArmijoFixedGD, nonsequential_armijo_fixed_gd
+export NonsequentialArmijoSafeBBGD, nonsequential_armijo_safe_bb_gd
 
 
 ## Helper functions for optimization methods
@@ -107,5 +108,6 @@ include("methods/gd_backtracking.jl")
 include("methods/gd_fixed_nonmonotone_ls.jl")
 include("methods/gd_non_sequential_armijo_adaptive.jl")
 include("methods/gd_non_sequential_armijo_fixed.jl")
+include("methods/gd_non_sequential_armijo_safe_bb.jl")
 
 end

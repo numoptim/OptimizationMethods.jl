@@ -16,6 +16,7 @@ methods/gd_backtracking.jl
 methods/gd_fixed_nonmonotone_ls.jl
 methods/gd_non_sequential_armijo_adaptive.jl
 methods/gd_non_sequential_armijo_fixed.jl
+methods/gd_non_sequential_armijo_safe_bb.jl
 problems/regression_helpers/link_functions.jl
 problems/regression_helpers/link_function_derivatives.jl
 problems/regression_helpers/variance_functions.jl
