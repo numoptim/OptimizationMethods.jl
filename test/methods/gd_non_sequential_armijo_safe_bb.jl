@@ -1549,7 +1549,7 @@ end
             ρ = ρ, 
             M = M,
             threshold = threshold,
-            max_iterations = iter) ## stop_iteration = iter
+            max_iterations = iter) ## stop_iteration = iter = last_acceptance - 2
 
         optDatak = NonsequentialArmijoSafeBBGD(Float64; 
             x0 = x0,
@@ -1562,11 +1562,12 @@ end
             ρ = ρ, 
             M = M,
             threshold = threshold,
-            max_iterations = iter + 1) ## stop_iteration = iter + 1
+            max_iterations = iter + 1) ## stop_iteration = iter + 1 = last_acceptance - 1
 
         # generate k - 1 and k
         xkm1 = nonsequential_armijo_safe_bb_gd(optDatakm1, progData)  
         xk = nonsequential_armijo_safe_bb_gd(optDatak, progData)
+        @test !(xk ≈ xkm1)
 
         # Setting up for test - output of inner loop for iteration k
         x = copy(xkm1) 
