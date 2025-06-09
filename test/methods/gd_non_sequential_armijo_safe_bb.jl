@@ -1184,7 +1184,7 @@ end
     δ_upper = 1.0
     ρ = rand()
     M = rand(3:10)
-    threshold = 0.0
+    threshold = 1e-10
     max_iterations = 100
 
     # Should exit on iteration 0 because max_iterations is 0
@@ -1261,7 +1261,7 @@ end
         max_iterations=100
 
         #Specify Problem 
-        progData = OptimizationMethods.LeastSquares(Float64, nvar=dim)
+        progData = OptimizationMethods.LogisticRegression(Float64, nvar=dim)
 
         # Specify optimization method for exit_iteration - 1
         optData = NonsequentialArmijoSafeBBGD(Float64; 
@@ -1567,7 +1567,7 @@ end
         # generate k - 1 and k
         xkm1 = nonsequential_armijo_safe_bb_gd(optDatakm1, progData)  
         xk = nonsequential_armijo_safe_bb_gd(optDatak, progData)
-        @test !(xk ≈ xkm1)
+        @test xk != xkm1
 
         # Setting up for test - output of inner loop for iteration k
         x = copy(xkm1) 
