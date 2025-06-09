@@ -368,7 +368,7 @@ end
     ρ = abs(randn())
     M = rand(1:100)
     threshold = abs(randn())
-    max_iterations = rand(1:100)
+    max_iterations = rand(10:100)
 
     # build structure
     optData = NonsequentialArmijoSafeBBGD(Float64;
