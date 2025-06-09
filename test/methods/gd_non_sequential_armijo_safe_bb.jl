@@ -1183,7 +1183,7 @@ end
     δ0 = abs(randn())
     δ_upper = δ0 + 1
     ρ = abs(randn())
-    M = rand(50:100)
+    M = rand(3:10)
     threshold = abs(randn())
     max_iterations = M + 1
 
