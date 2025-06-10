@@ -257,7 +257,7 @@ end # end test set SafeBarzilaiBorweinNLSMaxValGD{T} -- Structure
 @testset "Test backtracking_safe_bb_gd -- Monotone Version" begin
 
     # initialize a ranodm linear regression problem for testing
-    progData = OptimizationMethods.LeastSquares(Float64)
+    progData = OptimizationMethods.LogisticRegression(Float64)
 
     # sample random fields for initialization
     dim = 50
@@ -270,7 +270,7 @@ end # end test set SafeBarzilaiBorweinNLSMaxValGD{T} -- Structure
     long_stepsize = rand([true, false])
     α_lower = rand()
     α_default = rand()
-    threshold = rand()
+    threshold = 1e-10
 
     ############################################################################
     # Line search should be successful
