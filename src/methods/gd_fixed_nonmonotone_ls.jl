@@ -62,7 +62,7 @@ track of values during the optimization procedure implemented in
 
 # Constructors
 
-    FixedStepNonmonLSMaxValG(::Type{T}; x0::Vector{T}, α::T, δ::T, ρ::T,
+    FixedStepNonmonLSMaxValGD(::Type{T}; x0::Vector{T}, α::T, δ::T, ρ::T,
         window_size::Int64, line_search_max_iteration::Int64,
         threshold::T, max_iterations::Int64) where {T}
 
@@ -87,7 +87,7 @@ track of values during the optimization procedure implemented in
 - `max_iterations::Int64`, max number of iterations (gradient steps) taken by 
     the solver.
 """
-mutable struct FixedStepNonmonLSMaxValG{T} <: AbstractOptimizerData{T}
+mutable struct FixedStepNonmonLSMaxValGD{T} <: AbstractOptimizerData{T}
     name::String
     α::T                                        
     δ::T
@@ -104,7 +104,7 @@ mutable struct FixedStepNonmonLSMaxValG{T} <: AbstractOptimizerData{T}
     stop_iteration::Int64
 
     # inner constructor
-    FixedStepNonmonLSMaxValG{T}(name, α, δ, ρ, window_size, line_search_max_iteration,
+    FixedStepNonmonLSMaxValGD{T}(name, α, δ, ρ, window_size, line_search_max_iteration,
         threshold, max_iterations, iter_hist, grad_val_hist, 
         stop_iteration) where {T} = 
         begin
@@ -114,7 +114,7 @@ mutable struct FixedStepNonmonLSMaxValG{T} <: AbstractOptimizerData{T}
                 max_iterations, iter_hist, grad_val_hist, stop_iteration)
         end
 end
-function FixedStepNonmonLSMaxValG(
+function FixedStepNonmonLSMaxValGD(
     ::Type{T};
     x0::Vector{T},
     α::T,
@@ -145,13 +145,13 @@ function FixedStepNonmonLSMaxValG(
     name = "Gradient Descent with non-monotone line search using the max value"*
     " of the previous $(window_size) values" 
 
-    return FixedStepNonmonLSMaxValG{T}(name, α, δ, ρ, window_size,
+    return FixedStepNonmonLSMaxValGD{T}(name, α, δ, ρ, window_size,
         line_search_max_iteration, threshold, max_iterations, 
         iter_hist, grad_val_hist, stop_iteration)
 end
 
 """
-    fixed_step_nls_maxval_gd(optData::FixedStepNonmonLSMaxValG{T},
+    fixed_step_nls_maxval_gd(optData::FixedStepNonmonLSMaxValGD{T},
         progData::P where P <: AbstractNLPModel{T, S}) where {T, S}
 
 Implementation of gradient descent with non-monotone line search using
@@ -182,7 +182,7 @@ where ``||\\cdot||_2`` is the L2-norm, and ``M \\in \\mathbb{N}_{>0}``.
 
 # Arguments
 
-- `optData::FixedStepNonmonLSMaxValG{T}`, the specification for the optimization 
+- `optData::FixedStepNonmonLSMaxValGD{T}`, the specification for the optimization 
     method.
 - `progData<:AbstractNLPModel{T,S}`, the specification for the optimization
     problem. 
@@ -193,7 +193,7 @@ where ``||\\cdot||_2`` is the L2-norm, and ``M \\in \\mathbb{N}_{>0}``.
     a `grad` argument.
 """
 function fixed_step_nls_maxval_gd(
-    optData::FixedStepNonmonLSMaxValG{T},
+    optData::FixedStepNonmonLSMaxValGD{T},
     progData::P where P <: AbstractNLPModel{T, S}
 ) where {T, S}
 
