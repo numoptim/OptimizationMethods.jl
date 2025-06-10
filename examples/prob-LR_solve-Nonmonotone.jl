@@ -1,7 +1,7 @@
 using OptimizationMethods
 
 progData = OptimizationMethods.LogisticRegression(Float64)
-optData = FixedStepNonmonLSMaxValG(
+optData = FixedStepNonmonLSMaxValGD(
     Float64,
     x0 = randn(50),
     α = 10.0,

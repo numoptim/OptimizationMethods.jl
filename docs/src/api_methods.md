@@ -82,7 +82,7 @@ BacktrackingGD
 ```@docs
 fixed_step_nls_maxval_gd
 
-FixedStepNonmonLSMaxValG
+FixedStepNonmonLSMaxValGD
 ```
 
 # Non-sequential Armijo Line Search with Event Triggered Objective Evaluations
