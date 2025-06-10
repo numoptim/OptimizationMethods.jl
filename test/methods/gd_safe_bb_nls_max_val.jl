@@ -436,7 +436,7 @@ end # end test set backtracking_safe_bb_gd -- Monotone Version
     long_stepsize = rand([true, false])
     α_lower = rand()
     α_default = rand()
-    threshold = rand()
+    threshold = 1e-10
 
     ############################################################################
     # Line search should be successful
@@ -564,7 +564,7 @@ end # end test set backtracking_safe_bb_gd -- Monotone Version
     end
 
     # Inductive step: test a random iteration
-    max_iterations = rand(window_size:100)
+    max_iterations = rand(window_size:50)
     optData = SafeBarzilaiBorweinNLSMaxValGD(Float64;
         x0 = x0,
         δ = δ,

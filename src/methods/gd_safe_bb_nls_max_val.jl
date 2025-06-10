@@ -66,7 +66,7 @@
 - `δ::T`, backtracking decreasing factor applied to `α` when the line search
     criterion is not satisfied
 - `ρ::T`, factor involved in the acceptance criterion in the line search
-    procedure. Larger values correpsond to stricter descetn conditions, and
+    procedure. Larger values correspond to stricter descent conditions, and
     smaller values correspond to looser descent conditions.
 - `window_size::Int64`, number of previous objective values that are used
     to construct the reference value for the line search criterion.
@@ -120,7 +120,7 @@ function SafeBarzilaiBorweinNLSMaxValGD(::Type{T};
     max_iterations::Int64) where {T}
 
     # initial step size must be positive
-    @assert init_stepsize > 0 "Initial step size must be a postive value."
+    @assert init_stepsize > 0 "Initial step size must be a positive value."
 
     # window size must be positive
     @assert window_size >= 1 "$(window_size) needs to be a natural number."
