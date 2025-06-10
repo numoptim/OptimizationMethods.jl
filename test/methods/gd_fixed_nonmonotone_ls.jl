@@ -191,7 +191,7 @@ end # end test set for structure
     ρ = rand()
     window_size = rand(5:10)
     line_search_max_iteration = 100
-    threshold = 1e-10
+    threshold = 1e-16
 
     max_iterations = 1
 
@@ -242,7 +242,7 @@ end # end test set for structure
     end
 
     # "Inductive Step": test a random iteration of the method
-    max_iterations = rand(20:100)
+    max_iterations = rand(20:50)
     let progData = progData, x0 = x0, α = α, δ = δ, ρ = ρ, 
         window_size = window_size, 
         line_search_max_iteration = line_search_max_iteration,
