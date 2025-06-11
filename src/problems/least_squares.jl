@@ -220,8 +220,8 @@ function AllocateLS(
         zeros(T, prog.nls_meta.nequ),
         prog.coef,
         zeros(T, prog.nls_meta.nvar),
-        prog.coef' * prog.coef,
-    )
+        copy(preComp.coef_t_coef))          # Copy as hessian modifications might 
+                                            # in place
 end
 
 """
