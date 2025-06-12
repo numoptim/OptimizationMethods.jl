@@ -266,9 +266,9 @@ end # end test set SafeBarzilaiBorweinNLSMaxValGD{T} -- Structure
     ρ = rand()
     window_size = 1 # monotone
     line_search_max_iteration = 100
-    init_stepsize = rand()
+    init_stepsize = 1e-10
     long_stepsize = rand([true, false])
-    α_lower = rand()
+    α_lower = 1e-16
     α_default = rand()
     threshold = 1e-10
 
@@ -423,7 +423,7 @@ end # end test set backtracking_safe_bb_gd -- Monotone Version
 @testset "Test backtracking_safe_bb_gd -- Nonmonotone Version" begin
 
     # initialize a random linear regression problem for testing
-    progData = OptimizationMethods.LeastSquares(Float64)
+    progData = OptimizationMethods.LogisticRegression(Float64)
 
     # sample random fields for initialization
     dim = 50
