@@ -26,5 +26,5 @@ problems/regression_helpers/variance_function_derivatives.jl
 methods/stepsize_helpers/diminishing_stepsizes.jl
 methods/line_search_helpers/backtracking.jl
 methods/line_search_helpers/non_sequential_armijo.jl
-second_order_helpers/modified_newton.jl
-second_order_helpers/triangle_solve.jl
+methods/second_order_helpers/modified_newton.jl
+methods/second_order_helpers/triangle_solve.jl
