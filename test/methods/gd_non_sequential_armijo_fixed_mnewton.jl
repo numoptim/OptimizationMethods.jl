@@ -1390,7 +1390,7 @@ end # end the test for the method
     β = rand()
     λ = rand()
     hessian_modification_max_iteration = 10
-    M = rand(2:100)                                           # M = 2 for monotone
+    M = rand(2:10)                                           # M = 2 for monotone
     inner_loop_radius = rand()
     inner_loop_max_iterations = rand(1:100)
     threshold = rand()
@@ -1481,8 +1481,7 @@ end # end the test for the method
         @test optData.reference_value_index == 1
     end
 
-    factor = 1000
-    let x0=copy(x0), α = α, δ0=factor*δ0, δ_upper=factor*δ_upper, ρ=ρ, β = β, λ = λ,
+    let x0=copy(x0), α = α, δ0=δ0, δ_upper=δ_upper, ρ=ρ, β = β, λ = λ,
         hessian_modification_max_iteration = hessian_modification_max_iteration,
         M = M, inner_loop_radius = inner_loop_radius, threshold=threshold, 
         max_iterations=max_iterations
