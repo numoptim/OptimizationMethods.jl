@@ -187,8 +187,8 @@ end # end test set for structure
     # sample random field values to for the optimization method
     x0 = randn(50)
     α = abs(randn())
-    δ = rand()
-    ρ = rand()
+    δ = .5 * rand()
+    ρ = (1e-2) * rand()
     window_size = rand(5:10)
     line_search_max_iteration = 100
     threshold = 1e-16

@@ -18,6 +18,7 @@ methods/gd_non_sequential_armijo_adaptive.jl
 methods/gd_non_sequential_armijo_fixed.jl
 methods/gd_safe_bb_nls_max_val.jl
 methods/gd_non_sequential_armijo_safe_bb.jl
+methods/gd_non_sequential_armijo_fixed_mnewton.jl
 problems/regression_helpers/link_functions.jl
 problems/regression_helpers/link_function_derivatives.jl
 problems/regression_helpers/variance_functions.jl
@@ -25,3 +26,5 @@ problems/regression_helpers/variance_function_derivatives.jl
 methods/stepsize_helpers/diminishing_stepsizes.jl
 methods/line_search_helpers/backtracking.jl
 methods/line_search_helpers/non_sequential_armijo.jl
+methods/second_order_helpers/modified_newton.jl
+methods/second_order_helpers/triangle_solve.jl
