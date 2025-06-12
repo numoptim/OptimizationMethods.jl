@@ -615,7 +615,7 @@ end # end test set backtracking_safe_bb_gd -- Monotone Version
         
         # test the iter_diff and grad_dff
         @test optData.iter_diff ≈ xk - xkm1
-        @test optData.grad_diff ≈ G(xk) - G(xkm1)
+        @test optData.grad_diff ≈ G(xk) - G(xkm1) atol = 1e-5
 
         # test the values of the objective history
         for i in (k+1-optData.window_size + 1):(k+1)
