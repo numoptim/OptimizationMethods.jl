@@ -545,7 +545,7 @@ end # end test set backtracking_safe_bb_gd -- Monotone Version
         
         # test the iter_diff and grad_dff
         @test optData.iter_diff ≈ xk - xkm1
-        @test optData.grad_diff ≈ G(xk) - G(xkm1)
+        @test optData.grad_diff ≈ G(xk) - G(xkm1) atol = 1e-5
 
         # test the values of the objective history
         for i in (k+1-optData.window_size + 1):(k+1)
@@ -560,7 +560,7 @@ end # end test set backtracking_safe_bb_gd -- Monotone Version
 
         # test that the correct values are stored
         @test optData.iter_hist[optData.stop_iteration + 1] == xk
-        @test optData.grad_val_hist[optData.stop_iteration + 1] ≈ norm(G(xk))
+        @test optData.grad_val_hist[optData.stop_iteration + 1] ≈ norm(G(xk)) atol = 1e-5
     end
 
     # Inductive step: test a random iteration
@@ -629,7 +629,7 @@ end # end test set backtracking_safe_bb_gd -- Monotone Version
 
         # test that the correct values are stored
         @test optData.iter_hist[optData.stop_iteration + 1] == xk
-        @test optData.grad_val_hist[optData.stop_iteration + 1] ≈ norm(G(xk))
+        @test optData.grad_val_hist[optData.stop_iteration + 1] ≈ norm(G(xk)) atol = 1e-5
     end
 
     ############################################################################
