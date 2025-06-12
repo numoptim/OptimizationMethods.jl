@@ -99,7 +99,6 @@ function add_identity_until_pd!(
 
     iter = 0
     add_identity!(res, λ)
-    λ_prev = λ                                                
     while iter < max_iterations
         
         iter += 1
@@ -107,9 +106,9 @@ function add_identity_until_pd!(
         if issuccess(cholesky!(Hermitian(res); check = false))
             return λ, true
         else
+            add_identity!(res, - λ)
             λ = max(10 * λ, β)
-            add_identity!(res, λ - λ_prev)
-            λ_prev = λ
+            add_identity!(res, λ)
         end
     end
 
