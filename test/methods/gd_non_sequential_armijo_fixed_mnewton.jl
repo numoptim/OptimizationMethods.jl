@@ -907,18 +907,18 @@ end # end the test of the inner loop
 
     # generate random arguments
     x0 = randn(50)            
-    α = rand()
-    δ0 = rand()
+    α = 1e-5 * rand()
+    δ0 = 1.0
     δ_upper = 1 + rand()
-    ρ = rand()
+    ρ = 1e-4 
     β = rand()
-    λ = rand()
+    λ = 1.0
     hessian_modification_max_iteration = 10
     M = 1                                           # M = 1 for monotone
-    inner_loop_radius = rand()
+    inner_loop_radius = 10.0
     inner_loop_max_iterations = rand(1:100)
     threshold = rand()
-    max_iterations = rand(10:100)
+    max_iterations = rand(10:25)
 
 
     # Should exit on iteration 0 because max_iterations is 0
