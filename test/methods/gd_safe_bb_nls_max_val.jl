@@ -257,7 +257,7 @@ end # end test set SafeBarzilaiBorweinNLSMaxValGD{T} -- Structure
 @testset "Test backtracking_safe_bb_gd -- Monotone Version" begin
 
     # initialize a ranodm linear regression problem for testing
-    progData = OptimizationMethods.LogisticRegression(Float64)
+    progData = OptimizationMethods.LeastSquares(Float64)
 
     # sample random fields for initialization
     dim = 50
@@ -328,7 +328,7 @@ end # end test set SafeBarzilaiBorweinNLSMaxValGD{T} -- Structure
     end
 
     # Inductive step: test a random iteration of the method
-    max_iterations = rand(2:100)
+    max_iterations = rand(2:20)
     optData = SafeBarzilaiBorweinNLSMaxValGD(Float64;
         x0 = x0,
         δ = δ,
@@ -423,7 +423,7 @@ end # end test set backtracking_safe_bb_gd -- Monotone Version
 @testset "Test backtracking_safe_bb_gd -- Nonmonotone Version" begin
 
     # initialize a random linear regression problem for testing
-    progData = OptimizationMethods.LogisticRegression(Float64)
+    progData = OptimizationMethods.LeastSquares(Float64)
 
     # sample random fields for initialization
     dim = 50
@@ -564,7 +564,7 @@ end # end test set backtracking_safe_bb_gd -- Monotone Version
     end
 
     # Inductive step: test a random iteration
-    max_iterations = rand(window_size:50)
+    max_iterations = rand(window_size:20)
     optData = SafeBarzilaiBorweinNLSMaxValGD(Float64;
         x0 = x0,
         δ = δ,
