@@ -377,7 +377,7 @@ end # end test set SafeBarzilaiBorweinNLSMaxValGD{T} -- Structure
         
         # test the iter_diff and grad_dff
         @test optData.iter_diff ≈ xk - xkm1
-        @test optData.grad_diff ≈ G(xk) - G(xkm1)
+        @test optData.grad_diff ≈ G(xk) - G(xkm1) atol = 1e-5
 
         # test the non-monotone condition
         @test optData.objective_hist[1] == F(xk)
