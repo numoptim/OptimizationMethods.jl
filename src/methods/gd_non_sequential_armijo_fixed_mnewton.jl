@@ -16,7 +16,7 @@ A mutable struct that represents gradient descent with non-sequential Armijo
 - `name::String`, name of the optimizer for reference.
 - `∇F_θk::Vector{T}`, buffer array for the gradient of the initial inner
     loop iterate. This is saved to avoid recomputation if there is a rejection.
-- `∇∇F_θk::Matrix{T}`, buffer matrix for the hessian of the initial inner loop
+- `∇∇F_θk::Matrix{T}`, buffer matrix for the Hessian of the initial inner loop
     iterate. This is saved to avoid recomputation if there is a rejection.
 - `norm_∇F_ψ::T`, norm of the gradient of the current inner loop iterate.
 - `α::T`, step size used in the inner loop. 
@@ -25,15 +25,16 @@ A mutable struct that represents gradient descent with non-sequential Armijo
 - `ρ::T`, parameter used in the non-sequential Armijo condition. Larger
     numbers indicate stricter descent conditions. Smaller numbers indicate
     less strict descent conditions.
-- `β::T`, argument for the function used to modify the hessian.
-- `λ::T`, argument for the function used to modify the hessian.
+- `β::T`, argument for the function used to modify the Hessian.
+- `λ::T`, argument for the function used to modify the Hessian.
 - `hessian_modification_max_iteration::Int64`, max number of attempts
-    at modifying the hessian per-step.
-- `objective_hist::CircularVector{T, Vector{T}}`,  vector of previous accepted 
-    objective value for non-monotone cache update.
+    at modifying the Hessian per-step.
+- `objective_hist::CircularVector{T, Vector{T}}`, circular vector of 
+    previous accepted objective value for non-monotone cache update.
 - `reference_value::T`, the maximum objective value in `objective_hist`.
 - `reference_value_index::Int64`, the index of the maximum value in `objective_hist`.
-- `acceptance_cnt::Int64`,
+- `acceptance_cnt::Int64`, tracks the number of accepted iterates. 
+    This is used to update the non-monotone cache.
 - `τ_lower::T`, lower bound on the gradient interval triggering event.
 - `τ_upper::T`, upper bound on the gradient interval triggering event.
 - `inner_loop_radius::T`, inner loop radius for the bounding ball event.
@@ -68,14 +69,14 @@ A mutable struct that represents gradient descent with non-sequential Armijo
     `iter_hist[1]`.
 - `α::T`, step size used in the inner loop. 
 - `δ0::T`, initial scaling factor.
-- `δ_upper::T`, upper bound on scalling factor 
+- `δ_upper::T`, upper bound on scaling factor 
 - `ρ::T`, parameter used in the non-sequential Armijo condition. Larger
     numbers indicate stricter descent conditions. Smaller numbers indicate
     less strict descent conditions.
-- `β::T`, argument for the function used to modify the hessian.
-- `λ::T`, argument for the function used to modify the hessian.
+- `β::T`, argument for the function used to modify the Hessian.
+- `λ::T`, argument for the function used to modify the Hessian.
 - `hessian_modification_max_iteration::Int64`, max number of attempts
-    at modifying the hessian per-step.
+    at modifying the Hessian per-step.
 - `M::Int64`, number of objective function values from accepted iterates utilized
     in the non-monotone cache.
 - `inner_loop_radius::T`, inner loop radius for the bounding ball event.
@@ -132,7 +133,7 @@ function NonsequentialArmijoFixedMNewtonGD(
     # error checking
     @assert α > 0 "Step size $(α) needs to be positive."
 
-    @assert δ0 > 0 "Step size $(δ0) needs to be postive."
+    @assert δ0 > 0 "Step size $(δ0) needs to be positive."
     
     @assert δ_upper >= δ0 "The upper bound $(δ_upper) is smaller than $(δ0)."
 
@@ -281,7 +282,7 @@ function inner_loop!(
         # Increment the inner loop counter
         j += 1
 
-        # modify hessian and return the result
+        # modify Hessian and return the result
         res = add_identity_until_pd!(store.hess;
             λ = optData.λ,
             β = optData.β, 
@@ -386,7 +387,7 @@ function nonsequential_armijo_mnewton_fixed_gd(
     progData::P where P <: AbstractNLPModel{T, S}
 ) where {T, S}
 
-    # initialize the problem data nd save initial values
+    # initialize the problem data and save initial values
     precomp, store = OptimizationMethods.initialize(progData)
     F(θ) = OptimizationMethods.obj(progData, precomp, store, θ)
     
