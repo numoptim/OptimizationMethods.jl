@@ -86,11 +86,12 @@ export NesterovAcceleratedGD, nesterov_accelerated_gd
 export DiminishingStepGD, diminishing_step_gd
 export WeightedNormDampingGD, weighted_norm_damping_gd
 export BacktrackingGD, backtracking_gd
-export FixedStepNLSMaxValGD, fixed_step_nls_maxval_gd
+export FixedStepNonmonLSMaxValGD, fixed_step_nls_maxval_gd
 export SafeBarzilaiBorweinNLSMaxValGD, safe_barzilai_borwein_nls_maxval_gd
 export FixedModifiedNewtonNLSMaxValGD, fixed_modified_newton_nls_maxval_gd
 export NonsequentialArmijoAdaptiveGD, nonsequential_armijo_adaptive_gd
 export NonsequentialArmijoFixedGD, nonsequential_armijo_fixed_gd
+export NonsequentialArmijoSafeBBGD, nonsequential_armijo_safe_bb_gd
 export FixedDampedBFGSNLSMaxValGD, fixed_damped_bfgs_nls_maxval_gd
 
 ## Helper functions for optimization methods
@@ -109,11 +110,12 @@ include("methods/gd_nesterov_accelerated.jl")
 include("methods/gd_diminishing.jl")
 include("methods/gd_weighted_norm_damping.jl")
 include("methods/gd_backtracking.jl")
-include("methods/gd_fixed_nls.jl")
+include("methods/gd_fixed_nonmonotone_ls.jl")
 include("methods/gd_safe_bb_nls_max_val.jl")
 include("methods/gd_fixed_nls_max_val_mnewton.jl")
 include("methods/gd_non_sequential_armijo_adaptive.jl")
 include("methods/gd_non_sequential_armijo_fixed.jl")
+include("methods/gd_non_sequential_armijo_safe_bb.jl")
 include("methods/gd_fixed_nls_max_val_damped_bfgs.jl")
 
 end

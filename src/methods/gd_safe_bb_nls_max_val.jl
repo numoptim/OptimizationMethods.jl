@@ -18,8 +18,9 @@
     line search.
 - `window_size::Int64`, number of previous objective values that are used
     to construct the reference objective value for the line search criterion.
-- `objective_hist::Vector{T}`, buffer array of size `window_size` that stores
-    `window_size` previous objective values.
+- `objective_hist::CircularVector{T, Vector{T}}`, 
+    buffer array of size `window_size` that stores `window_size` previous
+    objective values.
 - `max_value::T`, maximum value of `objective_hist`. This is the reference 
     objective value used in the line search procedure.
 - `max_index::Int64`, index of the maximum value that corresponds to the 
@@ -45,7 +46,7 @@
     corresponds to the iterate at iteration `k`.
 - `grad_val_hist::Vector{T}`, a vector for storing `max_iterations+1` gradient
     norm values. The first entry corresponds to iteration `0`. The `k+1` entry
-    correpsonds to the gradient norm at iteration `k`.
+    corresponds to the gradient norm at iteration `k`.
 - `stop_iteration::Int64`, the iteration number that the solver stopped on.
     The terminal iterate is saved at `iter_hist[stop_iteration+1]`.
 
@@ -66,7 +67,7 @@
 - `δ::T`, backtracking decreasing factor applied to `α` when the line search
     criterion is not satisfied
 - `ρ::T`, factor involved in the acceptance criterion in the line search
-    procedure. Larger values correpsond to stricter descetn conditions, and
+    procedure. Larger values correspond to stricter descent conditions, and
     smaller values correspond to looser descent conditions.
 - `window_size::Int64`, number of previous objective values that are used
     to construct the reference value for the line search criterion.
@@ -120,7 +121,7 @@ function SafeBarzilaiBorweinNLSMaxValGD(::Type{T};
     max_iterations::Int64) where {T}
 
     # initial step size must be positive
-    @assert init_stepsize > 0 "Initial step size must be a postive value."
+    @assert init_stepsize > 0 "Initial step size must be a positive value."
 
     # window size must be positive
     @assert window_size >= 1 "$(window_size) needs to be a natural number."
@@ -150,7 +151,7 @@ function SafeBarzilaiBorweinNLSMaxValGD(::Type{T};
 end
 
 """
-    backtracking_safe_bb_gd(optData::SafeBarzilaiBorweinNLSMaxValGD{T},
+    safe_barzilai_borwein_nls_maxval_gd(optData::SafeBarzilaiBorweinNLSMaxValGD{T},
         progData::P where P <: AbstractNLPModel{T, S}) where {T, S}
 
 Implementation of gradient descent with a non-monotone line search strategy
@@ -173,12 +174,12 @@ step size.
 Let ``\\theta_{k-1}`` be the current iterate, and let 
 ``\\alpha_{k-1} \\in \\mathbb{R}_{>0}``, ``\\delta \\in (0, 1)``, and
 ``\\rho \\in (0, 1)``. The ``k^{th}`` iterate is generated as 
-``\\theta_k = \\theta_{k-1} - \\delta^t\\alpha \\dot F(\\theta_{k-1})`` 
+``\\theta_k = \\theta_{k-1} - \\delta^t\\alpha_{k-1} \\dot F(\\theta_{k-1})`` 
 where ``t + 1 \\in \\mathbb{N}`` is the smallest such number satisfying
 
 ```math
     F(\\theta_k) \\leq \\max_{\\max(0, k-M) \\leq j < k} F(\\theta_{k-1}) - 
-    \\rho\\delta^t\\alpha||\\dot F(\\theta_{k-1})||_2^2,
+    \\rho\\delta^t\\alpha_{k-1}||\\dot F(\\theta_{k-1})||_2^2,
 ```
 
 where ``||\\cdot||_2`` is the L2-norm, and ``M \\in \\mathbb{N}_{>0}``. The
@@ -192,7 +193,7 @@ let
 
 ```math 
 \\beta_k = \\frac{ \\Vert x_k - x_{k-1} \\Vert_2^2}{(x_k - x_{k-1})^\\intercal 
-    (\\nabla f(x_k) - \\nabla f(x_{k-1}))},
+    (\\dot f(x_k) - \\dot f(x_{k-1}))},
 ```
 
 then ``\\alpha_k = \\beta_k`` when ``\\beta_k \\in`` `[optData.α_lower, 
@@ -203,8 +204,8 @@ then ``\\alpha_k = \\beta_k`` when ``\\beta_k \\in`` `[optData.α_lower,
 If ``k=0``, then ``\\alpha_0`` is set to `optData.init_stepsize`. For ``k>0``,
 
 ```math
-\\alpha_k = \\frac{(x_k - x_{k-1})^\\intercal (\\nabla f(x_k) - 
-    \\nabla f(x_{k-1}))}{\\Vert \\nabla f(x_k) - \\nabla f(x_{k-1})\\Vert_2^2},
+\\alpha_k = \\frac{(x_k - x_{k-1})^\\intercal (\\dot f(x_k) - 
+    \\dot f(x_{k-1}))}{\\Vert \\dot f(x_k) - \\dot f(x_{k-1})\\Vert_2^2},
 ```
 
 then ``\\alpha_k = \\beta_k`` when ``\\beta_k \\in`` `[optData.α_lower, 
@@ -214,7 +215,7 @@ then ``\\alpha_k = \\beta_k`` when ``\\beta_k \\in`` `[optData.α_lower,
 
 - `optData::SafeBarzilaiBorweinNLSMaxValGD{T}`, the specification for the
     optimization method.
-- `progData<:AbstractNLPModel{T, S}`, the sepcification for the optimization
+- `progData<:AbstractNLPModel{T, S}`, the specification for the optimization
     problem.
 """
 function safe_barzilai_borwein_nls_maxval_gd(optData::SafeBarzilaiBorweinNLSMaxValGD{T},
