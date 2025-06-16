@@ -90,6 +90,7 @@ export FixedStepNonmonLSMaxValGD, fixed_step_nls_maxval_gd
 export SafeBarzilaiBorweinNLSMaxValGD, safe_barzilai_borwein_nls_maxval_gd
 export NonsequentialArmijoAdaptiveGD, nonsequential_armijo_adaptive_gd
 export NonsequentialArmijoFixedGD, nonsequential_armijo_fixed_gd
+export NonsequentialArmijoFixedMNewtonGD, nonsequential_armijo_mnewton_fixed_gd
 export NonsequentialArmijoSafeBBGD, nonsequential_armijo_safe_bb_gd
 
 ## Helper functions for optimization methods
@@ -98,6 +99,10 @@ include("methods/line_search_helpers/backtracking.jl")
 include("methods/line_search_helpers/non_sequential_armijo.jl")
 include("methods/second_order_helpers/modified_newton.jl")
 include("methods/second_order_helpers/triangle-solve.jl")
+
+### Helper functions for second order optimization methods
+include("methods/second_order_helpers/modified_newton.jl")
+include("methods/second_order_helpers/triangle_solve.jl")
 
 ## Source Code 
 include("methods/gd_barzilai_borwein.jl")
@@ -111,6 +116,7 @@ include("methods/gd_fixed_nonmonotone_ls.jl")
 include("methods/gd_safe_bb_nls_max_val.jl")
 include("methods/gd_non_sequential_armijo_adaptive.jl")
 include("methods/gd_non_sequential_armijo_fixed.jl")
+include("methods/gd_non_sequential_armijo_fixed_mnewton.jl")
 include("methods/gd_non_sequential_armijo_safe_bb.jl")
 
 end
