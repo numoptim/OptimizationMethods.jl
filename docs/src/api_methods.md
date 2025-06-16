@@ -102,6 +102,13 @@ nonsequential_armijo_safe_bb_gd
 NonsequentialArmijoSafeBBGD
 ```
 
+## Second Order Methods
+```@docs
+nonsequential_armijo_fixed_damped_bfgs
+
+NonsequentialArmijoFixedDampedBFGSGD
+```
+
 The methods above require several utility functions. These are listed
 below.
 
@@ -123,6 +130,20 @@ safe_barzilai_borwein_nls_maxval_gd
 SafeBarzilaiBorweinNLSMaxValGD
 ```
 
+# Safeguarded Modified Newton's Method with Line Search
+```@docs
+fixed_modified_newton_nls_maxval_gd
+
+FixedModifiedNewtonNLSMaxValGD
+```
+
+# Safeguarded Damped BFGS Quasi-Newton's Method with Line Search
+```@docs
+fixed_damped_bfgs_nls_maxval_gd
+
+FixedDampedBFGSNLSMaxValGD
+```
+
 # Line search Helper Functions
 
 ## Backtracking
@@ -133,6 +154,25 @@ OptimizationMethods.backtracking!
 ## Non-sequential Armijo Line Search
 ```@docs
 OptimizationMethods.non_sequential_armijo_condition
+```
+
+# Second Order Helper Functions
+
+## Hessian Modification
+```@docs
+OptimizationMethods.add_identity_until_pd!
+```
+
+## Quasi-Newton Updates
+```@docs
+OptimizationMethods.update_bfgs!
+```
+
+## Linear System Solvers
+```@docs
+OptimizationMethods.lower_triangle_solve!
+
+OptimizationMethods.upper_triangle_solve!
 ```
 
 # Index 
