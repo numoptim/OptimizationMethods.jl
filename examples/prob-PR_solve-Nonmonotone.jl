@@ -1,7 +1,7 @@
 using OptimizationMethods
 
 progData = OptimizationMethods.PoissonRegression(Float64);
-optData = FixedStepNLSMaxValGD(
+optData = FixedStepNonmonLSMaxValGD(
     Float64,
     x0 = randn(50),
     α = 10.0,

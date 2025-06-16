@@ -244,6 +244,7 @@ using Test, OptimizationMethods, CircularArrays, LinearAlgebra, Random
             @test optData.α_default == α_default
             @test optData.threshold == threshold
             @test optData.max_iterations == max_iterations
+            @test optData.iter_hist[1] == x0
             @test length(optData.iter_hist) == max_iterations + 1
             @test length(optData.grad_val_hist) == max_iterations + 1
             @test optData.stop_iteration == -1 
@@ -256,45 +257,407 @@ end # end test set SafeBarzilaiBorweinNLSMaxValGD{T} -- Structure
 @testset "Test backtracking_safe_bb_gd -- Monotone Version" begin
 
     # initialize a ranodm linear regression problem for testing
+    progData = OptimizationMethods.LogisticRegression(Float64)
 
     # sample random fields for initialization
+    dim = 50
+    x0 = randn(dim)
+    δ = rand()
+    ρ = rand()
+    window_size = 1 # monotone
+    line_search_max_iteration = 100
+    init_stepsize = rand()
+    long_stepsize = rand([true, false])
+    α_lower = rand()
+    α_default = rand()
+    threshold = 1e-10
 
     ############################################################################
     # Line search should be successful
     ############################################################################
 
     # Base case: test the first iteration of the method
+    max_iterations = 1
+    optData = SafeBarzilaiBorweinNLSMaxValGD(Float64;
+        x0 = x0,
+        δ = δ,
+        ρ = ρ,
+        window_size = window_size,
+        line_search_max_iteration = line_search_max_iteration,
+        init_stepsize = init_stepsize,
+        long_stepsize = long_stepsize,
+        α_lower = α_lower,
+        α_default = α_default,
+        threshold = threshold,
+        max_iterations = max_iterations)
+
+    let optData = optData,
+        progData = progData
+        
+        x = safe_barzilai_borwein_nls_maxval_gd(optData, progData)
+
+        # carry out process for backtracking
+        F(θ) = OptimizationMethods.obj(progData, θ)
+        G(θ) = OptimizationMethods.grad(progData, θ)
+
+        x0_copy = copy(x0)
+        success = OptimizationMethods.backtracking!(x0_copy,
+            x0, F, G(x0), norm(G(x0)) ^ 2, F(x0), 
+            optData.init_stepsize, optData.δ, optData.ρ;
+            max_iteration = optData.line_search_max_iteration)
+
+        # test that returned iterate is from `backtracking!`
+        @test success
+        @test x0_copy ≈ x
+        
+        # test the iter_diff and grad_dff
+        @test optData.iter_diff ≈ x - x0
+        @test optData.grad_diff ≈ G(x) - G(x0)
+
+        # test the non-monotone condition
+        @test optData.objective_hist[1] == F(x)
+        @test optData.max_value == F(x)
+        @test optData.max_index == 1
+        @test (1 % optData.window_size) + 1 == 1
+
+        # test that the correct values are stored
+        @test optData.iter_hist[1] == x0
+        @test optData.iter_hist[2] == x
+        @test optData.grad_val_hist[1] ≈ norm(G(x0))
+        @test optData.grad_val_hist[2] ≈ norm(G(x))
+    end
 
     # Inductive step: test a random iteration of the method
+    max_iterations = rand(2:100)
+    optData = SafeBarzilaiBorweinNLSMaxValGD(Float64;
+        x0 = x0,
+        δ = δ,
+        ρ = ρ,
+        window_size = window_size,
+        line_search_max_iteration = line_search_max_iteration,
+        init_stepsize = init_stepsize,
+        long_stepsize = long_stepsize,
+        α_lower = α_lower,
+        α_default = α_default,
+        threshold = threshold,
+        max_iterations = max_iterations)
+
+    let optData = optData,
+        progData = progData,
+        k = max_iterations
+        
+        xk = safe_barzilai_borwein_nls_maxval_gd(optData, progData)
+
+        # carry out process for backtracking
+        xkm2 = optData.iter_hist[optData.stop_iteration-1] 
+        xkm1 = optData.iter_hist[optData.stop_iteration]
+        F(θ) = OptimizationMethods.obj(progData, θ)
+        G(θ) = OptimizationMethods.grad(progData, θ)
+        gkm1 = G(xkm1)
+        gkm2 = G(xkm2)
+
+        # compute initial step size
+        δxkm1 = xkm1 - xkm2
+        δgkm1 = gkm1 - gkm2
+        bb_step = optData.long_stepsize ? 
+            OptimizationMethods.bb_long_step_size(δxkm1, δgkm1) :
+            OptimizationMethods.bb_short_step_size(δxkm1, δgkm1)
+        step_size = (bb_step < optData.α_lower || bb_step > 1/optData.α_lower) ?
+            optData.α_default : bb_step
+
+        xkm1_copy = copy(xkm1)
+        success = OptimizationMethods.backtracking!(xkm1_copy,
+            xkm1, F, G(xkm1), norm(G(xkm1)) ^ 2, F(xkm1), 
+            step_size, optData.δ, optData.ρ;
+            max_iteration = optData.line_search_max_iteration)
+
+        # test that returned iterate is from `backtracking!`
+        @test success
+        @test xkm1_copy ≈ xk 
+        
+        # test the iter_diff and grad_dff
+        @test optData.iter_diff ≈ xk - xkm1
+        @test optData.grad_diff ≈ G(xk) - G(xkm1)
+
+        # test the non-monotone condition
+        @test optData.objective_hist[1] == F(xk)
+        @test optData.max_value == F(xk)
+        @test optData.max_index == 1
+        @test (optData.stop_iteration % optData.window_size) + 1 == 1
+
+        # test that the correct values are stored
+        @test optData.iter_hist[optData.stop_iteration + 1] == xk
+        @test optData.grad_val_hist[optData.stop_iteration + 1] ≈ norm(G(xk))
+    end
 
     ############################################################################
     # Line search failure on first iteration
     ############################################################################
 
     # Check to make sure the correct iterate is being returned
+    line_search_max_iteration = 0
+    max_iterations = rand(1:100)
+    optData = SafeBarzilaiBorweinNLSMaxValGD(Float64;
+        x0 = x0,
+        δ = δ,
+        ρ = ρ,
+        window_size = window_size,
+        line_search_max_iteration = line_search_max_iteration,
+        init_stepsize = init_stepsize,
+        long_stepsize = long_stepsize,
+        α_lower = α_lower,
+        α_default = α_default,
+        threshold = threshold,
+        max_iterations = max_iterations)
+    
+    let optData = optData, progData = progData, x0 = x0
+        
+        x = safe_barzilai_borwein_nls_maxval_gd(optData, progData)
 
+        @test x == x0
+        @test optData.stop_iteration == 0
+        @test optData.iter_hist[1] == x
+    end
 end # end test set backtracking_safe_bb_gd -- Monotone Version 
 
 @testset "Test backtracking_safe_bb_gd -- Nonmonotone Version" begin
 
     # initialize a random linear regression problem for testing
+    progData = OptimizationMethods.LeastSquares(Float64)
 
     # sample random fields for initialization
+    dim = 50
+    x0 = randn(dim)
+    δ = rand()
+    ρ = rand()
+    window_size = rand(2:10) # monotone
+    line_search_max_iteration = 100
+    init_stepsize = rand()
+    long_stepsize = rand([true, false])
+    α_lower = rand()
+    α_default = rand()
+    threshold = 1e-10
 
     ############################################################################
     # Line search should be successful
     ############################################################################
 
-    # Bsae case: test the first iteration of the method
+    # Base case: test the first iteration of the method
+    max_iterations = 1
+    optData = SafeBarzilaiBorweinNLSMaxValGD(Float64;
+        x0 = x0,
+        δ = δ,
+        ρ = ρ,
+        window_size = window_size,
+        line_search_max_iteration = line_search_max_iteration,
+        init_stepsize = init_stepsize,
+        long_stepsize = long_stepsize,
+        α_lower = α_lower,
+        α_default = α_default,
+        threshold = threshold,
+        max_iterations = max_iterations) 
 
-    # Inductive step: test a random iteration of the method 
-    # and ensure that the objective history is correctly updated
+    let optData = optData, progData = progData
+
+        # first iteration of the method
+        x1 = safe_barzilai_borwein_nls_maxval_gd(optData, progData)
+
+        # carry out process for backtracking
+        F(θ) = OptimizationMethods.obj(progData, θ)
+        G(θ) = OptimizationMethods.grad(progData, θ)
+
+        x0_copy = copy(x0)
+        success = OptimizationMethods.backtracking!(x0_copy,
+            x0, F, G(x0), norm(G(x0)) ^ 2, F(x0), 
+            optData.init_stepsize, optData.δ, optData.ρ;
+            max_iteration = optData.line_search_max_iteration)
+
+        # test that returned iterate is from `backtracking!`
+        @test success
+        @test x0_copy ≈ x1
+        
+        # test the iter_diff and grad_dff
+        @test optData.iter_diff ≈ x1 - x0
+        @test optData.grad_diff ≈ G(x1) - G(x0)
+
+        # test the non-monotone condition
+        @test optData.objective_hist[1] == F(x0)
+        @test optData.objective_hist[2] == F(x1)
+        @test optData.max_value == F(x0)
+        @test optData.max_index == 1
+        @test (optData.stop_iteration % optData.window_size) + 1 == 2
+
+        # test that the correct values are stored
+        @test optData.iter_hist[1] == x0
+        @test optData.iter_hist[2] == x1
+        @test optData.grad_val_hist[1] ≈ norm(G(x0))
+        @test optData.grad_val_hist[2] ≈ norm(G(x1)) 
+    end
+
+    # Inductive step: test when the history is suppose to change
+    max_iterations = window_size
+    optData = SafeBarzilaiBorweinNLSMaxValGD(Float64;
+        x0 = x0,
+        δ = δ,
+        ρ = ρ,
+        window_size = window_size,
+        line_search_max_iteration = line_search_max_iteration,
+        init_stepsize = init_stepsize,
+        long_stepsize = long_stepsize,
+        α_lower = α_lower,
+        α_default = α_default,
+        threshold = threshold,
+        max_iterations = max_iterations)
+        
+    let optData = optData, progData = progData
+
+        # first iteration of the method
+        xk = safe_barzilai_borwein_nls_maxval_gd(optData, progData)
+        k = optData.stop_iteration
+
+        # carry out process for backtracking
+        xkm2 = optData.iter_hist[k-1] 
+        xkm1 = optData.iter_hist[k]
+        F(θ) = OptimizationMethods.obj(progData, θ)
+        G(θ) = OptimizationMethods.grad(progData, θ)
+        gkm1 = G(xkm1)
+        gkm2 = G(xkm2)
+
+        # compute initial step size
+        δxkm1 = xkm1 - xkm2
+        δgkm1 = gkm1 - gkm2
+        bb_step = optData.long_stepsize ? 
+            OptimizationMethods.bb_long_step_size(δxkm1, δgkm1) :
+            OptimizationMethods.bb_short_step_size(δxkm1, δgkm1)
+        step_size = (bb_step < optData.α_lower || bb_step > 1/optData.α_lower) ?
+            optData.α_default : bb_step
+
+        xkm1_copy = copy(xkm1)
+        ref_objkm1 = F(x0)      # cache has not overwritten this yet
+        success = OptimizationMethods.backtracking!(xkm1_copy,
+            xkm1, F, G(xkm1), norm(G(xkm1)) ^ 2, ref_objkm1, 
+            step_size, optData.δ, optData.ρ;
+            max_iteration = optData.line_search_max_iteration)
+
+        # test that returned iterate is from `backtracking!`
+        @test success
+        @test xkm1_copy ≈ xk 
+        
+        # test the iter_diff and grad_dff
+        @test optData.iter_diff ≈ xk - xkm1
+        @test optData.grad_diff ≈ G(xk) - G(xkm1)
+
+        # test the values of the objective history
+        for i in (k+1-optData.window_size + 1):(k+1)
+            @test optData.objective_hist[i] == F(optData.iter_hist[i])
+        end
+
+        # test the max val and index
+        val, ind = findmax(optData.objective_hist)
+        @test optData.max_value == val
+        @test optData.max_index == ind
+        @test (optData.stop_iteration % optData.window_size) + 1 == 1
+
+        # test that the correct values are stored
+        @test optData.iter_hist[optData.stop_iteration + 1] == xk
+        @test optData.grad_val_hist[optData.stop_iteration + 1] ≈ norm(G(xk))
+    end
+
+    # Inductive step: test a random iteration
+    max_iterations = rand(window_size:50)
+    optData = SafeBarzilaiBorweinNLSMaxValGD(Float64;
+        x0 = x0,
+        δ = δ,
+        ρ = ρ,
+        window_size = window_size,
+        line_search_max_iteration = line_search_max_iteration,
+        init_stepsize = init_stepsize,
+        long_stepsize = long_stepsize,
+        α_lower = α_lower,
+        α_default = α_default,
+        threshold = threshold,
+        max_iterations = max_iterations)
+        
+    let optData = optData, progData = progData
+
+        # first iteration of the method
+        xk = safe_barzilai_borwein_nls_maxval_gd(optData, progData)
+        k = optData.stop_iteration
+
+        # carry out process for backtracking
+        xkmwindsz = optData.iter_hist[k + 1 - optData.window_size]
+        xkm2 = optData.iter_hist[k-1] 
+        xkm1 = optData.iter_hist[k]
+        F(θ) = OptimizationMethods.obj(progData, θ)
+        G(θ) = OptimizationMethods.grad(progData, θ)
+        gkm1 = G(xkm1)
+        gkm2 = G(xkm2)
+
+        # compute initial step size
+        δxkm1 = xkm1 - xkm2
+        δgkm1 = gkm1 - gkm2
+        bb_step = optData.long_stepsize ? 
+            OptimizationMethods.bb_long_step_size(δxkm1, δgkm1) :
+            OptimizationMethods.bb_short_step_size(δxkm1, δgkm1)
+        step_size = (bb_step < optData.α_lower || bb_step > 1/optData.α_lower) ?
+            optData.α_default : bb_step
+
+        xkm1_copy = copy(xkm1)
+        ref_objkm1 = max(optData.max_value, F(xkmwindsz))
+        success = OptimizationMethods.backtracking!(xkm1_copy,
+            xkm1, F, G(xkm1), norm(G(xkm1)) ^ 2, ref_objkm1, 
+            step_size, optData.δ, optData.ρ;
+            max_iteration = optData.line_search_max_iteration)
+
+        # test that returned iterate is from `backtracking!`
+        @test success
+        @test xkm1_copy ≈ xk 
+        
+        # test the iter_diff and grad_dff
+        @test optData.iter_diff ≈ xk - xkm1
+        @test optData.grad_diff ≈ G(xk) - G(xkm1)
+
+        # test the values of the objective history
+        for i in (k+1-optData.window_size + 1):(k+1)
+            @test optData.objective_hist[i] == F(optData.iter_hist[i])
+        end
+
+        # test the max val and index
+        val, ind = findmax(optData.objective_hist)
+        @test optData.max_value == val
+        @test optData.max_index == ind
+
+        # test that the correct values are stored
+        @test optData.iter_hist[optData.stop_iteration + 1] == xk
+        @test optData.grad_val_hist[optData.stop_iteration + 1] ≈ norm(G(xk))
+    end
 
     ############################################################################
     # Line search failure on first iteration
     ############################################################################
 
     # Check to make sure the correct iterate is being returned
+    optData = SafeBarzilaiBorweinNLSMaxValGD(Float64;
+        x0 = x0,
+        δ = δ,
+        ρ = ρ,
+        window_size = rand(2:10),
+        line_search_max_iteration = 0,
+        init_stepsize = init_stepsize,
+        long_stepsize = long_stepsize,
+        α_lower = α_lower,
+        α_default = α_default,
+        threshold = threshold,
+        max_iterations = rand(10:100))
+
+    let optData = optData, progData = progData, x0 = x0
+    
+        x = safe_barzilai_borwein_nls_maxval_gd(optData, progData)
+
+        @test x == x0
+        @test optData.stop_iteration == 0
+        @test optData.iter_hist[1] == x
+    end
 
 end # end test set backtracking_safe_bb_gd -- Nonmonotone Version
 

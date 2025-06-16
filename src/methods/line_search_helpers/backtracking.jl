@@ -48,7 +48,7 @@ where ``O_{k-1}`` is some reference value.
     Larger values correspond to stricter descent conditions, and
     smaller values correspond to looser descent conditions on `θk`.
 
-## Optional Keyword Arguments
+# Optional Keyword Arguments
 
 - `max_iteration::Int64 = 100`, the maximum allowable iterations
     for the line search procedure. In the language above, when
@@ -79,8 +79,7 @@ function backtracking!(
 
     # backtracking
     backtracking_condition_satisfied = false
-    while (t < max_iteration) &&
-        (!backtracking_condition_satisfied)
+    while (t < max_iteration) && (!backtracking_condition_satisfied)
 
         if F(θk) > reference_value - ρ * (δ^t * α) * inner_prod_grad_by_direction
             t += 1
@@ -173,8 +172,7 @@ function backtracking!(
 
     # backtracking
     backtracking_condition_satisfied = false
-    while (t < max_iteration) &&
-        (!backtracking_condition_satisfied)
+    while (t < max_iteration) && (!backtracking_condition_satisfied)
 
         if F(θk) > reference_value - ρ * (δ^t * α) * norm_gkm1_squared 
             t += 1
