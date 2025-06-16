@@ -256,7 +256,7 @@ end # end test set SafeBarzilaiBorweinNLSMaxValGD{T} -- Structure
 
 @testset "Test backtracking_safe_bb_gd -- Monotone Version" begin
 
-    # initialize a ranodm linear regression problem for testing
+    # initialize a random linear regression problem for testing
     progData = OptimizationMethods.LeastSquares(Float64)
 
     # sample random fields for initialization
