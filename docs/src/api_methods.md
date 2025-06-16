@@ -11,6 +11,14 @@ barzilai_borwein_gd
 BarzilaiBorweinGD
 ```
 
+This method relies on two utility functions.
+
+```@docs
+OptimizationMethods.bb_long_step_size
+
+OptimizationMethods.bb_short_step_size
+```
+
 # Gradient Descent with Fixed Step Size
 
 ```@docs
@@ -74,7 +82,7 @@ BacktrackingGD
 ```@docs
 fixed_step_nls_maxval_gd
 
-FixedStepNLSMaxValGD
+FixedStepNonmonLSMaxValGD
 ```
 
 # Non-sequential Armijo Line Search with Event Triggered Objective Evaluations
@@ -88,6 +96,10 @@ NonsequentialArmijoAdaptiveGD
 nonsequential_armijo_fixed_gd
 
 NonsequentialArmijoFixedGD
+
+nonsequential_armijo_safe_bb_gd
+
+NonsequentialArmijoSafeBBGD
 ```
 
 ## Second Order Methods
