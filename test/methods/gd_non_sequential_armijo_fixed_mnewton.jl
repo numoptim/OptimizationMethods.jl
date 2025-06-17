@@ -1735,7 +1735,7 @@ end # end the test for the method
             OptimizationMethods.inner_loop!(x, optDatakm1.iter_hist[k], 
                 optDatakm1, progData, precomp, store, k;
                 radius = optData.inner_loop_radius,
-                max_iteration = optData.inner_loop_max_iteration)
+                max_iteration = optData.inner_loop_max_iterations)
             
             # Test that the non sequential armijo condition is failed
             @test !OptimizationMethods.non_sequential_armijo_condition(
