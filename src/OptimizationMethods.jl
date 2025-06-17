@@ -98,8 +98,6 @@ export FixedModifiedNewtonNLSMaxValGD, fixed_modified_newton_nls_maxval_gd
 include("methods/stepsize_helpers/diminishing_stepsizes.jl")
 include("methods/line_search_helpers/backtracking.jl")
 include("methods/line_search_helpers/non_sequential_armijo.jl")
-include("methods/second_order_helpers/modified_newton.jl")
-include("methods/second_order_helpers/triangle_solve.jl")
 
 ### Helper functions for second order optimization methods
 include("methods/second_order_helpers/modified_newton.jl")
