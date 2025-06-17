@@ -917,7 +917,7 @@ end # end the test of the inner loop
     M = 1                                           # M = 1 for monotone
     inner_loop_radius = 10.0
     inner_loop_max_iterations = rand(1:100)
-    threshold = rand()
+    threshold = 1e-10
     max_iterations = rand(10:25)
 
 
@@ -1393,8 +1393,8 @@ end # end the test for the method
     M = rand(2:10)                                           # M = 2 for monotone
     inner_loop_radius = rand()
     inner_loop_max_iterations = rand(1:100)
-    threshold = rand()
-    max_iterations = rand(10:100)
+    threshold = 1e-10
+    max_iterations = rand(10:25)
 
 
     # Should exit on iteration 0 because max_iterations is 0
