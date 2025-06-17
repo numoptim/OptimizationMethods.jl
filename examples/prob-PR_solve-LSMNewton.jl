@@ -1,15 +1,15 @@
 # Date: 2025/06/17
 # Author: Christian Varner
-# Purpose: Example of solving a Logistic Regression problem using the 
+# Purpose: Example of solving a Poisson Regression problem using the 
 # Line search modified Newton method.
 
 using OptimizationMethods
 
-# Initialize the Logistic Regression problem
-progData = OptimizationMethods.LogisticRegression(Float64)
+# Initialize the Poisson Regression problem
+progData = OptimizationMethods.PoissonRegression(Float64)
 x0 = randn(50)
 
-# Set up the optimizer data for the Line Search Modified Newton method
+# Set up the optimizer data for the Line Search Modified Newton method (Monotone)
 optData = FixedModifiedNewtonNLSMaxValGD(Float64;
     x0 = x0,
     α = 1.0,
@@ -64,7 +64,11 @@ println(
 """
 )
 
-# Set up the optimizer data for the Line Search Modified Newton method
+# reset for non-monotone version
+progData.counters.neval_obj = 0
+progData.counters.neval_grad = 0
+
+# Set up the optimizer data for the Line Search Modified Newton method (Non-Monotone)
 optData = FixedModifiedNewtonNLSMaxValGD(Float64;
     x0 = x0,
     α = 1.0,
@@ -78,10 +82,6 @@ optData = FixedModifiedNewtonNLSMaxValGD(Float64;
     threshold = 1e-10,
     max_iterations = 100
 )
-
-# reset for non-monotone version
-progData.counters.neval_obj = 0
-progData.counters.neval_grad = 0
 
 # Solve the optimization problem
 x = fixed_modified_newton_nls_maxval_gd(

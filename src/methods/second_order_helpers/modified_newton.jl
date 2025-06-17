@@ -102,7 +102,8 @@ function add_identity_until_pd!(
     while iter < max_iterations
         
         iter += 1
-    
+        
+        # Attempt to Cholesky factorize the matrix
         if issuccess(cholesky!(Hermitian(res); check = false))
             return λ, true
         else
