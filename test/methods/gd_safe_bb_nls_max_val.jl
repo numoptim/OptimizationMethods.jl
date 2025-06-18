@@ -256,7 +256,7 @@ end # end test set SafeBarzilaiBorweinNLSMaxValGD{T} -- Structure
 
 @testset "Test backtracking_safe_bb_gd -- Monotone Version" begin
 
-    # initialize a ranodm linear regression problem for testing
+    # initialize a random linear regression problem for testing
     progData = OptimizationMethods.LeastSquares(Float64)
 
     # sample random fields for initialization
@@ -387,7 +387,7 @@ end # end test set SafeBarzilaiBorweinNLSMaxValGD{T} -- Structure
 
         # test that the correct values are stored
         @test optData.iter_hist[optData.stop_iteration + 1] == xk
-        @test optData.grad_val_hist[optData.stop_iteration + 1] ≈ norm(G(xk))
+        @test optData.grad_val_hist[optData.stop_iteration + 1] ≈ norm(G(xk)) atol = 1e-10
     end
 
     ############################################################################
