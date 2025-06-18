@@ -105,7 +105,7 @@ function update_algorithm_parameters_test_cases(optData::P
             i += 1
         end
 
-        @test xp1 == optData.iter_hist[iter] atol = 1e-10
+        @test xp1 == optData.iter_hist[iter]
         @test optData.τ_lower == 0.0 
         @test optData.τ_upper == 1.0
         @test optData.δk == 0.5
