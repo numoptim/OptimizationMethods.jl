@@ -942,7 +942,7 @@ end # end the test of the inner loop
             inner_loop_max_iterations = inner_loop_max_iterations,
             threshold = threshold,
             max_iterations = max_iterations)
-        progData = OptimizationMethods.LogisticRegression(Float64, nvar=length(x0))
+        progData = OptimizationMethods.PoissonRegression(Float64, nvar=length(x0))
 
         # Run method
         x = nonsequential_armijo_mnewton_fixed_gd(optData, progData)
@@ -984,7 +984,7 @@ end # end the test of the inner loop
             inner_loop_max_iterations = inner_loop_max_iterations,
             threshold = threshold,
             max_iterations = max_iterations)
-        progData = OptimizationMethods.LogisticRegression(Float64, nvar=length(x0))
+        progData = OptimizationMethods.PoissonRegression(Float64, nvar=length(x0))
 
         # Run method
         x = nonsequential_armijo_mnewton_fixed_gd(optData, progData)
@@ -1012,7 +1012,7 @@ end # end the test of the inner loop
         max_iterations=max_iterations
 
         #Specify Problem 
-        progData = OptimizationMethods.LogisticRegression(Float64, nvar=length(x0))
+        progData = OptimizationMethods.PoissonRegression(Float64, nvar=length(x0))
 
         # Specify optimization method for exit_iteration - 1
         optData = NonsequentialArmijoFixedMNewtonGD(Float64;
