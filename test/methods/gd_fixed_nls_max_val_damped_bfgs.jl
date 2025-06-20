@@ -664,8 +664,8 @@ end # end test cases for the function -- monotone
          gk = OptimizationMethods.grad(progData, xk) 
          s = xk - xkm1
          y = gk - gkm1
-         @test optData.s ≈ s
-         @test optData.y ≈ y
+         @test norm(optData.s - s) ≈ 0 atol = 1e-10
+         @test norm(optData.y - y) ≈ 0 atol = 1e-10
 
         # that that δB was formed correctly
         δBk = zeros(dim, dim)
