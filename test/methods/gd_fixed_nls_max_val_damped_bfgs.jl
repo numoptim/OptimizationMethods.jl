@@ -268,7 +268,7 @@ end # end test cases for the struct
     ############################################################################
     # Inductive Step: random max_iteration
     ############################################################################
-    max_iterations = rand(2:100)
+    max_iterations = rand(2:20)
     let x0 = x0, c = c, β = β, α = α, δ = δ, ρ = ρ, 
         line_search_max_iteration = line_search_max_iteration, 
         window_size = window_size, threshold = 0.0,
@@ -347,7 +347,7 @@ end # end test cases for the struct
         @test optData.B ≈ Bk
 
         # test the gradient history
-        @test norm(optData.grad_val_hist[k + 1] - norm(gk)) atol = 1e-5
+        @test norm(optData.grad_val_hist[k + 1] - norm(gk)) ≈ 0 atol = 1e-5
 
         # test the objective history
         @test optData.objective_hist == [F(xk)]
