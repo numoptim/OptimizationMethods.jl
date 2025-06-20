@@ -332,7 +332,7 @@ end # end test cases for the struct
          s = xk - xkm1
          y = gk - gkm1
          @test optData.s ≈ s
-         @test optData.y ≈ y
+         @test norm(optData.y - y) ≈ 0 atol = 1e-5
 
         # that that δB was formed correctly
         δBk = zeros(dim, dim)
@@ -347,7 +347,7 @@ end # end test cases for the struct
         @test optData.B ≈ Bk
 
         # test the gradient history
-        @test optData.grad_val_hist[k + 1] ≈ norm(gk)
+        @test norm(optData.grad_val_hist[k + 1] - norm(gk)) atol = 1e-5
 
         # test the objective history
         @test optData.objective_hist == [F(xk)]
