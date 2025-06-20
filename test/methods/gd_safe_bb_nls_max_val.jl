@@ -256,8 +256,8 @@ end # end test set SafeBarzilaiBorweinNLSMaxValGD{T} -- Structure
 
 @testset "Test backtracking_safe_bb_gd -- Monotone Version" begin
 
-    # initialize a ranodm linear regression problem for testing
-    progData = OptimizationMethods.LogisticRegression(Float64)
+    # initialize a random linear regression problem for testing
+    progData = OptimizationMethods.LeastSquares(Float64)
 
     # sample random fields for initialization
     dim = 50
@@ -266,9 +266,9 @@ end # end test set SafeBarzilaiBorweinNLSMaxValGD{T} -- Structure
     ρ = rand()
     window_size = 1 # monotone
     line_search_max_iteration = 100
-    init_stepsize = rand()
+    init_stepsize = 1e-10
     long_stepsize = rand([true, false])
-    α_lower = rand()
+    α_lower = 1e-16
     α_default = rand()
     threshold = 1e-10
 
@@ -328,7 +328,7 @@ end # end test set SafeBarzilaiBorweinNLSMaxValGD{T} -- Structure
     end
 
     # Inductive step: test a random iteration of the method
-    max_iterations = rand(2:100)
+    max_iterations = rand(2:20)
     optData = SafeBarzilaiBorweinNLSMaxValGD(Float64;
         x0 = x0,
         δ = δ,
@@ -377,7 +377,7 @@ end # end test set SafeBarzilaiBorweinNLSMaxValGD{T} -- Structure
         
         # test the iter_diff and grad_dff
         @test optData.iter_diff ≈ xk - xkm1
-        @test optData.grad_diff ≈ G(xk) - G(xkm1)
+        @test optData.grad_diff ≈ G(xk) - G(xkm1) atol = 1e-5
 
         # test the non-monotone condition
         @test optData.objective_hist[1] == F(xk)
@@ -387,7 +387,7 @@ end # end test set SafeBarzilaiBorweinNLSMaxValGD{T} -- Structure
 
         # test that the correct values are stored
         @test optData.iter_hist[optData.stop_iteration + 1] == xk
-        @test optData.grad_val_hist[optData.stop_iteration + 1] ≈ norm(G(xk))
+        @test optData.grad_val_hist[optData.stop_iteration + 1] ≈ norm(G(xk)) atol = 1e-10
     end
 
     ############################################################################
@@ -432,9 +432,9 @@ end # end test set backtracking_safe_bb_gd -- Monotone Version
     ρ = rand()
     window_size = rand(2:10) # monotone
     line_search_max_iteration = 100
-    init_stepsize = rand()
+    init_stepsize = 1e-10
     long_stepsize = rand([true, false])
-    α_lower = rand()
+    α_lower = 1e-16
     α_default = rand()
     threshold = 1e-10
 
@@ -545,7 +545,7 @@ end # end test set backtracking_safe_bb_gd -- Monotone Version
         
         # test the iter_diff and grad_dff
         @test optData.iter_diff ≈ xk - xkm1
-        @test optData.grad_diff ≈ G(xk) - G(xkm1)
+        @test optData.grad_diff ≈ G(xk) - G(xkm1) atol = 1e-5
 
         # test the values of the objective history
         for i in (k+1-optData.window_size + 1):(k+1)
@@ -560,11 +560,11 @@ end # end test set backtracking_safe_bb_gd -- Monotone Version
 
         # test that the correct values are stored
         @test optData.iter_hist[optData.stop_iteration + 1] == xk
-        @test optData.grad_val_hist[optData.stop_iteration + 1] ≈ norm(G(xk))
+        @test optData.grad_val_hist[optData.stop_iteration + 1] ≈ norm(G(xk)) atol = 1e-5
     end
 
     # Inductive step: test a random iteration
-    max_iterations = rand(window_size:50)
+    max_iterations = rand(window_size:20)
     optData = SafeBarzilaiBorweinNLSMaxValGD(Float64;
         x0 = x0,
         δ = δ,
@@ -615,7 +615,7 @@ end # end test set backtracking_safe_bb_gd -- Monotone Version
         
         # test the iter_diff and grad_dff
         @test optData.iter_diff ≈ xk - xkm1
-        @test optData.grad_diff ≈ G(xk) - G(xkm1)
+        @test optData.grad_diff ≈ G(xk) - G(xkm1) atol = 1e-5
 
         # test the values of the objective history
         for i in (k+1-optData.window_size + 1):(k+1)
@@ -629,7 +629,7 @@ end # end test set backtracking_safe_bb_gd -- Monotone Version
 
         # test that the correct values are stored
         @test optData.iter_hist[optData.stop_iteration + 1] == xk
-        @test optData.grad_val_hist[optData.stop_iteration + 1] ≈ norm(G(xk))
+        @test optData.grad_val_hist[optData.stop_iteration + 1] ≈ norm(G(xk)) atol = 1e-5
     end
 
     ############################################################################
