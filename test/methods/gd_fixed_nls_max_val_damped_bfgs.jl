@@ -185,7 +185,7 @@ end # end test cases for the struct
         max_iterations = max_iterations
 
         # get random least squares problem
-        progData = OptimizationMethods.LeastSquares(Float64)
+        progData = OptimizationMethods.PoissonRegression(Float64)
 
         # generate random structure
         optData = FixedDampedBFGSNLSMaxValGD(Float64;
@@ -275,7 +275,7 @@ end # end test cases for the struct
         max_iterations = max_iterations
         
         # get random least squares problem
-        progData = OptimizationMethods.LeastSquares(Float64)
+        progData = OptimizationMethods.PoissonRegression(Float64)
 
         # generate random structure
         optData = FixedDampedBFGSNLSMaxValGD(Float64;
@@ -366,7 +366,7 @@ end # end test cases for the struct
         max_iterations = max_iterations
 
         # get random least squares problem
-        progData = OptimizationMethods.LeastSquares(Float64)
+        progData = OptimizationMethods.PoissonRegression(Float64)
 
         # generate random structure
         optData = FixedDampedBFGSNLSMaxValGD(Float64;
@@ -413,7 +413,7 @@ end # end test cases for the function -- monotone
         max_iterations = max_iterations
 
         # get random least squares problem
-        progData = OptimizationMethods.LeastSquares(Float64)
+        progData = OptimizationMethods.PoissonRegression(Float64)
 
         # generate random structure
         optData = FixedDampedBFGSNLSMaxValGD(Float64;
@@ -502,7 +502,7 @@ end # end test cases for the function -- monotone
         max_iterations = max_iterations
         
         # get random least squares problem
-        progData = OptimizationMethods.LeastSquares(Float64)
+        progData = OptimizationMethods.PoissonRegression(Float64)
 
         # generate random structure
         optData = FixedDampedBFGSNLSMaxValGD(Float64;
@@ -592,7 +592,7 @@ end # end test cases for the function -- monotone
         max_iterations = max_iterations
         
         # get random least squares problem
-        progData = OptimizationMethods.LeastSquares(Float64)
+        progData = OptimizationMethods.PoissonRegression(Float64)
 
         # generate random structure
         optData = FixedDampedBFGSNLSMaxValGD(Float64;
@@ -700,7 +700,7 @@ end # end test cases for the function -- monotone
         max_iterations = max_iterations
 
         # get random least squares problem
-        progData = OptimizationMethods.LeastSquares(Float64)
+        progData = OptimizationMethods.PoissonRegression(Float64)
 
         # generate random structure
         optData = FixedDampedBFGSNLSMaxValGD(Float64;
