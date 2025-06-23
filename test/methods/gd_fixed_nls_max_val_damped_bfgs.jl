@@ -396,11 +396,11 @@ end # end test cases for the function -- monotone
     # get random parameter with window_size >= 2
     dim = 50
     x0 = randn(dim)
-    c = rand()
-    β = rand()
+    c = rand() + 1
+    β = 1e-3 * rand()
     α = rand()
-    δ = rand()
-    ρ = rand()
+    δ = .5
+    ρ = 1e-4 * rand()
     line_search_max_iteration = rand(50:100)
     window_size = rand(2:5)
     threshold = rand()
