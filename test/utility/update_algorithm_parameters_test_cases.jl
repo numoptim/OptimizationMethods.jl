@@ -91,6 +91,7 @@ function update_algorithm_parameters_test_cases(optData::P
             push!(constant_field_values, getfield(optData, symbol))
         end
 
+        optData.iter_hist[iter] = rand(dim)
         params_update_flag = OptimizationMethods.update_algorithm_parameters!(xp1, 
             optData, achieved_descent, iter)
 
