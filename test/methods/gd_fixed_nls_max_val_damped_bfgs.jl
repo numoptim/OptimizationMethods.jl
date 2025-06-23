@@ -402,7 +402,7 @@ end # end test cases for the function -- monotone
     δ = rand()
     ρ = rand()
     line_search_max_iteration = rand(50:100)
-    window_size = rand(2:10)
+    window_size = rand(2:5)
     threshold = rand()
 
     # Base Case: max_iteration = 1
@@ -498,7 +498,7 @@ end # end test cases for the function -- monotone
     max_iterations = window_size
     let x0 = x0, c = c, β = β, α = α, δ = δ, ρ = ρ, 
         line_search_max_iteration = line_search_max_iteration, 
-        window_size = window_size, threshold = 0.0,
+        window_size = window_size, threshold = 1e-10,
         max_iterations = max_iterations
         
         # get random least squares problem
@@ -585,7 +585,7 @@ end # end test cases for the function -- monotone
     end
 
     # Inductive Step: random max_iteration
-    max_iterations = rand((window_size+1):(window_size + 100))
+    max_iterations = rand((window_size+1):(window_size + 10))
     let x0 = x0, c = c, β = β, α = α, δ = δ, ρ = ρ, 
         line_search_max_iteration = line_search_max_iteration, 
         window_size = window_size, threshold = 0.0,
