@@ -107,6 +107,10 @@ NonsequentialArmijoSafeBBGD
 nonsequential_armijo_fixed_damped_bfgs
 
 NonsequentialArmijoFixedDampedBFGSGD
+
+nonsequential_armijo_mnewton_fixed_gd
+
+NonsequentialArmijoFixedMNewtonGD
 ```
 
 The methods above require several utility functions. These are listed

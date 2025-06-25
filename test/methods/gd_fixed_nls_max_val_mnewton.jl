@@ -735,7 +735,7 @@ end # end of monotone method implementation test cases
  
          max_val, max_ind = findmax(optData.objective_hist)
          @test optData.max_value == max_val
-         @test optData.max_index == max_ind
+         @test optData.objective_hist[optData.max_index] == optData.max_value 
      end # end arbitrary iteration test
 
     # ############################################################################

@@ -248,7 +248,7 @@ function fixed_damped_bfgs_nls_maxval_gd(
 
     # Initialize approximation
     fill!(optData.B, 0)
-    OptimizationMethods.add_identity(optData.B,
+    OptimizationMethods.add_identity!(optData.B,
         optData.c * optData.grad_val_hist[iter + 1])
 
     # Update the objective cache
