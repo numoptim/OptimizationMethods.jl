@@ -436,7 +436,7 @@ function nonsequential_armijo_fixed_damped_bfgs(
 
     # Initialize hessian approximation
     fill!(optData.Bjk, 0)
-    OptimizationMethods.add_identity(optData.Bjk,
+    OptimizationMethods.add_identity!(optData.Bjk,
         optData.c * optData.grad_val_hist[iter + 1])
 
     # update constants needed for triggering events

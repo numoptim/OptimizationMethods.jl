@@ -57,7 +57,7 @@ using Test, OptimizationMethods, CircularArrays, LinearAlgebra, Random
         for field in fields
             @test field in fieldnames(NonsequentialArmijoFixedDampedBFGSGD)
         end
-    end # end teest cases for default fields
+    end # end test cases for default fields
 
     ############################################################################
     # Test error throwing in constructor
