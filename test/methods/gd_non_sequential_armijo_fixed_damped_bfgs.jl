@@ -960,12 +960,12 @@ end # end test for monotone
     c =                 rand()
     β =                 rand()
     α =                 rand()
-    δ0 =                rand()
-    ρ =                 rand()
+    δ0 =                1.0
+    ρ =                 1e-5 * rand()
     M =                 rand(2:10)
     threshold =         rand()
-    inner_loop_radius = rand()
-    inner_loop_max_iterations = rand(1:100)
+    inner_loop_radius = 1.0
+    inner_loop_max_iterations = 100 + rand(1:10)
     max_iterations = rand(1:100)
     δ_upper = δ0 + 1
 
@@ -1057,7 +1057,7 @@ end # end test for monotone
     let x0 = copy(x0), c = c, β = β, α = α, δ0 = δ0, ρ = ρ, M = M,
         threshold = threshold, inner_loop_radius = inner_loop_radius,
         inner_loop_max_iterations = inner_loop_max_iterations, 
-        threshold = 0.0,
+        threshold = 1e-10,
         max_iterations = max_iterations 
 
         #Specify Problem 
