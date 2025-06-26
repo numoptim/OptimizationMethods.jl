@@ -104,6 +104,10 @@ NonsequentialArmijoSafeBBGD
 
 ## Second Order Methods
 ```@docs
+nonsequential_armijo_fixed_damped_bfgs
+
+NonsequentialArmijoFixedDampedBFGSGD
+
 nonsequential_armijo_mnewton_fixed_gd
 
 NonsequentialArmijoFixedMNewtonGD

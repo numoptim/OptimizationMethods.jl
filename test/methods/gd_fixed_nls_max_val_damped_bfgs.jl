@@ -515,6 +515,22 @@ end # end test cases for the function -- monotone
             line_search_max_iteration = line_search_max_iteration,
             window_size = window_size,
             threshold = threshold,
+            max_iterations = max_iterations - 1)
+        
+        xkm1 = fixed_damped_bfgs_nls_maxval_gd(optData, progData)
+        τkm1 = optData.max_value
+
+        # generate random structure
+        optData = FixedDampedBFGSNLSMaxValGD(Float64;
+            x0 = x0,
+            c = c,
+            β = β,
+            α = α,
+            δ = δ,
+            ρ = ρ,
+            line_search_max_iteration = line_search_max_iteration,
+            window_size = window_size,
+            threshold = threshold,
             max_iterations = max_iterations)
 
         # get the correct iterate (hopefully)
@@ -542,7 +558,7 @@ end # end test cases for the function -- monotone
             F,
             gkm1,
             stepkm1,
-            F(xkm1),
+            τkm1,
             optData.α,
             optData.δ,
             optData.ρ;
