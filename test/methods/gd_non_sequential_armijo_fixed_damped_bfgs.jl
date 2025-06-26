@@ -966,7 +966,7 @@ end # end test for monotone
     threshold =         rand()
     inner_loop_radius = 1.0
     inner_loop_max_iterations = 100 + rand(1:10)
-    max_iterations = rand(1:100)
+    max_iterations = rand(10:25)
     δ_upper = δ0 + 1
 
     # Should exit on iteration 0 because max_iterations is 0
