@@ -87,7 +87,7 @@ Mutable struct that represents and parameterizes the non-sequential armijo
 - `δ0::T`, initial scaling factor for the method
 - `δ_upper::T`, upper bound on the scaling factor
 - `ρ::T`, factor involved in the acceptance criterion in the line search
-    procedure. Larger values correpsond to stricter descetn conditions, and
+    procedure. Larger values correspond to stricter descent conditions, and
     smaller values correspond to looser descent conditions.
 - `M::Int64`, number of previous objective values that are used
     to construct the reference value for the line search criterion.
