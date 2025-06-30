@@ -92,6 +92,7 @@ export NonsequentialArmijoAdaptiveGD, nonsequential_armijo_adaptive_gd
 export NonsequentialArmijoFixedGD, nonsequential_armijo_fixed_gd
 export NonsequentialArmijoFixedMNewtonGD, nonsequential_armijo_mnewton_fixed_gd
 export NonsequentialArmijoSafeBBGD, nonsequential_armijo_safe_bb_gd
+export NonsequentialArmijoFixedDampedBFGSGD, nonsequential_armijo_fixed_damped_bfgs
 export FixedModifiedNewtonNLSMaxValGD, fixed_modified_newton_nls_maxval_gd
 export FixedDampedBFGSNLSMaxValGD, fixed_damped_bfgs_nls_maxval_gd
 
@@ -121,5 +122,6 @@ include("methods/gd_non_sequential_armijo_fixed.jl")
 include("methods/gd_non_sequential_armijo_safe_bb.jl")
 include("methods/gd_fixed_nls_max_val_damped_bfgs.jl")
 include("methods/gd_non_sequential_armijo_fixed_mnewton.jl")
+include("methods/gd_non_sequential_armijo_fixed_damped_bfgs.jl")
 
 end
