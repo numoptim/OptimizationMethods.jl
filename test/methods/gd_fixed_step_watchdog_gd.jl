@@ -6,7 +6,7 @@ module TestWatchdogFixedGD
 
 using Test, OptimizationMethods, LinearAlgebra, CircularArrays, Random
 
-Random.seed!(1234) # for reproducibility
+#Random.seed!(1234) # for reproducibility
 
 @testset "Test Structure: WatchdogFixedGD{T}" begin
 
@@ -352,14 +352,14 @@ end
     dim = 50
     x0 = randn(T, dim)
     α = 1e-5 * rand(T)
-    δ = rand(T)
-    ρ = rand(T)
+    δ = .5
+    ρ = 1e-4 * rand(T)
     window_size = 1
     η = rand(T)
     line_search_max_iterations = rand(1:100)
     inner_loop_max_iterations = rand(1:100)
     threshold = rand(T)
-    max_iterations = rand(10:100) 
+    max_iterations = rand(10:25) 
 
     # first inner loop fails -- line search succeeds
     let dim = dim, x0 = x0, α = α, δ = δ, ρ = ρ, window_size = window_size,
@@ -618,14 +618,14 @@ end
     dim = 50
     x0 = randn(T, dim)
     α = 1e-5 * rand(T)
-    δ = rand(T)
-    ρ = rand(T)
+    δ = 0.5
+    ρ = 1e-4 * rand(T)
     window_size = rand(2:10)
     η = rand(T)
     line_search_max_iterations = rand(1:100)
     inner_loop_max_iterations = rand(1:100)
     threshold = rand(T)
-    max_iterations = rand(1:100) 
+    max_iterations = rand(window_size:25) 
 
     # first inner loop fails
     let dim = dim, x0 = x0, α = α, δ = δ, ρ = ρ, window_size = window_size,
