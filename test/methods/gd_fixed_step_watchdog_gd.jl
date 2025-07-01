@@ -4,7 +4,9 @@
 
 module TestWatchdogFixedGD
 
-using Test, OptimizationMethods, LinearAlgebra, CircularArrays
+using Test, OptimizationMethods, LinearAlgebra, CircularArrays, Random
+
+Random.seed!(1234) # for reproducibility
 
 @testset "Test Structure: WatchdogFixedGD{T}" begin
 
