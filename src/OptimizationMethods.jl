@@ -101,7 +101,6 @@ export FixedDampedBFGSNLSMaxValGD, fixed_damped_bfgs_nls_maxval_gd
 include("methods/stepsize_helpers/diminishing_stepsizes.jl")
 include("methods/line_search_helpers/backtracking.jl")
 include("methods/line_search_helpers/non_sequential_armijo.jl")
-include("methods/line_search_helpers/backtracking.jl")
 
 ### Helper functions for second order optimization methods
 include("methods/second_order_helpers/modified_newton.jl")
