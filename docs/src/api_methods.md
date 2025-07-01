@@ -11,6 +11,14 @@ barzilai_borwein_gd
 BarzilaiBorweinGD
 ```
 
+This method relies on two utility functions.
+
+```@docs
+OptimizationMethods.bb_long_step_size
+
+OptimizationMethods.bb_short_step_size
+```
+
 # Gradient Descent with Fixed Step Size
 
 ```@docs
@@ -61,6 +69,13 @@ OptimizationMethods.inverse_log2k_step_size
 OptimizationMethods.stepdown_100_step_size
 ```
 
+# Gradient Descent with Backtracking
+```@docs
+backtracking_gd
+
+BacktrackingGD
+```
+
 # Watchdog Technique with Nonmonotone Line Search
 
 ## First Order Methods
@@ -69,6 +84,15 @@ OptimizationMethods.stepdown_100_step_size
 watchdog_fixed_gd
 
 WatchdogFixedGD
+```
+
+# Gradient Descent with Non-monotone Line Search
+
+## Fixed Step
+```@docs
+fixed_step_nls_maxval_gd
+
+FixedStepNonmonLSMaxValGD
 ```
 
 # Non-sequential Armijo Line Search with Event Triggered Objective Evaluations
@@ -82,6 +106,21 @@ NonsequentialArmijoAdaptiveGD
 nonsequential_armijo_fixed_gd
 
 NonsequentialArmijoFixedGD
+
+nonsequential_armijo_safe_bb_gd
+
+NonsequentialArmijoSafeBBGD
+```
+
+## Second Order Methods
+```@docs
+nonsequential_armijo_fixed_damped_bfgs
+
+NonsequentialArmijoFixedDampedBFGSGD
+
+nonsequential_armijo_mnewton_fixed_gd
+
+NonsequentialArmijoFixedMNewtonGD
 ```
 
 The Non-sequential Armijo Line Search Algorithms make use of the following
@@ -99,12 +138,57 @@ OptimizationMethods.inner_loop!
 OptimizationMethods.update_algorithm_parameters!
 ```
 
+# Safeguarded and Globalized Barzilai-Borwein Method
+
+```@docs
+safe_barzilai_borwein_nls_maxval_gd
+
+SafeBarzilaiBorweinNLSMaxValGD
+```
+
+# Safeguarded Modified Newton's Method with Line Search
+```@docs
+fixed_modified_newton_nls_maxval_gd
+
+FixedModifiedNewtonNLSMaxValGD
+```
+
+# Safeguarded Damped BFGS Quasi-Newton's Method with Line Search
+```@docs
+fixed_damped_bfgs_nls_maxval_gd
+
+FixedDampedBFGSNLSMaxValGD
+```
 
 # Line search Helper Functions
+
+## Backtracking
+```@docs
+OptimizationMethods.backtracking!
+```
 
 ## Non-sequential Armijo Line Search
 ```@docs
 OptimizationMethods.non_sequential_armijo_condition
+```
+
+# Second Order Helper Functions
+
+## Hessian Modification
+```@docs
+OptimizationMethods.add_identity_until_pd!
+```
+
+## Quasi-Newton Updates
+```@docs
+OptimizationMethods.update_bfgs!
+```
+
+## Linear System Solvers
+```@docs
+OptimizationMethods.lower_triangle_solve!
+
+OptimizationMethods.upper_triangle_solve!
 ```
 
 # Index 
