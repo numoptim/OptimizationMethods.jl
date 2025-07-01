@@ -90,15 +90,12 @@ export FixedStepNonmonLSMaxValGD, fixed_step_nls_maxval_gd
 export SafeBarzilaiBorweinNLSMaxValGD, safe_barzilai_borwein_nls_maxval_gd
 export NonsequentialArmijoAdaptiveGD, nonsequential_armijo_adaptive_gd
 export NonsequentialArmijoFixedGD, nonsequential_armijo_fixed_gd
-<<<<<<< HEAD
 export WatchdogFixedGD, watchdog_fixed_gd
-=======
 export NonsequentialArmijoFixedMNewtonGD, nonsequential_armijo_mnewton_fixed_gd
 export NonsequentialArmijoSafeBBGD, nonsequential_armijo_safe_bb_gd
 export NonsequentialArmijoFixedDampedBFGSGD, nonsequential_armijo_fixed_damped_bfgs
 export FixedModifiedNewtonNLSMaxValGD, fixed_modified_newton_nls_maxval_gd
 export FixedDampedBFGSNLSMaxValGD, fixed_damped_bfgs_nls_maxval_gd
->>>>>>> main-v0.0.1
 
 ## Helper functions for optimization methods
 include("methods/stepsize_helpers/diminishing_stepsizes.jl")
