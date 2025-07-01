@@ -8,6 +8,8 @@ module TestNonsequentialArmijoDampedBFGS
 
 using Test, OptimizationMethods, CircularArrays, LinearAlgebra, Random
 
+Random.seed!(1234) # for reproducibility
+
 @testset "Test NonsequentialArmijoFixedDampedBFGSGD" begin
 
     ############################################################################

@@ -5,7 +5,9 @@
 
 module TestModifiedNewtonStepFixStepSizeNLSMaxVal
 
-using Test, OptimizationMethods, CircularArrays, LinearAlgebra
+using Test, OptimizationMethods, CircularArrays, LinearAlgebra, Random
+
+Random.seed!(1234) # for reproducibility
 
 @testset "Test -- FixedModifiedNewtonNLSMaxValGD Structure" begin
 
