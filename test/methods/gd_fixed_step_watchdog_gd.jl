@@ -102,7 +102,7 @@ using Test, OptimizationMethods, LinearAlgebra, CircularArrays
                 max_iterations = max_iterations
             )
 
-            # test fielt types
+            # test field types
             for (field_symbol, field_type) in field_types(T)
                 @test field_type == typeof(getfield(optData, field_symbol))
             end
@@ -230,7 +230,7 @@ end
 
         k = rand(1:optData.max_iterations)
 
-        # reset values for the methd
+        # reset values for the method
         optData.F_θk = OptimizationMethods.obj(progData, x0)
         optData.reference_value = OptimizationMethods.obj(progData, x0)
         OptimizationMethods.grad!(progData, precomp, store, x0)        

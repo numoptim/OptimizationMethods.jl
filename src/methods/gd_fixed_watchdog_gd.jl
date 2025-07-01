@@ -18,7 +18,7 @@ A structure for storing data about gradient descent with fixed step size,
 - `∇F_θk::Vector{T}`, buffer array for the gradient of the initial inner
     loop iterate.
 - `norm_∇F_ψ::T`, norm of the gradient of the current inner loop iterate.
-- `α::T`, step size used in the inner loop. Also used to initalize the
+- `α::T`, step size used in the inner loop. Also used to initialize the
     line search when the watchdog condition fails.
 - `δ::T`, the step size reduction factor used in line search.
 - `ρ::T`, parameter used in backtracking and the watchdog condition. Larger
@@ -236,6 +236,7 @@ function inner_loop!(
         # take step
         ψjk .-= optData.α .* store.grad
 
+        # compute distance to keep track of the maximum distance
         dist = norm(ψjk - θk)
         optData.max_distance_squared = max(dist^2, optData.max_distance_squared)
 
