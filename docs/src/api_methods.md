@@ -84,6 +84,10 @@ BacktrackingGD
 watchdog_fixed_gd
 
 WatchdogFixedGD
+
+watchdog_safe_barzilai_borwein_gd
+
+WatchdogSafeBarzilaiBorweinGD
 ```
 
 # Gradient Descent with Non-monotone Line Search
