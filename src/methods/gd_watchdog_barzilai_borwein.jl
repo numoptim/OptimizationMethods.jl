@@ -27,7 +27,7 @@ A structure that parameterizes gradient descent with Barzilai-Borwein
 - `α_lower::T`, used to compute a safeguard on the Barzilai-Borwein step size.
 - `α_default::T`, If the Barzilai-Borwein step size is smaller than `α_lower` or
     larger than `1/α_lower`, then it is set to `α_default`.
-- `α0k::T`, the initial step size used in the inner loop. Used to as an 
+- `α0k::T`, the initial step size used in the inner loop. Used as an 
     initial value when the inner loop fails the watchdog condition.
 - `iter_diff::Vector{T}`, buffer array for difference between iterates 
     used to calculate the step size.
@@ -160,7 +160,7 @@ function WatchdogSafeBarzilaiBorweinGD(::Type{T};
     grad_val_hist::Vector{T} = Vector{T}(undef, max_iterations + 1)
     stop_iteration::Int64 = -1 # dummy value
 
-    # initalize step size function
+    # initialize step size function
     step_size = long_stepsize ? bb_long_step_size : bb_short_step_size
 
     return WatchdogSafeBarzilaiBorweinGD{T}(
@@ -447,7 +447,7 @@ function watchdog_safe_barzilai_borwein_gd(
     progData::P where P <: AbstractNLPModel{T, S}
 ) where {T, S}
 
-    # initialize the problem data nd save initial values
+    # initialize the problem data and save initial values
     precomp, store = OptimizationMethods.initialize(progData)
     F(θ) = OptimizationMethods.obj(progData, precomp, store, θ)
     
