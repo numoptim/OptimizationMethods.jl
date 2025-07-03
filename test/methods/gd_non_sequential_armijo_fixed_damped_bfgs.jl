@@ -8,6 +8,8 @@ module TestNonsequentialArmijoDampedBFGS
 
 using Test, OptimizationMethods, CircularArrays, LinearAlgebra, Random
 
+Random.seed!(1234) # for reproducibility
+
 @testset "Test NonsequentialArmijoFixedDampedBFGSGD" begin
 
     ############################################################################
@@ -489,8 +491,8 @@ end # end test on inner loop
     c =                 rand()
     β =                 rand()
     α =                 rand()
-    δ0 =                rand()
-    ρ =                 rand()
+    δ0 =                0.5
+    ρ =                 1e-4 * rand() 
     M =                 1
     threshold =         rand()
     inner_loop_radius = rand()

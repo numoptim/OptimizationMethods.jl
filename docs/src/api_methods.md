@@ -76,6 +76,16 @@ backtracking_gd
 BacktrackingGD
 ```
 
+# Watchdog Technique with Nonmonotone Line Search
+
+## First Order Methods
+
+```@docs
+watchdog_fixed_gd
+
+WatchdogFixedGD
+```
+
 # Gradient Descent with Non-monotone Line Search
 
 ## Fixed Step
@@ -113,8 +123,10 @@ nonsequential_armijo_mnewton_fixed_gd
 NonsequentialArmijoFixedMNewtonGD
 ```
 
-The methods above require several utility functions. These are listed
-below.
+The Non-sequential Armijo Line Search Algorithms make use of the following
+helper functions. Additionally, the algorithms under
+[Watchdog Technique with Nonmonotone Line Search](@ref) makes use
+of the [`OptimizationMethods.inner_loop!`](@ref) function.
 
 ```@docs
 OptimizationMethods.update_local_lipschitz_approximation

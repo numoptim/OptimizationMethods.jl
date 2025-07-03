@@ -16,6 +16,7 @@ methods/gd_backtracking.jl
 methods/gd_fixed_nonmonotone_ls.jl
 methods/gd_non_sequential_armijo_adaptive.jl
 methods/gd_non_sequential_armijo_fixed.jl
+methods/gd_fixed_step_watchdog_gd.jl
 methods/gd_fixed_nls_max_val_mnewton.jl
 methods/gd_safe_bb_nls_max_val.jl
 methods/gd_fixed_nls_max_val_damped_bfgs.jl
