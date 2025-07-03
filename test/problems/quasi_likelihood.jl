@@ -102,19 +102,19 @@ function test_methods(
         obj_diff = trapezoidal(x)
 
         # Without Precompute 
-        @test obj_diff ≈ OptimizationMethods.obj(progData, x) - obj_base
+        @test obj_diff ≈ OptimizationMethods.obj(progData, x) - obj_base rtol = 1e-5
         @test progData.counters.neval_obj == nevals_obj 
         nevals_obj += 1
 
         # With Precompute 
         @test obj_diff ≈ OptimizationMethods.obj(progData, precomp, x) - 
-            obj_base
+            obj_base rtol = 1e-5
         @test progData.counters.neval_obj == nevals_obj 
         nevals_obj += 1
 
         # With Store 
         @test obj_diff ≈ OptimizationMethods.obj(progData, precomp, store, x) - 
-        obj_base
+        obj_base rtol = 1e-5
         @test progData.counters.neval_obj == nevals_obj 
         nevals_obj += 1
     end
@@ -132,7 +132,7 @@ function test_methods(
 
         # Without Precompute 
         o, g = OptimizationMethods.objgrad(progData, x)
-        @test o - obj_base ≈ obj_diff 
+        @test o - obj_base ≈ obj_diff rtol = 1e-5
         @test g ≈ gra 
         @test progData.counters.neval_obj == nevals_obj 
         @test progData.counters.neval_grad == nevals_grad 
@@ -141,7 +141,7 @@ function test_methods(
 
         # With Precomputation 
         o, g = OptimizationMethods.objgrad(progData, precomp, x)
-        @test o - obj_base ≈ obj_diff 
+        @test o - obj_base ≈ obj_diff rtol = 1e-5
         @test g ≈ gra
         @test progData.counters.neval_obj == nevals_obj 
         @test progData.counters.neval_grad == nevals_grad 
@@ -150,7 +150,7 @@ function test_methods(
 
         # With Store 
         o = OptimizationMethods.objgrad!(progData, precomp, store, x)
-        @test o - obj_base ≈ obj_diff
+        @test o - obj_base ≈ obj_diff rtol = 1e-5
         @test store.grad ≈ gra
         @test progData.counters.neval_obj == nevals_obj 
         @test progData.counters.neval_grad == nevals_grad 

@@ -41,10 +41,10 @@ A mutable struct that represents gradient descent with non-sequential armijo
 - `ρ::T`, parameter used in the non-sequential Armijo condition. Larger
     numbers indicate stricter descent conditions. Smaller numbers indicate
     less strict descent conditions.
-- `objective_hist::Vector{T}`, vector of previous accepted objective values
-    for non-monotone cache update.
+- `objective_hist::CircularVector{T, Vector{T}}`, vector of previous accepted 
+    objective values for non-monotone cache update.
 - `reference_value::T`, the maximum objective value in `objective_hist`.
-- `reference_value_index::T`, the index of the maximum value in `objective_hist`.
+- `reference_value_index::Int64`, the index of the maximum value in `objective_hist`.
 - `acceptance_cnt::Int64`, the number of accepted iterates.
 - `τ_lower::T`, lower bound on the gradient interval triggering event.
 - `τ_upper::T`, upper bound on the gradient interval triggering event.
@@ -214,7 +214,7 @@ end
 
 Conduct the inner loop iteration, modifying `ψjk`, `optData`, and
 `store` in place. `ψjk` gets updated to be the terminal iterate of the inner loop.
-This inner loop function uses negative gradient directions with a safe-guarded
+This inner loop function uses negative gradient directions with a safeguarded
     Barzilai-Borwein step size.
 
 # Method
@@ -227,7 +227,7 @@ be the ``k^{th}`` parameters for the optimization method.
 
 Let ``\\psi_0^k = \\theta_k``, then this method returns
 ```math
-    \\psi_{j_k}^k = \\psi_0^k - \\sum_{i = 0}^{j_k-1} \\delta_k \\alpha_j^k \\dot F(\\psi_i^k),
+    \\psi_{j_k}^k = \\psi_0^k - \\sum_{i = 0}^{j_k-1} \\delta_k \\alpha_i^k \\dot F(\\psi_i^k),
 ```
 where ``j_k \\in \\mathbb{N}`` is the smallest iteration for which at least one of the
 conditions are satisfied: 
@@ -237,7 +237,7 @@ conditions are satisfied:
     \\tau_{\\mathrm{grad},\\mathrm{upper}}^k)``, 
 3. ``j_k == 100``.
 
-The step size ``\\alpha_j^k`` is calculated using the safeguarded Barzilai-
+The step size ``\\alpha_i^k`` is calculated using the safeguarded Barzilai-
 Borwein method. To explain the step size computation, define
 
 ```math
@@ -325,7 +325,8 @@ function inner_loop!(
     step_size::T = (optData.second_acceptance_occurred) ?
         optData.bb_step_size(optData.iter_diff, optData.grad_diff) : 
         optData.init_stepsize 
-    if step_size < optData.α_lower || step_size > (1/optData.α_lower)
+    if step_size < optData.α_lower || step_size > (1/optData.α_lower) ||
+        isnan(step_size)
         step_size = optData.α_default
     end
     optData.α0k = step_size
@@ -358,7 +359,8 @@ function inner_loop!(
 
         # compute step size for next iteration
         step_size = optData.bb_step_size(optData.iter_diff, optData.grad_diff)
-        if step_size < optData.α_lower || step_size > (1/optData.α_lower)
+        if step_size < optData.α_lower || step_size > (1/optData.α_lower) ||
+            isnan(step_size)
             step_size = optData.α_default
         end
     end
@@ -395,7 +397,7 @@ The ``k+1^{th}`` iterate and parameters are produced by the following procedure.
 
 Let ``\\psi_0^k = \\theta_k``, and recursively define
 ```math
-    \\psi_{j}^k = \\psi_0^k - \\sum_{i = 0}^{j-1} \\delta_k \\alpha_j^k \\dot F(\\psi_i^k).
+    \\psi_{j}^k = \\psi_0^k - \\sum_{i = 0}^{j-1} \\delta_k \\alpha_i^k \\dot F(\\psi_i^k).
 ```
 To see how the inner loop steps are performed for this method,
 see documentation for [OptimizationMethods.inner_loop!](@ref) where 
