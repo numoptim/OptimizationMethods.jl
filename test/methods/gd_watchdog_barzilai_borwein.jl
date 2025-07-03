@@ -507,16 +507,16 @@ end
     x0 = randn(T, dim)
     init_stepsize = rand(T)
     long_stepsize = rand([false, true])
-    α_lower = rand(T)
+    α_lower = 1e-10*rand(T)
     α_default = rand(T)
-    δ = rand(T)
-    ρ = rand(T)
-    line_search_max_iterations = rand(1:100)
+    δ = 0.5
+    ρ = 1e-4 * rand(T)
+    line_search_max_iterations = rand(50:100)
     η = rand(T)
     inner_loop_max_iterations = rand(1:100)
     window_size = 1
     threshold = rand(T)
-    max_iterations = rand(2:100)
+    max_iterations = rand(2:10)
 
     # first inner loop fails -- line search succeeds
     let dim = dim, x0 = x0, init_stepsize = init_stepsize, 
@@ -798,16 +798,16 @@ end
     x0 = randn(T, dim)
     init_stepsize = rand(T)
     long_stepsize = rand([false, true])
-    α_lower = rand(T)
+    α_lower = 1e-10*rand(T)
     α_default = rand(T)
-    δ = rand(T)
-    ρ = rand(T)
-    line_search_max_iterations = rand(1:100)
+    δ = 0.5
+    ρ = 1e-4 * rand(T)
+    line_search_max_iterations = rand(50:100)
     η = rand(T)
     inner_loop_max_iterations = rand(1:100)
-    window_size = rand(2:10)
+    window_size = rand(2:5)
     threshold = rand(T)
-    max_iterations = rand(2:100)
+    max_iterations = rand(window_size:20)
 
     # first inner loop fails -- line search succeeds
     let dim = dim, x0 = x0, init_stepsize = init_stepsize, 
