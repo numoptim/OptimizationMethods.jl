@@ -48,11 +48,7 @@ where ``O_{k-1}`` is some reference value.
     Larger values correspond to stricter descent conditions, and
     smaller values correspond to looser descent conditions on `θk`.
 
-<<<<<<< HEAD
-## Optional Keyword Arguments
-=======
 # Optional Keyword Arguments
->>>>>>> main-v0.0.1
 
 - `max_iteration::Int64 = 100`, the maximum allowable iterations
     for the line search procedure. In the language above, when
