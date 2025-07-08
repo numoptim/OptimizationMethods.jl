@@ -16,9 +16,7 @@ methods/gd_backtracking.jl
 methods/gd_fixed_nonmonotone_ls.jl
 methods/gd_non_sequential_armijo_adaptive.jl
 methods/gd_non_sequential_armijo_fixed.jl
-<<<<<<< HEAD
 methods/gd_watchdog_fixed_mnewton.jl
-=======
 methods/gd_fixed_step_watchdog_gd.jl
 methods/gd_fixed_nls_max_val_mnewton.jl
 methods/gd_safe_bb_nls_max_val.jl
@@ -26,7 +24,6 @@ methods/gd_fixed_nls_max_val_damped_bfgs.jl
 methods/gd_non_sequential_armijo_fixed_damped_bfgs.jl
 methods/gd_non_sequential_armijo_safe_bb.jl
 methods/gd_non_sequential_armijo_fixed_mnewton.jl
->>>>>>> main-v0.0.1
 problems/regression_helpers/link_functions.jl
 problems/regression_helpers/link_function_derivatives.jl
 problems/regression_helpers/variance_functions.jl
