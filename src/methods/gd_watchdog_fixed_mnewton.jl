@@ -185,7 +185,7 @@ end
 Conduct the inner loop iteration, modifying `ψjk`, `optData`, and `store` in
     place. `ψjk` gets updated to be the terminal iterate of the inner loop.
     This inner loop function uses fixed step sizes with modified Newton
-    directions (see [OptimizationMethods.add_identity_until_pd!](@ref)).
+    directions.
 
 # Method
 
