@@ -69,7 +69,7 @@ end # end test for add_identity
             L[i,j] = randn()
         end
     end
-    A = L * L' 
+    A = L * L' + 1000 * Matrix{Float64}(I, dim, dim) 
     
     ## should terminate after one iteration
     let dim = dim, A = A, λ = 0.0, β = rand(),
