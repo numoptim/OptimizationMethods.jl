@@ -4,7 +4,7 @@
 
 module TestWatchdogFixedModifiedNewton
 
-using Test, OptimizationMethods, Test, LinearAlgebra, CircularArrays
+using Test, OptimizationMethods, LinearAlgebra, CircularArrays
 
 @testset "Test WatchdogFixedMNewtonGD{T}" begin
 
