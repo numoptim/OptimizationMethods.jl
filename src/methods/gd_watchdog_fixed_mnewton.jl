@@ -24,8 +24,7 @@ Mutable structure that parameterizes gradient descent with fixed step sizes
 - `hessian_modification_max_iteration::Int64`, max iteration for the hessian
     modification routine.
 - `d0k::Vector{T}`, buffer array for the first step of the inner loop.
-    Saved in case the inner loop fails and backtracking using this step
-    is required.
+    Saved in case the inner loop fails for the backtracking routine.
 - `α::T`, fixed step size used in the inner loop.
 - `δ::T`, step size reduction parameter used in the line search routine. 
 - `ρ::T`, parameter used in backtracking and the watchdog condition. Larger
@@ -208,7 +207,8 @@ at least one of the conditions are satisfied:
 The step direction ``d_i^k`` is one of the following. Let ``\\ddot F(\\psi_i^k)``
 be the hessian matrix of ``F`` at ``\\psi_i^k`` for ``i + 1 \\in \\mathbb{N}``
 and ``k + 1 \\in \\mathbb{N}``. Then, if 
-[OptimizationMethods.add_identity_until_pd!](@ref) successful modifies
+[the hessian modification routine](@ref OptimizationMethods.add_identity_until_pd!) 
+successful modifies
 ``\\ddot F(\\psi_i^k)`` to be positive definite, returning ``H_i^k``, then
 
 ```math
@@ -311,6 +311,9 @@ end
     watchdog_fixed_mnewton_gd(optData::WatchdogFixedMNewtonGD{T},
         progData::P where P <: AbstractNLPModel{T, S}) where {T, S}
 
+Fixed step size modified Newton method globlized through the watchdog technique, 
+parameterized by `optData`, applied to an optimization problem specified by `progData`. 
+
 # Reference(s)
 
 [Grippo L. and Sciandrone M. "Nonmonotone Globalization Techniques
@@ -380,7 +383,7 @@ function watchdog_fixed_mnewton_gd(
     progData::P where P <: AbstractNLPModel{T, S}
 ) where {T, S}
 
-    # initialize the problem data nd save initial values
+    # initialize the problem data and save initial values
     precomp, store = OptimizationMethods.initialize(progData)
     F(θ) = OptimizationMethods.obj(progData, precomp, store, θ)
     

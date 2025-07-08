@@ -8,6 +8,7 @@ Pages=["api_methods.md"]
 
 ```@docs
 barzilai_borwein_gd
+
 BarzilaiBorweinGD
 ```
 
@@ -183,11 +184,13 @@ OptimizationMethods.non_sequential_armijo_condition
 # Second Order Helper Functions
 
 ## Hessian Modification
+
 ```@docs
 OptimizationMethods.add_identity_until_pd!
 ```
 
 ## Quasi-Newton Updates
+
 ```@docs
 OptimizationMethods.update_bfgs!
 ```
