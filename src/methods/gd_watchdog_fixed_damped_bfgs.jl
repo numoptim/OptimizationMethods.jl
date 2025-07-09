@@ -252,7 +252,7 @@ was produced through backtracking.
 
 ## Optional Keyword Arguments
 
-- `max_iteration = 100`, maximum number of allowable iteration of the inner loop.
+- `max_iterations = 100`, maximum number of allowable iteration of the inner loop.
 
 # Returns
 
