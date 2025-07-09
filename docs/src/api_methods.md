@@ -90,6 +90,13 @@ watchdog_safe_barzilai_borwein_gd
 WatchdogSafeBarzilaiBorweinGD
 ```
 
+## Second Order Methods
+```@docs
+watchdog_fixed_damped_bfgs_gd
+
+WatchdogFixedDampedBFGSGD
+```
+
 # Gradient Descent with Non-monotone Line Search
 
 ## Fixed Step
@@ -97,15 +104,6 @@ WatchdogSafeBarzilaiBorweinGD
 fixed_step_nls_maxval_gd
 
 FixedStepNonmonLSMaxValGD
-```
-
-# Watchdog Technique with Nonmonotone Line Search
-
-## Second Order Methods
-```@docs
-watchdog_fixed_damped_bfgs_gd
-
-WatchdogFixedDampedBFGSGD
 ```
 
 # Non-sequential Armijo Line Search with Event Triggered Objective Evaluations
