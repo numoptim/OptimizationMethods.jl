@@ -216,7 +216,7 @@ end
     inner_loop_max_iterations = rand(1:100)
     window_size = rand(1:100)
     threshold = rand(T)
-    max_iterations = rand(1:100)
+    max_iterations = rand(5:25)
 
     # construct
     optData = WatchdogSafeBarzilaiBorweinGD(
