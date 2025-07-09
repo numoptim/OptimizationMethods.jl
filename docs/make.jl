@@ -8,6 +8,9 @@ bib = CitationBibliography(
 
 makedocs(
     sitename="OptimizationMethods.jl Documentation",
+    format = Documenter.HTML(
+        size_threshold_ignore = ["api_methods.md"]
+    ),
     pages = [
         "Overview" => "index.md",
         "Manual" =>[

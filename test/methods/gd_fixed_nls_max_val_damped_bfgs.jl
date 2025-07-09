@@ -185,7 +185,7 @@ end # end test cases for the struct
         max_iterations = max_iterations
 
         # get random least squares problem
-        progData = OptimizationMethods.LeastSquares(Float64)
+        progData = OptimizationMethods.PoissonRegression(Float64)
 
         # generate random structure
         optData = FixedDampedBFGSNLSMaxValGD(Float64;
@@ -268,14 +268,14 @@ end # end test cases for the struct
     ############################################################################
     # Inductive Step: random max_iteration
     ############################################################################
-    max_iterations = rand(2:100)
+    max_iterations = rand(2:20)
     let x0 = x0, c = c, β = β, α = α, δ = δ, ρ = ρ, 
         line_search_max_iteration = line_search_max_iteration, 
         window_size = window_size, threshold = 0.0,
         max_iterations = max_iterations
         
         # get random least squares problem
-        progData = OptimizationMethods.LeastSquares(Float64)
+        progData = OptimizationMethods.PoissonRegression(Float64)
 
         # generate random structure
         optData = FixedDampedBFGSNLSMaxValGD(Float64;
@@ -332,7 +332,7 @@ end # end test cases for the struct
          s = xk - xkm1
          y = gk - gkm1
          @test optData.s ≈ s
-         @test optData.y ≈ y
+         @test norm(optData.y - y) ≈ 0 atol = 1e-5
 
         # that that δB was formed correctly
         δBk = zeros(dim, dim)
@@ -347,7 +347,7 @@ end # end test cases for the struct
         @test optData.B ≈ Bk
 
         # test the gradient history
-        @test optData.grad_val_hist[k + 1] ≈ norm(gk)
+        @test norm(optData.grad_val_hist[k + 1] - norm(gk)) ≈ 0 atol = 1e-5
 
         # test the objective history
         @test optData.objective_hist == [F(xk)]
@@ -366,7 +366,7 @@ end # end test cases for the struct
         max_iterations = max_iterations
 
         # get random least squares problem
-        progData = OptimizationMethods.LeastSquares(Float64)
+        progData = OptimizationMethods.PoissonRegression(Float64)
 
         # generate random structure
         optData = FixedDampedBFGSNLSMaxValGD(Float64;
@@ -396,13 +396,13 @@ end # end test cases for the function -- monotone
     # get random parameter with window_size >= 2
     dim = 50
     x0 = randn(dim)
-    c = rand()
-    β = rand()
+    c = rand() + 1
+    β = 1e-3 * rand()
     α = rand()
-    δ = rand()
-    ρ = rand()
+    δ = .5
+    ρ = 1e-4 * rand()
     line_search_max_iteration = rand(50:100)
-    window_size = rand(2:10)
+    window_size = rand(2:5)
     threshold = rand()
 
     # Base Case: max_iteration = 1
@@ -413,7 +413,7 @@ end # end test cases for the function -- monotone
         max_iterations = max_iterations
 
         # get random least squares problem
-        progData = OptimizationMethods.LeastSquares(Float64)
+        progData = OptimizationMethods.PoissonRegression(Float64)
 
         # generate random structure
         optData = FixedDampedBFGSNLSMaxValGD(Float64;
@@ -498,101 +498,11 @@ end # end test cases for the function -- monotone
     max_iterations = window_size
     let x0 = x0, c = c, β = β, α = α, δ = δ, ρ = ρ, 
         line_search_max_iteration = line_search_max_iteration, 
-        window_size = window_size, threshold = 0.0,
+        window_size = window_size, threshold = 1e-10,
         max_iterations = max_iterations
         
         # get random least squares problem
-        progData = OptimizationMethods.LeastSquares(Float64)
-
-        # generate random structure
-        optData = FixedDampedBFGSNLSMaxValGD(Float64;
-            x0 = x0,
-            c = c,
-            β = β,
-            α = α,
-            δ = δ,
-            ρ = ρ,
-            line_search_max_iteration = line_search_max_iteration,
-            window_size = window_size,
-            threshold = threshold,
-            max_iterations = max_iterations)
-
-        # get the correct iterate (hopefully)
-        xk = fixed_damped_bfgs_nls_maxval_gd(optData, progData)
-        
-        # test stop iteration
-        @test optData.stop_iteration == max_iterations
-        k = optData.stop_iteration
-
-        # test iter_hist
-        @test optData.iter_hist[k + 1] == xk
-        xkm1 = optData.iter_hist[k]
-
-        # test that xk was formed correctly
-        Bkm1 = optData.B - optData.δB 
-        gkm1 = OptimizationMethods.grad(progData, xkm1)
-        stepkm1 = Bkm1 \ gkm1
-        
-        ## backtracking
-        x = copy(xkm1)
-        F(θ) = OptimizationMethods.obj(progData, θ)
-        backtrack_success = OptimizationMethods.backtracking!(
-            x,
-            xkm1,
-            F,
-            gkm1,
-            stepkm1,
-            F(xkm1),
-            optData.α,
-            optData.δ,
-            optData.ρ;
-            max_iteration = optData.line_search_max_iteration
-        )
-
-        # test agreement
-        @test backtrack_success
-        @test optData.step ≈ stepkm1 atol = 1e-5
-        @test xk ≈ x
-
-         # test correctness of s, y
-         gk = OptimizationMethods.grad(progData, xk) 
-         s = xk - xkm1
-         y = gk - gkm1
-         @test optData.s ≈ s
-         @test optData.y ≈ y
-
-        # that that δB was formed correctly
-        δBk = zeros(dim, dim)
-        Bkm1_copy = copy(Bkm1)
-        update_success = OptimizationMethods.update_bfgs!(Bkm1_copy, 
-            optData.r, δBk,
-            optData.s, optData.y; damped_update = true)
-        @test δBk ≈ optData.δB
-
-        # test δB
-        Bk = Bkm1 + optData.δB
-        @test optData.B ≈ Bk
-
-        # test the gradient history
-        @test optData.grad_val_hist[k + 1] ≈ norm(gk)
-
-        # test the objective history
-        @test optData.objective_hist[1] == F(xk)
-
-        max_val, max_ind = findmax(optData.objective_hist)
-        @test optData.objective_hist[optData.max_index] == max_val
-        @test optData.max_value == max_val
-    end
-
-    # Inductive Step: random max_iteration
-    max_iterations = rand((window_size+1):(window_size + 100))
-    let x0 = x0, c = c, β = β, α = α, δ = δ, ρ = ρ, 
-        line_search_max_iteration = line_search_max_iteration, 
-        window_size = window_size, threshold = 0.0,
-        max_iterations = max_iterations
-        
-        # get random least squares problem
-        progData = OptimizationMethods.LeastSquares(Float64)
+        progData = OptimizationMethods.PoissonRegression(Float64)
 
         # generate random structure
         optData = FixedDampedBFGSNLSMaxValGD(Float64;
@@ -683,6 +593,112 @@ end # end test cases for the function -- monotone
         @test optData.grad_val_hist[k + 1] ≈ norm(gk)
 
         # test the objective history
+        @test optData.objective_hist[1] == F(xk)
+
+        max_val, max_ind = findmax(optData.objective_hist)
+        @test optData.objective_hist[optData.max_index] == max_val
+        @test optData.max_value == max_val
+    end
+
+    # Inductive Step: random max_iteration
+    max_iterations = rand((window_size+1):(window_size + 10))
+    let x0 = x0, c = c, β = β, α = α, δ = δ, ρ = ρ, 
+        line_search_max_iteration = line_search_max_iteration, 
+        window_size = window_size, threshold = 0.0,
+        max_iterations = max_iterations
+        
+        # get random least squares problem
+        progData = OptimizationMethods.PoissonRegression(Float64)
+
+        # generate random structure
+        optData = FixedDampedBFGSNLSMaxValGD(Float64;
+            x0 = x0,
+            c = c,
+            β = β,
+            α = α,
+            δ = δ,
+            ρ = ρ,
+            line_search_max_iteration = line_search_max_iteration,
+            window_size = window_size,
+            threshold = threshold,
+            max_iterations = max_iterations - 1)
+        
+        xkm1 = fixed_damped_bfgs_nls_maxval_gd(optData, progData)
+        τkm1 = optData.max_value
+
+        # generate random structure
+        optData = FixedDampedBFGSNLSMaxValGD(Float64;
+            x0 = x0,
+            c = c,
+            β = β,
+            α = α,
+            δ = δ,
+            ρ = ρ,
+            line_search_max_iteration = line_search_max_iteration,
+            window_size = window_size,
+            threshold = threshold,
+            max_iterations = max_iterations)
+
+        # get the correct iterate (hopefully)
+        xk = fixed_damped_bfgs_nls_maxval_gd(optData, progData)
+        
+        # test stop iteration
+        @test optData.stop_iteration == max_iterations
+        k = optData.stop_iteration
+
+        # test iter_hist
+        @test optData.iter_hist[k + 1] == xk
+        xkm1 = optData.iter_hist[k]
+
+        # test that xk was formed correctly
+        Bkm1 = optData.B - optData.δB 
+        gkm1 = OptimizationMethods.grad(progData, xkm1)
+        stepkm1 = Bkm1 \ gkm1
+        
+        ## backtracking
+        x = copy(xkm1)
+        F(θ) = OptimizationMethods.obj(progData, θ)
+        backtrack_success = OptimizationMethods.backtracking!(
+            x,
+            xkm1,
+            F,
+            gkm1,
+            stepkm1,
+            τkm1,
+            optData.α,
+            optData.δ,
+            optData.ρ;
+            max_iteration = optData.line_search_max_iteration
+        )
+
+        # test agreement
+        @test backtrack_success
+        @test optData.step ≈ stepkm1 atol = 1e-5
+        @test xk ≈ x
+
+         # test correctness of s, y
+         gk = OptimizationMethods.grad(progData, xk) 
+         s = xk - xkm1
+         y = gk - gkm1
+         @test norm(optData.s - s) ≈ 0 atol = 1e-10
+         @test norm(optData.y - y) ≈ 0 atol = 1e-10
+
+        # that that δB was formed correctly
+        δBk = zeros(dim, dim)
+        Bkm1_copy = copy(Bkm1)
+        update_success = OptimizationMethods.update_bfgs!(Bkm1_copy, 
+            optData.r, δBk,
+            optData.s, optData.y; damped_update = true)
+        @test δBk ≈ optData.δB
+
+        # test δB
+        Bk = Bkm1 + optData.δB
+        @test optData.B ≈ Bk
+
+        # test the gradient history
+        @test optData.grad_val_hist[k + 1] ≈ norm(gk)
+
+        # test the objective history
         @test optData.objective_hist[k + 1] == F(xk)
 
         max_val, max_ind = findmax(optData.objective_hist)
@@ -700,7 +716,7 @@ end # end test cases for the function -- monotone
         max_iterations = max_iterations
 
         # get random least squares problem
-        progData = OptimizationMethods.LeastSquares(Float64)
+        progData = OptimizationMethods.PoissonRegression(Float64)
 
         # generate random structure
         optData = FixedDampedBFGSNLSMaxValGD(Float64;

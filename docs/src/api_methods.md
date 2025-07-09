@@ -11,6 +11,14 @@ barzilai_borwein_gd
 BarzilaiBorweinGD
 ```
 
+This method relies on two utility functions.
+
+```@docs
+OptimizationMethods.bb_long_step_size
+
+OptimizationMethods.bb_short_step_size
+```
+
 # Gradient Descent with Fixed Step Size
 
 ```@docs
@@ -68,13 +76,27 @@ backtracking_gd
 BacktrackingGD
 ```
 
+# Watchdog Technique with Nonmonotone Line Search
+
+## First Order Methods
+
+```@docs
+watchdog_fixed_gd
+
+WatchdogFixedGD
+
+watchdog_safe_barzilai_borwein_gd
+
+WatchdogSafeBarzilaiBorweinGD
+```
+
 # Gradient Descent with Non-monotone Line Search
 
 ## Fixed Step
 ```@docs
 fixed_step_nls_maxval_gd
 
-FixedStepNLSMaxValGD
+FixedStepNonmonLSMaxValGD
 ```
 
 # Watchdog Technique with Nonmonotone Line Search
@@ -97,6 +119,10 @@ NonsequentialArmijoAdaptiveGD
 nonsequential_armijo_fixed_gd
 
 NonsequentialArmijoFixedGD
+
+nonsequential_armijo_safe_bb_gd
+
+NonsequentialArmijoSafeBBGD
 ```
 
 ## Second Order Methods
@@ -104,10 +130,16 @@ NonsequentialArmijoFixedGD
 nonsequential_armijo_fixed_damped_bfgs
 
 NonsequentialArmijoFixedDampedBFGSGD
+
+nonsequential_armijo_mnewton_fixed_gd
+
+NonsequentialArmijoFixedMNewtonGD
 ```
 
-The methods above require several utility functions. These are listed
-below.
+The Non-sequential Armijo Line Search Algorithms make use of the following
+helper functions. Additionally, the algorithms under
+[Watchdog Technique with Nonmonotone Line Search](@ref) makes use
+of the [`OptimizationMethods.inner_loop!`](@ref) function.
 
 ```@docs
 OptimizationMethods.update_local_lipschitz_approximation

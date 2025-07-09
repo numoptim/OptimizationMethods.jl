@@ -99,7 +99,7 @@ function update_bfgs!(
 
     # get the damped BFGS update
     sy = dot(s, y)
-    if (!damped_update) || (dot(s, y) >= .2 * sHs)
+    if (!damped_update) || (sy >= .2 * sHs)
         r .= y
     else
         θ = (.8 * sHs) / (sHs - sy)
@@ -114,7 +114,7 @@ function update_bfgs!(
 
     # update the hessian
     update .= -(Hs*transpose(Hs) ./ sHs)
-    update .+= (r*transpose(r) ./ dot(s, r))  
+    update .+= (r*transpose(r) ./ sr)  
     H .+= update
 
     return true

@@ -30,11 +30,11 @@ scheme.
 - `max_value::T`, maximum value of `objective_hist`. This is the reference 
     objective value used in the line search procedure.
 - `max_index::Int64`, index of the maximum value that corresponds to the 
-    reference objective value.
-- `β::T`, argument for the function used to modify the hessian.
-- `λ::T`, argument for the function used to modify the hessian.
+    reference objective value. Index of the maximum value in `objective_hist`.
+- `β::T`, argument for the function used to modify the Hessian.
+- `λ::T`, argument for the function used to modify the Hessian.
 - `hessian_modification_max_iteration::Int64`, max number of attempts
-    at modifying the hessian per-step.
+    at modifying the Hessian per-step.
 - `threshold::T`, norm gradient tolerance condition. Induces stopping when norm 
     at most `threshold`.
 - `max_iterations::Int64`, max number of iterates that are produced, not 
@@ -64,14 +64,14 @@ scheme.
 - `δ::T`, backtracking decreasing factor applied to `α` when the line search
     criterion is not satisfied
 - `ρ::T`, factor involved in the acceptance criterion in the line search
-    procedure. Larger values correpsond to stricter descetn conditions, and
+    procedure. Larger values correspond to stricter descent conditions, and
     smaller values correspond to looser descent conditions.
 - `line_search_max_iteration::Int64`, maximum number of iterations for
     line search.
 - `window_size::Int64`, number of previous objective values that are used
     to construct the reference value for the line search criterion.
-- `β::T`, argument for the function used to modify the hessian.
-- `λ::T`, argument for the function used to modify the hessian.
+- `β::T`, argument for the function used to modify the Hessian.
+- `λ::T`, argument for the function used to modify the Hessian.
 - `threshold::T`, gradient threshold. If the norm gradient is below this, then 
     iteration stops.
 - `max_iterations::Int64`, max number of iterations (gradient steps) taken by 
@@ -178,7 +178,7 @@ The method we describe is a version of Algorithm 3.2 in the
 
 Let ``k + 1 \\in \\mathbb{N}``, and ``\\theta_{k} \\in \\mathbb{R}^n``.
 Let ``F(\\theta)`` be a function, and let ``\\dot F(\\theta)`` and
-``\\ddot F(\\theta)`` be the gradient and hessian of ``F(\\theta)``,
+``\\ddot F(\\theta)`` be the gradient and Hessian of ``F(\\theta)``,
 respectively. Let ``\\alpha \\in \\mathbb{R}_{>0}``, ``\\delta \\in (0, 1)``,
 ``\\rho \\in (0, 1)`` be algorithmic parameters. Then, iterate ``\\theta_{k+1}``
 is produced by the following procedure.
@@ -285,7 +285,7 @@ function fixed_modified_newton_nls_maxval_gd(
             return optData.iter_hist[iter]
         end
 
-        # compute the next gradient and hessian values
+        # compute the next gradient and Hessian values
         OptimizationMethods.grad!(progData, precomp, store, x)
         OptimizationMethods.hess!(progData, precomp, store, x)
         
