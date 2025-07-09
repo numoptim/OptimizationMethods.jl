@@ -85,6 +85,10 @@ BacktrackingGD
 watchdog_fixed_gd
 
 WatchdogFixedGD
+
+watchdog_safe_barzilai_borwein_gd
+
+WatchdogSafeBarzilaiBorweinGD
 ```
 
 ## Second Order Methods
