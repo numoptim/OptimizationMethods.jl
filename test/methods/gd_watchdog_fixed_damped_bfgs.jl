@@ -286,7 +286,7 @@ end
         
         # start approximation
         fill!(optData.Bjk, 0)
-        OptimizationMethods.add_identity(optData.Bjk,
+        OptimizationMethods.add_identity!(optData.Bjk,
             optData.c * norm(store.grad))
         Bjk = copy(optData.Bjk)
 
@@ -330,7 +330,7 @@ end
 
         # Initial approximation
         fill!(optData.Bjk, 0)
-        OptimizationMethods.add_identity(optData.Bjk,
+        OptimizationMethods.add_identity!(optData.Bjk,
             optData.c * norm(store.grad))
         B00 = copy(optData.Bjk)
         g0 = copy(store.grad)
@@ -351,7 +351,7 @@ end
 
         # Initial approximation
         fill!(optData.Bjk, 0)
-        OptimizationMethods.add_identity(optData.Bjk,
+        OptimizationMethods.add_identity!(optData.Bjk,
             optData.c * norm(store.grad))
 
         ψjk = copy(x0)
@@ -376,7 +376,7 @@ end
 
         # Initial approximation
         fill!(optData.Bjk, 0)
-        OptimizationMethods.add_identity(optData.Bjk,
+        OptimizationMethods.add_identity!(optData.Bjk,
             optData.c * norm(store.grad))
 
         ψjk = copy(x0)

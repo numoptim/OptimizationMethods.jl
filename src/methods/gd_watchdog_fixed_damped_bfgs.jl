@@ -18,7 +18,7 @@ Mutable structure that parameterizes gradient descent with fixed
 - `∇F_θk::Vector{T}`, buffer array for the gradient of the initial inner
     loop iterate.
 - `B_θk::Matrix{T}`, buffer matrix for the BFGS approximation prior to the
-    start of the inner loop. This is saved in case bactracking is required,
+    start of the inner loop. This is saved in case backtracking is required,
     making the next approximation dependent on this value.
 - `norm_∇F_ψ::T`, norm of the gradient of the current inner loop iterate.
 - `c::T`, initial factor used in the approximation of the Hessian.
@@ -410,7 +410,7 @@ function watchdog_fixed_damped_bfgs_gd(
 
     # Initialize hessian approximation
     fill!(optData.Bjk, 0)
-    OptimizationMethods.add_identity(optData.Bjk,
+    OptimizationMethods.add_identity!(optData.Bjk,
         optData.c * optData.grad_val_hist[iter + 1])
 
     # Initialize the objective history
