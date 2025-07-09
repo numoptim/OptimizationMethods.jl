@@ -15,7 +15,7 @@ A structure that parameterizes gradient descent with Barzilai-Borwein
 
 - `name::String`, name of the optimizer for reference.
 - `F_θk::T`, objective function value at the beginning of the inner loop
-    for one of the inner loop stopping condition.
+    for one of the inner loop stopping conditions.
 - `∇F_θk::Vector{T}`, buffer array for the gradient of the initial inner
     loop iterate.
 - `norm_∇F_ψ::T`, norm of the gradient of the current inner loop iterate.
@@ -29,9 +29,9 @@ A structure that parameterizes gradient descent with Barzilai-Borwein
     larger than `1/α_lower`, then it is set to `α_default`.
 - `α0k::T`, the initial step size used in the inner loop. Used as an 
     initial value when the inner loop fails the watchdog condition.
-- `iter_diff::Vector{T}`, buffer array for difference between iterates 
+- `iter_diff::Vector{T}`, buffer array for the difference between iterates 
     used to calculate the step size.
-- `grad_diff::Vector{T}`, buffer array for difference between gradients
+- `grad_diff::Vector{T}`, buffer array for the difference between gradients
     used to calculate the step size.
 - `δ::T`, step size reduction parameter used in the line search routine. 
 - `ρ::T`, parameter used in backtracking and the watchdog condition. Larger
@@ -288,7 +288,7 @@ changes to the short form of the Barzilai-Borwein step size.
 
 ## Optional Keyword Arguments
 
-- `max_iteration = 100`, maximum number of allowable iteration of the inner loop.
+- `max_iteration = 100`, maximum number of allowable iterations of the inner loop.
 
 # Returns
 
