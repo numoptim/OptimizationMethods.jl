@@ -93,6 +93,7 @@ export NonsequentialArmijoFixedGD, nonsequential_armijo_fixed_gd
 export WatchdogFixedGD, watchdog_fixed_gd
 export NonsequentialArmijoFixedMNewtonGD, nonsequential_armijo_mnewton_fixed_gd
 export NonsequentialArmijoSafeBBGD, nonsequential_armijo_safe_bb_gd
+export WatchdogSafeBarzilaiBorweinGD, watchdog_safe_barzilai_borwein_gd
 export NonsequentialArmijoFixedDampedBFGSGD, nonsequential_armijo_fixed_damped_bfgs
 export FixedModifiedNewtonNLSMaxValGD, fixed_modified_newton_nls_maxval_gd
 export FixedDampedBFGSNLSMaxValGD, fixed_damped_bfgs_nls_maxval_gd
@@ -101,6 +102,7 @@ export FixedDampedBFGSNLSMaxValGD, fixed_damped_bfgs_nls_maxval_gd
 include("methods/stepsize_helpers/diminishing_stepsizes.jl")
 include("methods/line_search_helpers/backtracking.jl")
 include("methods/line_search_helpers/non_sequential_armijo.jl")
+
 
 ### Helper functions for second order optimization methods
 include("methods/second_order_helpers/modified_newton.jl")
@@ -122,6 +124,7 @@ include("methods/gd_non_sequential_armijo_adaptive.jl")
 include("methods/gd_non_sequential_armijo_fixed.jl")
 include("methods/gd_fixed_watchdog_gd.jl")
 include("methods/gd_non_sequential_armijo_safe_bb.jl")
+include("methods/gd_watchdog_barzilai_borwein.jl")
 include("methods/gd_fixed_nls_max_val_damped_bfgs.jl")
 include("methods/gd_non_sequential_armijo_fixed_mnewton.jl")
 include("methods/gd_non_sequential_armijo_fixed_damped_bfgs.jl")
