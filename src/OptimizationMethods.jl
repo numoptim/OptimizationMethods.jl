@@ -91,6 +91,7 @@ export SafeBarzilaiBorweinNLSMaxValGD, safe_barzilai_borwein_nls_maxval_gd
 export NonsequentialArmijoAdaptiveGD, nonsequential_armijo_adaptive_gd
 export NonsequentialArmijoFixedGD, nonsequential_armijo_fixed_gd
 export WatchdogFixedGD, watchdog_fixed_gd
+export WatchdogFixedMNewtonGD, watchdog_fixed_mnewton_gd
 export NonsequentialArmijoFixedMNewtonGD, nonsequential_armijo_mnewton_fixed_gd
 export NonsequentialArmijoSafeBBGD, nonsequential_armijo_safe_bb_gd
 export WatchdogSafeBarzilaiBorweinGD, watchdog_safe_barzilai_borwein_gd
@@ -129,6 +130,7 @@ include("methods/gd_watchdog_barzilai_borwein.jl")
 include("methods/gd_fixed_nls_max_val_damped_bfgs.jl")
 include("methods/gd_watchdog_fixed_damped_bfgs.jl")
 include("methods/gd_non_sequential_armijo_fixed_mnewton.jl")
+include("methods/gd_watchdog_fixed_mnewton.jl")
 include("methods/gd_non_sequential_armijo_fixed_damped_bfgs.jl")
 
 end

@@ -8,6 +8,7 @@ Pages=["api_methods.md"]
 
 ```@docs
 barzilai_borwein_gd
+
 BarzilaiBorweinGD
 ```
 
@@ -90,7 +91,14 @@ watchdog_safe_barzilai_borwein_gd
 WatchdogSafeBarzilaiBorweinGD
 ```
 
-## Second Order Methods
+## Second Order Methods (Hessian Evaluated)
+```@docs
+watchdog_fixed_mnewton_gd
+
+WatchdogFixedMNewtonGD
+```
+
+## Quasi-Newton Methods (No Hessian Evaluation)
 ```@docs
 watchdog_fixed_damped_bfgs_gd
 
@@ -186,11 +194,13 @@ OptimizationMethods.non_sequential_armijo_condition
 # Second Order Helper Functions
 
 ## Hessian Modification
+
 ```@docs
 OptimizationMethods.add_identity_until_pd!
 ```
 
 ## Quasi-Newton Updates
+
 ```@docs
 OptimizationMethods.update_bfgs!
 ```
