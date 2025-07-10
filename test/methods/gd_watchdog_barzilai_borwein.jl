@@ -835,7 +835,7 @@ end
             max_iterations = 1)        
 
         # get random problem
-        progData = OptimizationMethods.LeastSquares(Float64, nvar=dim)
+        progData = OptimizationMethods.LogisticRegression(Float64, nvar=dim)
 
         # run method
         x = watchdog_safe_barzilai_borwein_gd(optData, progData)
