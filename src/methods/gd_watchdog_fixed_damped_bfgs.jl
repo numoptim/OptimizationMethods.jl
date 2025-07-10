@@ -14,7 +14,7 @@ Mutable structure that parameterizes gradient descent with fixed
 
 - `name::String`, name of the optimizer for reference.
 - `F_θk::T`, objective function value at the beginning of the inner loop
-    for one of the inner loop stopping condition.
+    for one of the inner loop stopping conditions.
 - `∇F_θk::Vector{T}`, buffer array for the gradient of the initial inner
     loop iterate.
 - `B_θk::Matrix{T}`, buffer matrix for the BFGS approximation prior to the
@@ -252,7 +252,7 @@ was produced through backtracking.
 
 ## Optional Keyword Arguments
 
-- `max_iterations = 100`, maximum number of allowable iteration of the inner loop.
+- `max_iterations = 100`, maximum number of allowable iterations of the inner loop.
 
 # Returns
 
