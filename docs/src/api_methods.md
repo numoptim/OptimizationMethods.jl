@@ -91,12 +91,18 @@ watchdog_safe_barzilai_borwein_gd
 WatchdogSafeBarzilaiBorweinGD
 ```
 
-## Second Order Methods
-
+## Second Order Methods (Hessian Evaluated)
 ```@docs
 watchdog_fixed_mnewton_gd
 
 WatchdogFixedMNewtonGD
+```
+
+## Quasi-Newton Methods (No Hessian Evaluation)
+```@docs
+watchdog_fixed_damped_bfgs_gd
+
+WatchdogFixedDampedBFGSGD
 ```
 
 # Gradient Descent with Non-monotone Line Search

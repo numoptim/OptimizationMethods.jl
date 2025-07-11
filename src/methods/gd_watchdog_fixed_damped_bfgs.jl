@@ -1,15 +1,14 @@
-# Date: 2025/05/05
+# Date: 2025/05/07
 # Author: Christian Varner
-# Implementation of gradient descent with Barzilai-Borwein steps
-# globalized through a watchdog technique
+# Purpose: Implementation of damped BFGS
 
 """
-    WatchdogSafeBarzilaiBorweinGD{T} <: AbstractOptimizerData{T}
+    WatchdogFixedDampedBFGSGD{T} <: AbstractOptimizerData{T}
 
-A structure that parameterizes gradient descent with Barzilai-Borwein
-    step size and negative gradient steps, globalized through the
-    watchdog framework. The structure also stores values during the progression
-    of its application on an optimization problem.
+Mutable structure that parameterizes gradient descent with fixed
+    step size and damped BFGS directions. The structure also stores and tracks
+    values during the progress of applying the method to an optimization
+    problem.
 
 # Fields
 
@@ -18,21 +17,26 @@ A structure that parameterizes gradient descent with Barzilai-Borwein
     for one of the inner loop stopping conditions.
 - `∇F_θk::Vector{T}`, buffer array for the gradient of the initial inner
     loop iterate.
+- `B_θk::Matrix{T}`, buffer matrix for the BFGS approximation prior to the
+    start of the inner loop. This is saved in case backtracking is required,
+    making the next approximation dependent on this value.
 - `norm_∇F_ψ::T`, norm of the gradient of the current inner loop iterate.
-- `init_stepsize::T`, initial step size used to start the Barzilai-Borwein
-    method.
-- `bb_step_size::Function`, Barzilai-Borwein step size function. See
-    [the long step size function](@ref OptimizationMethods.bb_long_step_size) and
-    [the short step size function](@ref OptimizationMethods.bb_short_step_size).
-- `α_lower::T`, used to compute a safeguard on the Barzilai-Borwein step size.
-- `α_default::T`, If the Barzilai-Borwein step size is smaller than `α_lower` or
-    larger than `1/α_lower`, then it is set to `α_default`.
-- `α0k::T`, the initial step size used in the inner loop. Used as an 
-    initial value when the inner loop fails the watchdog condition.
-- `iter_diff::Vector{T}`, buffer array for the difference between iterates 
-    used to calculate the step size.
-- `grad_diff::Vector{T}`, buffer array for the difference between gradients
-    used to calculate the step size.
+- `c::T`, initial factor used in the approximation of the Hessian.
+- `Bjk::Matrix{T}`, buffer matrix for the damped BFGS approximation in the
+    inner loop.
+- `δBjk::Matrix{T}`, buffer matrix for the update term added to the BFGS 
+    approximation.
+- `rjk::Vector{T}`, buffer vector for the update term in the damped BFGS
+    approximation.
+- `sjk::Vector{T}`, buffer vector for a term used in the damped BFGS approximation.
+    Should correspond to the difference of consecutive iterates in the 
+    inner loop.
+- `yjk::Vector{T}`, buffer vector for a term used in the damped BFGS approximation.
+    Should correspond to the difference of gradient values between 
+    consecutive iterates in the inner loop.
+- `djk::Vector{T}`, buffer vector used to store the step used in the inner
+    loop.
+- `α::T`, fixed step size used in the inner loop.
 - `δ::T`, step size reduction parameter used in the line search routine. 
 - `ρ::T`, parameter used in backtracking and the watchdog condition. Larger
     numbers indicate stricter descent conditions. Smaller numbers indicate
@@ -47,8 +51,7 @@ A structure that parameterizes gradient descent with Barzilai-Borwein
 - `objective_hist::CircularVector{T, Vector{T}}`, vector of previous accepted 
     objective values for non-monotone cache update.
 - `reference_value::T`, the maximum objective value in `objective_hist`.
-- `reference_value_index::Int64`, the index of the maximum value in
-    `objective_hist`.
+- `reference_value_index::Int64`, the index of the maximum value in `objective_hist`.
 - `threshold::T`, norm gradient tolerance condition. Induces stopping when norm 
     is at most `threshold`.
 - `max_iterations::Int64`, max number of iterates that are produced, not 
@@ -63,11 +66,10 @@ A structure that parameterizes gradient descent with Barzilai-Borwein
 
 # Constructors
 
-    WatchdogSafeBarzilaiBorweinGD(::Type{T}, x0::Vector{T}, init_stepsize::T,
-        long_stepsize::Bool, α_lower::T, α_default::T, δ::T, ρ::T,
-        line_search_max_iterations::Int64, η::T,
-        inner_loop_max_iterations::Int64, window_size::Int64, threshold::T,
-        max_iterations::Int64) where {T}
+    WatchdogFixedDampedBFGSGD(::Type{T}; x0::Vector{T}, c::T, α::T, δ::T, ρ::T,
+        line_search_max_iterations::Int64, η::T, 
+        inner_loop_max_iterations::Int64, window_size::Int64,
+        threshold::T, max_iterations::Int64) where {T}
 
 ## Arguments
 
@@ -75,15 +77,8 @@ A structure that parameterizes gradient descent with Barzilai-Borwein
 
 ## Keyword Arguments
 
-- `x0::Vector{T}`, initial point to start the optimization routine. Saved in
-    `iter_hist[1]`.
-- `init_stepsize::T`, initial step size used to start the Barzilai-Borwein
-    method.
-- `long_stepsize::Bool`, if `true` use the long form of the step size,
-    otherwise use the short form.
-- `α_lower::T`, used to compute a safeguard on the Barzilai-Borwein step size.
-- `α_default::T`, If the Barzilai-Borwein step size is smaller than `α_lower` or
-    larger than `1/α_lower`, then it is set to `α_default`.
+- `c::T`, initial factor used in the approximation of the Hessian.
+- `α::T`, fixed step size used in the inner loop.
 - `δ::T`, step size reduction parameter used in the line search routine. 
 - `ρ::T`, parameter used in backtracking and the watchdog condition. Larger
     numbers indicate stricter descent conditions. Smaller numbers indicate
@@ -98,21 +93,25 @@ A structure that parameterizes gradient descent with Barzilai-Borwein
     is at most `threshold`.
 - `max_iterations::Int64`, max number of iterates that are produced, not 
     including the initial iterate.
+
 """
-mutable struct WatchdogSafeBarzilaiBorweinGD{T} <: AbstractOptimizerData{T}
+mutable struct WatchdogFixedDampedBFGSGD{T} <: AbstractOptimizerData{T}
     name::String
     F_θk::T
     ∇F_θk::Vector{T}
+    B_θk::Matrix{T}
     norm_∇F_ψ::T
-    # step size helpers
-    init_stepsize::T
-    bb_step_size::Function
-    α_lower::T
-    α_default::T
-    α0k::T
-    iter_diff::Vector{T}
-    grad_diff::Vector{T}
+    # Quantities involved in damped BFGS update
+    c::T
+    Bjk::Matrix{T}
+    δBjk::Matrix{T}
+    rjk::Vector{T}
+    sjk::Vector{T}
+    yjk::Vector{T}
+    d0k::Vector{T}
+    djk::Vector{T}
     # line search parameters
+    α::T
     δ::T
     ρ::T
     line_search_max_iterations::Int64
@@ -131,12 +130,11 @@ mutable struct WatchdogSafeBarzilaiBorweinGD{T} <: AbstractOptimizerData{T}
     grad_val_hist::Vector{T}
     stop_iteration::Int64
 end
-function WatchdogSafeBarzilaiBorweinGD(::Type{T};
+function WatchdogFixedDampedBFGSGD(
+    ::Type{T};
     x0::Vector{T},
-    init_stepsize::T,
-    long_stepsize::Bool,
-    α_lower::T,
-    α_default::T,
+    c::T,
+    α::T,
     δ::T,
     ρ::T,
     line_search_max_iterations::Int64,
@@ -145,10 +143,10 @@ function WatchdogSafeBarzilaiBorweinGD(::Type{T};
     window_size::Int64,
     threshold::T,
     max_iterations::Int64
-    ) where {T}
+) where {T}
 
-    name::String = "Gradient Descent with Barzilai-Borwein Step Size, Globalized"*
-        " by Watchdog."
+    name::String = "Gradient Descent with Fixed Step Size and Damped BFGS Steps"*
+        " Globalized by Watchdog."
 
     # initialize buffer for history keeping
     d = length(x0)
@@ -160,30 +158,33 @@ function WatchdogSafeBarzilaiBorweinGD(::Type{T};
     grad_val_hist::Vector{T} = Vector{T}(undef, max_iterations + 1)
     stop_iteration::Int64 = -1 # dummy value
 
-    # initialize step size function
-    step_size = long_stepsize ? bb_long_step_size : bb_short_step_size
+    # initialize objective cache
+    objective_hist = CircularVector(zeros(T, window_size))
 
-    return WatchdogSafeBarzilaiBorweinGD{T}(
+    return WatchdogFixedDampedBFGSGD{T}(
         name,
-        T(0),
-        zeros(T, d),
-        T(0),
-        init_stepsize,
-        step_size,
-        α_lower,
-        α_default,
-        T(0),
-        zeros(T, d),
-        zeros(T, d),
+        T(0),                                                   # F_θk
+        zeros(T, d),                                            # ∇F_θk
+        zeros(T, d, d),                                         # B_θk
+        T(0),                                                   # norm_∇F_ψ
+        c,                                                      
+        zeros(T, d, d),                                         # Bjk
+        zeros(T, d, d),                                         # δBjk
+        zeros(T, d),                                            # rjk
+        zeros(T, d),                                            # sjk
+        zeros(T, d),                                            # yjk
+        zeros(T, d),                                            # d0k
+        zeros(T, d),                                            # djk
+        α,                                                      
         δ,
         ρ,
         line_search_max_iterations,
-        T(0),
+        T(0),                                                   # max_distance_squared
         η,
         inner_loop_max_iterations,
-        CircularVector(zeros(T, window_size)),
-        T(0),
-        -1,
+        objective_hist,
+        T(0),                                                   # reference_value
+        -1,                                                     # reference_value_index
         threshold,
         max_iterations,
         iter_hist,
@@ -193,89 +194,52 @@ function WatchdogSafeBarzilaiBorweinGD(::Type{T};
 end
 
 """
-    inner_loop!(ψjk::S, θk::S, optData::WatchdogSafeBarzilaiBorweinGD{T}, 
+    inner_loop!(ψjk::S, θk::S, optData::WatchdogFixedDampedBFGSGD{T}, 
         progData::P1 where P1 <: AbstractNLPModel{T, S}, 
         precomp::P2 where P2 <: AbstractPrecompute{T}, 
-        store::P3 where P3 <: AbstractProblemAllocate{T}, k::Int64; 
-        max_iterations = 100) where {T}
+        store::P3 where P3 <: AbstractProblemAllocate{T}, 
+        k::Int64; max_iterations = 100) where {T}
 
 Conduct the inner loop iteration, modifying `ψjk`, `optData`, and `store` in
     place. `ψjk` gets updated to be the terminal iterate of the inner loop.
-    This inner loop function uses negative gradient directions with a 
-    safeguarded Barzilai-Borwein step size.
+    This inner loop function uses fixed step sizes with the damped BFGS step.
 
 # Method
 
 In what follows, we let ``||\\cdot||_2`` denote the L2-norm. 
 Let ``\\theta_{k}`` for ``k + 1 \\in\\mathbb{N}`` be the ``k^{th}`` iterate
-of the optimization algorithm. Let ``\\alpha =`` `optData.α_default` 
-be a positive real number and
-``\\underline\\alpha = `` `optData.α_lower` be a number in ``(0, 1]``.
+of the optimization algorithm. Let ``\\alpha =`` `optData.α`.
 
 Let ``\\psi_0^k = \\theta_k``, then this method returns
 ```math
-    \\psi_{j_k}^k = \\psi_0^k - \\sum_{i = 0}^{j_k-1} \\alpha_i^k 
-    \\dot F(\\psi_i^k),
+    \\psi_{j_k}^k = \\psi_0^k - \\sum_{i = 0}^{j_k-1} \\alpha d_i^k,
 ```
 where ``j_k \\in \\mathbb{N}`` is the smallest iteration for which 
 at least one of the conditions are satisfied: 
 
 1. ``j_k == `` `optData.inner_loop_max_iterations`
 2. ``||\\dot F(\\psi_{j_k}^k)||_2 \\leq \\eta (1 + |F(\\theta_k)|)`` and
-    ``|F(\\psi_{j_k}^k| \\leq `` `optData.reference_value`.
+    ``|F(\\psi_{j_k}^k)| \\leq `` `optData.reference_value`.
 
-The step size ``\\alpha_i^k`` is calculated using the safeguarded Barzilai-
-Borwein method. 
+The step direction ``d_i^k`` is the damped BFGS step. In particular, let
+``B_i^k`` be the damped BFGS approximation to the Hessian using
+[OptimizationMethods.update_bfgs!](@ref). Then,
 
-## Step Size Computation
-
-Suppose that `long_stepsize = true` and let ``k + 1 \\in \\mathbb{N}``. We
-now describe how the initial step size for each inner loop is calculated, and
-then subsequent step sizes, which depends on ``k`` and whether the watchdog
-condition was satisfied previously.
-When ``k = 0``, the initial step size ``\\alpha_0^0`` is `optData.init_stepsize`.
-
-For ``k > 0``, if the watchdog condition was satisfied at 
-``\\psi_{j_{k-1}}^{k-1}``, then let 
 ```math
-    \\gamma_0^k = 
-        \\frac{
-        ||\\psi_{j_{k-1}}^{k-1} - \\psi_{j_{k-1} - 1}^{k-1}||_2^2} 
-        {(\\psi_{j_{k-1}}^{k-1} - \\psi_{j_{k-1} - 1}^{k-1})^\\intercal 
-        (\\dot F(\\psi_{j_{k-1}}^{k-1}) - 
-        \\dot F(\\psi_{j_{k-1} - 1}^{k-1}))},
+    d_i^k = (B_i^k)^{-1} \\dot F(\\psi_i^k).
 ```
-otherwise, ``\\theta_{k}`` was produced by backtracking on ``\\theta_{k-1}``
-and 
-```math
-    \\gamma_0^k = 
-        \\frac{
-        ||\\theta_{k} - \\theta_{k-1}||_2^2} 
-        {(\\theta_{k} - \\theta_{k-1})^\\intercal 
-        (\\dot F(\\theta_{k}) - \\dot F(\\theta_{k-1}))}.
-```
-If ``\\gamma_0^k \\in [\\underline{\\alpha}, 1/\\underline{\\alpha}]`` then
-``\\alpha_0^k = \\gamma_0^k``, otherwise ``\\alpha_0^k = \\alpha``.
 
-In all cases, for ``j \\in \\mathbb{N}`` and ``k + 1 \\in \\mathbb{N}``
-```math
-    \\gamma_i^k = 
-        \\frac{
-        ||\\psi_i^k - \\psi_{i-1}^k||_2^2}{ 
-        (\\psi_i^k - \\psi_{i-1}^k)^\\intercal 
-        (\\dot F(\\psi_i^k) - \\dot F(\\psi_{i-1}^k))},
-```
-and if ``\\gamma_i^k \\in [\\underline{\\alpha}, 1/\\underline{\\alpha}]`` then
-``\\alpha_i^k = \\gamma_i^k``, otherwise ``\\alpha_i^k = \\alpha``.
-
-When `long_stepsize = false`, the cases remain the same but the step size formula
-changes to the short form of the Barzilai-Borwein step size.
+If the inner loop iterate is accepted (the watchdog condition is satisfied) at
+time ``k \\in \\mathbb{N}``, then ``B_0^k = B_{j_{k-1}}^{k-1}``; otherwise,
+the ``B_0^k`` is ``B_0^{k-1}``  updated using the damped
+approximation between ``\\theta_{k-1}`` and ``\\theta_k`` where ``\\theta_k``
+was produced through backtracking.
 
 # Arguments
 
 - `ψjk::S`, buffer array for the inner loop iterates.
 - `θk::S`, starting iterate.
-- `optData::WatchdogSafeBarzilaiBorweinGD{T}`, `struct` that specifies the optimization
+- `optData::WatchdogFixedDampedBFGSGD{T}`, `struct` that specifies the optimization
     algorithm. Fields are modified during the inner loop.
 - `progData::P1 where P1 <: AbstractNLPModel{T, S}`, `struct` that specifies the
     optimization problem. Fields are modified during the inner loop.
@@ -288,7 +252,7 @@ changes to the short form of the Barzilai-Borwein step size.
 
 ## Optional Keyword Arguments
 
-- `max_iteration = 100`, maximum number of allowable iterations of the inner loop.
+- `max_iterations = 100`, maximum number of allowable iterations of the inner loop.
 
 # Returns
 
@@ -297,12 +261,13 @@ changes to the short form of the Barzilai-Borwein step size.
 function inner_loop!(
     ψjk::S,
     θk::S,
-    optData::WatchdogSafeBarzilaiBorweinGD{T}, 
+    optData::WatchdogFixedDampedBFGSGD{T}, 
     progData::P1 where P1 <: AbstractNLPModel{T, S}, 
     precomp::P2 where P2 <: AbstractPrecompute{T}, 
     store::P3 where P3 <: AbstractProblemAllocate{T}, 
     k::Int64; 
-    max_iterations = 100) where {T, S}
+    max_iterations = 100
+) where {T, S}
 
     # initialization for inner loop
     j::Int64 = 0
@@ -310,28 +275,24 @@ function inner_loop!(
     optData.max_distance_squared = T(0)
     optData.norm_∇F_ψ = optData.grad_val_hist[k]
 
-    # compute the initial step size
-    step_size = k == 1 ? optData.init_stepsize : 
-        optData.bb_step_size(optData.iter_diff, optData.grad_diff)
-    if step_size < optData.α_lower || 
-        step_size > (1/optData.α_lower) ||
-        isnan(step_size)
-        step_size = optData.α_default
-    end
-    optData.α0k = step_size
-
     # stopping conditions
     while j < max_iterations
 
         # Increment the inner loop counter
         j += 1
 
-        # update iter diff and grad diff
-        optData.iter_diff .= -ψjk
-        optData.grad_diff .= -store.grad
+        # store values for update
+        optData.sjk .= -ψjk
+        optData.yjk .= -store.grad
+
+        # compute step
+        optData.djk .= optData.Bjk \ store.grad
+        if j == 1
+            optData.d0k .= optData.djk
+        end
 
         # take step
-        ψjk .-= step_size .* store.grad
+        ψjk .-= optData.α * optData.djk
 
         dist = norm(ψjk - θk)
         optData.max_distance_squared = max(dist^2, optData.max_distance_squared)
@@ -340,17 +301,12 @@ function inner_loop!(
         OptimizationMethods.grad!(progData, precomp, store, ψjk)
         optData.norm_∇F_ψ = norm(store.grad)
 
-        # update values in iter_diff and grad_diff
-        optData.iter_diff .+= ψjk
-        optData.grad_diff .+= store.grad
-
-        # safe guard against too large or too small step sizes
-        step_size = optData.bb_step_size(optData.iter_diff, optData.grad_diff)
-        if step_size < optData.α_lower || 
-            step_size > (1/optData.α_lower) ||
-            isnan(step_size)
-            step_size = optData.α_default
-        end
+        # update approximation
+        optData.sjk .+= ψjk
+        optData.yjk .+= store.grad
+        update_success = OptimizationMethods.update_bfgs!(
+            optData.Bjk, optData.rjk, optData.δBjk,
+            optData.sjk, optData.yjk; damped_update = true)
 
         # check other stopping condition
         if optData.norm_∇F_ψ <= optData.η * (1 + abs(optData.F_θk))
@@ -361,17 +317,13 @@ function inner_loop!(
     end
 
     return j
-
 end
 
 """
-    watchdog_safe_barzilai_borwein_gd(optData::WatchdogSafeBarzilaiBorweinGD{T},
+    watchdog_fixed_damped_bfgs_gd(optData::WatchdogFixedDampedBFGSGD{T},
         progData::P where P <: AbstractNLPModel{T, S}) where {T, S}
 
-Implementation of gradient descent with the Barzilai-Borwein step size and
-    negative gradient directions, which is globalized through the
-    watchdog technique. The optimization algorithm is specified
-    through `optData`, and applied to the problem `progData`.
+Implementation of 
 
 # Reference(s)
 
@@ -379,33 +331,32 @@ Implementation of gradient descent with the Barzilai-Borwein step size and
     for the Barzilai-Borwein Gradient Method". 
     Computational Optimization and Applications.](@cite grippo2002Nonmonotone)
 
-[Barzilai and Borwein. "Two-Point Step Size Gradient Methods". IMA Journal of 
-    Numerical Analysis.](@cite barzilai1988Twopoint)
+[Nocedal and Wright, "Numerical Optimization". Springer. 2nd Edition. 
+    Chapter 6 and 18.](@cite nocedal2006Numerical)
 
 # Method
 
 In what follows, we let ``||\\cdot||_2`` denote the L2-norm. 
 Let ``\\theta_{k}`` for ``k + 1 \\in\\mathbb{N}`` be the ``k^{th}`` iterate
-of the optimization algorithm. Let ``\\rho =`` `optData.ρ` and 
-``\\delta=`` `optData.δ`.
+of the optimization algorithm. Let ``\\alpha =`` `optData.α`.
 
-Let ``\\psi_0^k = \\theta_k``, and recursively define for all ``j \\in \\mathbb{N}``
+Let ``\\psi_0^k = \\theta_k``, then recursively define for ``j \\in \\mathbb{N}``
 ```math
-    \\psi_{j}^k = \\psi_0^k - \\sum_{i = 0}^{j-1} \\alpha_i^k \\dot F(\\psi_i^k),
+    \\psi_{j}^k = \\psi_0^k - \\sum_{i = 0}^{j-1} \\alpha d_i^k.
 ```
-To see how the inner loop steps are performed for this method, see
-    the documentation for [OptimizationMethods.inner_loop!](@ref) for
-    `optData::WatchdogSafeBarzilaiBorweinGD{T}`.
+For more information on ``d_i^k``, see the documentation for 
+[OptimizationMethods.inner_loop!](@ref) when 
+`optData::WatchdogFixedDampedBFGSGD{T}`.
 
-Let ``j_k \\in \\mathbb{N}`` be the smallest number for which at least one of the
-conditions are satisfied: 
+Let ``j_k \\in \\mathbb{N}`` is the smallest iteration for which 
+at least one of the conditions are satisfied: 
 
 1. ``j_k == `` `optData.inner_loop_max_iterations`
 2. ``||\\dot F(\\psi_{j_k}^k)||_2 \\leq \\eta (1 + |F(\\theta_k)|)`` and
     ``|F(\\psi_{j_k}^k| \\leq `` `optData.reference_value`.
 
 Let 
-``\\tau_{\\mathrm{obj}}^k = \\max_{max(0, k - M + 1) \\leq i \\leq k} F(\\theta_{i})``.
+``\\tau_{\\mathrm{obj}}^k = \\max_{0 \\leq i \\leq max(0, M - 1)} F(\\theta_{k - i})``.
 
 If the watchdog condition
 
@@ -428,8 +379,8 @@ routine.
 
 # Arguments
 
-- `optData::WatchdogSafeBarzilaiBorweinGD{T}`, the specification for the optimization 
-    method.
+- `optData::WatchdogFixedDampedBFGSGD{T}`, the specification 
+    for the optimization method.
 - `progData<:AbstractNLPModel{T,S}`, the specification for the optimization
     problem.
 
@@ -442,12 +393,12 @@ routine.
 
 - `x::S`, final iterate of the optimization algorithm.
 """
-function watchdog_safe_barzilai_borwein_gd(
-    optData::WatchdogSafeBarzilaiBorweinGD{T},
+function watchdog_fixed_damped_bfgs_gd(
+    optData::WatchdogFixedDampedBFGSGD{T},
     progData::P where P <: AbstractNLPModel{T, S}
 ) where {T, S}
 
-    # initialize the problem data and save initial values
+    # initialize the problem data nd save initial values
     precomp, store = OptimizationMethods.initialize(progData)
     F(θ) = OptimizationMethods.obj(progData, precomp, store, θ)
     
@@ -455,11 +406,16 @@ function watchdog_safe_barzilai_borwein_gd(
     iter = 0
     x = copy(optData.iter_hist[1])
     OptimizationMethods.grad!(progData, precomp, store, x)
-    optData.grad_val_hist[1] = norm(store.grad)
+    optData.grad_val_hist[1] = norm(store.grad) 
+
+    # Initialize hessian approximation
+    fill!(optData.Bjk, 0)
+    OptimizationMethods.add_identity!(optData.Bjk,
+        optData.c * optData.grad_val_hist[iter + 1])
 
     # Initialize the objective history
     M = length(optData.objective_hist)
-    optData.objective_hist[1] = F(x) 
+    optData.objective_hist[1] = F(optData.iter_hist[1]) 
     optData.reference_value, optData.reference_value_index = 
         optData.objective_hist[1], 1
 
@@ -472,6 +428,7 @@ function watchdog_safe_barzilai_borwein_gd(
         # inner loop
         optData.F_θk = optData.objective_hist[iter]
         optData.∇F_θk .= store.grad
+        optData.B_θk .= optData.Bjk
         inner_loop!(x, optData.iter_hist[iter], optData, progData,
             precomp, store, iter; 
             max_iterations = optData.inner_loop_max_iterations)
@@ -480,12 +437,13 @@ function watchdog_safe_barzilai_borwein_gd(
         # if watchdog not successful, try to backtrack
         if Fx > optData.reference_value - optData.ρ * optData.max_distance_squared
 
-            # revert to previous iterate
+            # revert to previous iterate and approximation (for update)
+            optData.Bjk .= optData.B_θk
             x .= optData.iter_hist[iter]
 
             # update iter_diff and grad_diff
-            optData.iter_diff .= -x
-            optData.grad_diff .= -optData.∇F_θk
+            optData.sjk .= -x
+            optData.yjk .= -optData.∇F_θk
 
             # backtrack on the previous iterate
             backtrack_success = OptimizationMethods.backtracking!(
@@ -493,9 +451,9 @@ function watchdog_safe_barzilai_borwein_gd(
                 optData.iter_hist[iter],
                 F,
                 optData.∇F_θk,
-                optData.grad_val_hist[iter] ^ 2,
+                optData.d0k,
                 optData.reference_value,
-                optData.α0k,
+                optData.α,
                 optData.δ,
                 optData.ρ;
                 max_iteration = optData.line_search_max_iterations)
@@ -510,13 +468,16 @@ function watchdog_safe_barzilai_borwein_gd(
             OptimizationMethods.grad!(progData, precomp, store, x)
             optData.grad_val_hist[iter + 1] = norm(store.grad)
 
-            optData.iter_diff .+= x
-            optData.grad_diff .+= store.grad
+            # update BFGS approximation
+            optData.sjk .+= x
+            optData.yjk .+= store.grad
+            update_success = OptimizationMethods.update_bfgs!(
+                optData.Bjk, optData.rjk, optData.δBjk,
+                optData.sjk, optData.yjk; damped_update = true)
 
             Fx = F(x)
         else
-            OptimizationMethods.grad!(progData, precomp, store, x)
-            optData.grad_val_hist[iter + 1] = norm(store.grad)
+            optData.grad_val_hist[iter + 1] = optData.norm_∇F_ψ
         end
 
         # update the objective_hist

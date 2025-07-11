@@ -216,7 +216,7 @@ end
     inner_loop_max_iterations = rand(1:100)
     window_size = rand(1:100)
     threshold = rand(T)
-    max_iterations = rand(1:100)
+    max_iterations = rand(5:25)
 
     # construct
     optData = WatchdogSafeBarzilaiBorweinGD(
@@ -835,7 +835,7 @@ end
             max_iterations = 1)        
 
         # get random problem
-        progData = OptimizationMethods.LeastSquares(Float64, nvar=dim)
+        progData = OptimizationMethods.LogisticRegression(Float64, nvar=dim)
 
         # run method
         x = watchdog_safe_barzilai_borwein_gd(optData, progData)
@@ -903,7 +903,7 @@ end
             max_iterations = 1)        
 
         # get random problem
-        progData = OptimizationMethods.LeastSquares(Float64, nvar=dim)
+        progData = OptimizationMethods.LogisticRegression(Float64, nvar=dim)
 
         # run method
         x = watchdog_safe_barzilai_borwein_gd(optData, progData)
@@ -941,7 +941,7 @@ end
             max_iterations = 1)        
 
         # get random problem
-        progData = OptimizationMethods.LeastSquares(Float64, nvar=dim)
+        progData = OptimizationMethods.LogisticRegression(Float64, nvar=dim)
 
         # run method
         x1 = watchdog_safe_barzilai_borwein_gd(optData, progData)
@@ -1015,7 +1015,7 @@ end
             max_iterations = max_iterations)    
 
         # get random problem
-        progData = OptimizationMethods.LeastSquares(Float64, nvar=dim)
+        progData = OptimizationMethods.LogisticRegression(Float64, nvar=dim)
 
         # run method
         xk = watchdog_safe_barzilai_borwein_gd(optData, progData)
