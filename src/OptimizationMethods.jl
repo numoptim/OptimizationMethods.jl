@@ -6,6 +6,7 @@ using LinearAlgebra
 using NLPModels
 using Distributions
 using QuadGK: quadgk
+using CUTEst          # for CUTEst Wrapper
 
 ################################################################################
 # Optimization Problems 
