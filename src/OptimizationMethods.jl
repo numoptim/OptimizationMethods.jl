@@ -66,6 +66,7 @@ include("problems/ql_logistic_sin.jl")
 include("problems/ql_logistic_centered_exp.jl")
 include("problems/ql_logistic_centered_log.jl")
 include("problems/ql_logistic_monomial.jl")
+include("problems/cutest_wrapper.jl")
 
 ################################################################################
 # Optimization Methods 
