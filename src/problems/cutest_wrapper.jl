@@ -8,16 +8,6 @@
 
 """
 """
-function CUTEstWrapper(
-    ::Type{T};
-    name::String
-) where {T}
-    nlp = CUTEstModel{Float64}(name)
-    return nlp
-end
-
-"""
-"""
 struct PrecomputeCUTEst{T} <: AbstractPrecompute{T}
 end
 function PrecomputeCUTEst(progData::CUTEstModel{T}) where T
