@@ -107,6 +107,11 @@ end
     progData = CUTEstModel{Float64}("ROSENBR") 
     nvar = progData.meta.nvar
 
+    # counters
+    nobj = 0
+    ngrad = 0
+    nhess = 0
+
     # test output
     for i in 1:10
 
@@ -115,16 +120,119 @@ end
 
         # compute and test
         o = OptimizationMethods.obj(progData, x)
+        nobj += 1
+        
         @test o == NLPModels.obj(progData, x)
+        nobj += 1
+
+        # test wrapper function still count correctly
+        @test nobj == progData.counters.neval_obj
+        @test ngrad == progData.counters.neval_grad
+        @test nhess == progData.counters.neval_hess
 
         # compute and test
         g = OptimizationMethods.grad(progData, x)
+        ngrad += 1
+
+        @test g == NLPModels.grad(progData, x)
+        ngrad += 1
+        
+        # test wrapper function still count correctly
+        @test nobj == progData.counters.neval_obj
+        @test ngrad == progData.counters.neval_grad
+        @test nhess == progData.counters.neval_hess
 
         # compute and test 
-        o, g = OptimizationMethods.grad(progData, x) 
+        o, g = OptimizationMethods.objgrad(progData, x) 
+        @test o == NLPModels.obj(progData, x)
+        @test g == NLPModels.grad(progData, x) 
+        nobj += 2
+        ngrad += 2
+
+        # test wrapper function still count correctly
+        @test nobj == progData.counters.neval_obj
+        @test ngrad == progData.counters.neval_grad
+        @test nhess == progData.counters.neval_hess
 
         # compute and test
         h = OptimizationMethods.hess(progData, x)
+        @test h == NLPModels.hess(progData, x)
+        nhess += 2
+
+        # test wrapper function still count correctly
+        @test nobj == progData.counters.neval_obj
+        @test ngrad == progData.counters.neval_grad
+        @test nhess == progData.counters.neval_hess 
+
+    end
+
+    finalize(progData)
+
+end
+
+@testset "Test CUTEstWrapper Functionality -- Group 2" begin
+
+    # test problem 1 
+    progData = CUTEstModel{Float64}("ROSENBR")
+    precomp = OptimizationMethods.PrecomputeCUTEst(progData) 
+    nvar = progData.meta.nvar
+
+    # counters
+    nobj = 0
+    ngrad = 0
+    nhess = 0
+
+    # test output
+    for i in 1:10
+
+        # generate random point
+        x = randn(nvar)
+
+        # compute and test
+        o = OptimizationMethods.obj(progData, precomp, x)
+        nobj += 1
+        
+        @test o == NLPModels.obj(progData, x)
+        nobj += 1
+
+        # test wrapper function still count correctly
+        @test nobj == progData.counters.neval_obj
+        @test ngrad == progData.counters.neval_grad
+        @test nhess == progData.counters.neval_hess
+
+        # compute and test
+        g = OptimizationMethods.grad(progData, precomp, x)
+        ngrad += 1
+
+        @test g == NLPModels.grad(progData, x)
+        ngrad += 1
+        
+        # test wrapper function still count correctly
+        @test nobj == progData.counters.neval_obj
+        @test ngrad == progData.counters.neval_grad
+        @test nhess == progData.counters.neval_hess
+
+        # compute and test 
+        o, g = OptimizationMethods.objgrad(progData, precomp, x) 
+        @test o == NLPModels.obj(progData, x)
+        @test g == NLPModels.grad(progData, x) 
+        nobj += 2
+        ngrad += 2
+
+        # test wrapper function still count correctly
+        @test nobj == progData.counters.neval_obj
+        @test ngrad == progData.counters.neval_grad
+        @test nhess == progData.counters.neval_hess
+
+        # compute and test
+        h = OptimizationMethods.hess(progData, precomp, x)
+        @test h == NLPModels.hess(progData, x)
+        nhess += 2
+
+        # test wrapper function still count correctly
+        @test nobj == progData.counters.neval_obj
+        @test ngrad == progData.counters.neval_grad
+        @test nhess == progData.counters.neval_hess 
 
     end
 
@@ -134,6 +242,72 @@ end
 
 @testset "Test CUTEstWrapper Functionality -- Group 3" begin
 
+    # test problem 1 
+    progData = CUTEstModel{Float64}("ROSENBR")
+    precomp, store = OptimizationMethods.initialize(progData) 
+    nvar = progData.meta.nvar
+
+    # counters
+    nobj = 0
+    ngrad = 0
+    nhess = 0
+
+    # test output
+    for i in 1:10
+
+        # generate random point
+        x = randn(nvar)
+
+        # compute and test
+        o = OptimizationMethods.obj(progData, precomp, store, x)
+        nobj += 1
+        
+        @test o == NLPModels.obj(progData, x)
+        nobj += 1
+
+        # test wrapper function still count correctly
+        @test nobj == progData.counters.neval_obj
+        @test ngrad == progData.counters.neval_grad
+        @test nhess == progData.counters.neval_hess
+
+        # compute and test
+        OptimizationMethods.grad!(progData, precomp, store, x)
+        ngrad += 1
+
+        @test store.grad == NLPModels.grad(progData, x)
+        ngrad += 1
+        
+        # test wrapper function still count correctly
+        @test nobj == progData.counters.neval_obj
+        @test ngrad == progData.counters.neval_grad
+        @test nhess == progData.counters.neval_hess
+
+        # compute and test 
+        store.grad .= zeros(nvar)
+        o = OptimizationMethods.objgrad!(progData, precomp, store, x) 
+        @test o == NLPModels.obj(progData, x)
+        @test store.grad == NLPModels.grad(progData, x) 
+        nobj += 2
+        ngrad += 2
+
+        # test wrapper function still count correctly
+        @test nobj == progData.counters.neval_obj
+        @test ngrad == progData.counters.neval_grad
+        @test nhess == progData.counters.neval_hess
+
+        # compute and test
+        OptimizationMethods.hess!(progData, precomp, store, x)
+        @test store.hess == NLPModels.hess(progData, x)
+        nhess += 2
+
+        # test wrapper function still count correctly
+        @test nobj == progData.counters.neval_obj
+        @test ngrad == progData.counters.neval_grad
+        @test nhess == progData.counters.neval_hess 
+
+    end
+
+    finalize(progData)
 
 end
 
