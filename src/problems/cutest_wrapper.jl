@@ -1,5 +1,5 @@
 # OptimizationMethods.jl
-# Date: 2025/17/07
+# Date: 2025/07/17
 # Author: Christian Varner
 # Purpose: Implementation of a CUTEst Wrapper file
 # to gain access to it's functionality. The main
@@ -139,7 +139,7 @@ args_pre = [
 
     @doc """
         obj(
-            $(join(string.(args),",\n\t    "))
+            $(join(string.(args_pre),",\n\t    "))
         ) where {T,S}
     
     Computes the objective function at the value `x`.
@@ -150,7 +150,7 @@ args_pre = [
 
     @doc """
         grad(
-            $(join(string.(args),",\n\t    "))
+            $(join(string.(args_pre),",\n\t    "))
         ) where {T,S}
 
     Computes the gradient function value at `x`.
@@ -161,7 +161,7 @@ args_pre = [
 
     @doc """
          objgrad(
-            $(join(string.(args),",\n\t    "))
+            $(join(string.(args_pre),",\n\t    "))
         ) where {T,S}
 
     Computes the objective function and gradient function value at `x`. The
@@ -174,7 +174,7 @@ args_pre = [
 
     @doc """
         hess(
-            $(join(string.(args),",\n\t    "))
+            $(join(string.(args_pre),",\n\t    "))
         ) where {T,S}
     
     Computes the Hessian function value at `x`.

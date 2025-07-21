@@ -28,6 +28,10 @@ OptimizationMethods.QLLogisticCenteredLog
 OptimizationMethods.QLLogisticMonomial
 ```
 
+# CUTEst
+
+We support problems that are created using the `CUTEst` constructor.
+
 # Problem Utility
 
 ## Regression Link Functions
