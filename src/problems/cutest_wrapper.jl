@@ -7,6 +7,15 @@
 # a initialize function
 
 """
+    PrecomputeCUTEst{T} <: AbstractPrecompute{T}
+
+Store precomputed values used in computing objective, gradient, or hessian.
+
+# Constructor
+
+    PrecomputeCUTEst(progData::CUTEstModel{T}) where T
+
+Requests memory for the precomputed values and computes them.
 """
 struct PrecomputeCUTEst{T} <: AbstractPrecompute{T}
 end
@@ -15,6 +24,21 @@ function PrecomputeCUTEst(progData::CUTEstModel{T}) where T
 end
 
 """
+    AllocateCUTEst{T} <: AbstractProblemAllocate{T}
+
+Allocates memory for the gradient and hessian for in-place computation.
+
+# Fields
+
+- `grad::Vector{T}`, memory for the gradient of the objective
+- `hess::Matrix{T}`, memory for the hessian of the objective
+
+# Constructor
+
+    AllocateCUTEst(progData::CUTEstModel{T}) where T
+
+Requests memory for the buffer arrays. These will be initially filled with all
+    zeros.
 """
 struct AllocateCUTEst{T} <: AbstractProblemAllocate{T}
     grad::Vector{T}
@@ -29,6 +53,11 @@ function AllocateCUTEst(progData::CUTEstModel{T}) where T
 end
 
 """
+    initialize(progData::CUTEstModel{T}) where {T}
+
+Initializes the precompute and allocate data structures for a CUTEst problem
+    specified by `progData`. Returns the precomputed structure first, then
+    the allocate structure.
 """
 function initialize(progData::CUTEstModel{T}) where {T}
     
