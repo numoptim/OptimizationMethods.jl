@@ -69,61 +69,8 @@ end
 
 ###############################################################################
 # Operations that are not in-place. Does not make use of precomputed values.
+# Already implemented by the library
 ###############################################################################
-
-args = [
-    :(progData::CUTEstModel{T}),
-    :(x::Vector{T})
-]
-
-@eval begin
-
-    @doc """
-        obj(
-            $(join(string.(args),",\n\t    "))
-        ) where {T,S}
-    
-    Computes the objective function at the value `x`.
-    """
-    function obj($(args...)) where {T}
-        return NLPModels.obj(progData, x)
-    end
-
-    @doc """
-        grad(
-            $(join(string.(args),",\n\t    "))
-        ) where {T,S}
-
-    Computes the gradient function value at `x`.
-    """
-    function grad($(args...)) where {T}
-        return NLPModels.grad(progData, x)
-    end
-
-    @doc """
-         objgrad(
-            $(join(string.(args),",\n\t    "))
-        ) where {T,S}
-
-    Computes the objective function and gradient function value at `x`. The
-        values returned are the objective function value followed by the 
-        gradient function value. 
-    """
-    function objgrad($(args...)) where {T}
-        return NLPModels.objgrad(progData, x)
-    end
-
-    @doc """
-        hess(
-            $(join(string.(args),",\n\t    "))
-        ) where {T,S}
-    
-    Computes the Hessian function value at `x`.
-    """
-    function hess($(args...)) where {T}
-        return NLPModels.hess(progData, x)
-    end
-end
 
 ###############################################################################
 # Operations that are not in-place. Makes use of precomputed values. 
@@ -144,7 +91,7 @@ args_pre = [
     
     Computes the objective function at the value `x`.
     """
-    function obj($(args_pre...)) where {T}
+    function NLPModels.obj($(args_pre...)) where {T}
         return NLPModels.obj(progData, x)
     end
 
@@ -155,7 +102,7 @@ args_pre = [
 
     Computes the gradient function value at `x`.
     """
-    function grad($(args_pre...)) where {T}
+    function NLPModels.grad($(args_pre...)) where {T}
         return NLPModels.grad(progData, x)
     end
 
@@ -168,7 +115,7 @@ args_pre = [
         values returned are the objective function value followed by the 
         gradient function value. 
     """
-    function objgrad($(args_pre...)) where {T}
+    function NLPModels.objgrad($(args_pre...)) where {T}
         return NLPModels.objgrad(progData, x)
     end
 
@@ -205,7 +152,7 @@ args_store = [
 
     Computes the objective function at the value `x`.
     """
-    function obj($(args_store...)) where {T}
+    function NLPModels.obj($(args_store...)) where {T}
         return NLPModels.obj(progData, x)
     end
 
@@ -217,7 +164,7 @@ args_store = [
     Computes the gradient function value at `x`. The gradient is computed in
         place and saved in `store.grad`.
     """
-    function grad!($(args_store...)) where {T}
+    function NLPModels.grad!($(args_store...)) where {T}
         NLPModels.grad!(progData, x, store.grad)
     end
 
@@ -230,7 +177,7 @@ args_store = [
         objective function value is returned. The gradient function value is 
         stored in `store.grad`. 
     """
-    function objgrad!($(args_store...)) where {T}
+    function NLPModels.objgrad!($(args_store...)) where {T}
         f,_ = NLPModels.objgrad!(progData, x, store.grad)
         return f
     end
