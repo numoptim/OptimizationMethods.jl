@@ -21,7 +21,7 @@ jobs:
       - uses: fortran-lang/setup-fortran@main
         with:
           compiler: 'gcc'
-          version: '14'
+          version: '13'
       - uses: julia-actions/setup-julia@latest
         with:
           version: ${{ matrix.julia-version }}
