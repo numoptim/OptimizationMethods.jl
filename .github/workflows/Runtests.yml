@@ -18,6 +18,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+      - uses: fortran-lang/setup-fortran@main
+        with:
+          compiler: 'gcc'
+          version: '14'
       - uses: julia-actions/setup-julia@latest
         with:
           version: ${{ matrix.julia-version }}
