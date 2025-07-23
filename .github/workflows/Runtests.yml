@@ -14,10 +14,15 @@ jobs:
       matrix:
         julia-version: ['lts']
         julia-arch: [x64]
-        os: [ubuntu-latest, windows-latest, macOS-latest]
+        os: [ubuntu-latest, windows-latest, macOS-13]
 
     steps:
       - uses: actions/checkout@v4
+      - uses: fortran-lang/setup-fortran@main
+        with:
+          compiler: 'gcc'
+          version: '14'
+        if: matrix.os == 'macos-latest' || matrix.os == 'macos-13'
       - uses: julia-actions/setup-julia@latest
         with:
           version: ${{ matrix.julia-version }}

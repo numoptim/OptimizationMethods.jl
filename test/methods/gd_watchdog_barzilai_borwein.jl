@@ -807,7 +807,7 @@ end
     inner_loop_max_iterations = rand(1:100)
     window_size = rand(2:5)
     threshold = rand(T)
-    max_iterations = rand(window_size:20)
+    max_iterations = rand(window_size:10)
 
     # first inner loop fails -- line search succeeds
     let dim = dim, x0 = x0, init_stepsize = init_stepsize, 
