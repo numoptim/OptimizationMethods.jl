@@ -610,6 +610,9 @@ end
                 store, past_acceptance,k,max_iteration=100)
 
             @test ψjk == x0 .+ 11
+            @test optData.triggering_event_hist[k][1] == 1
+            @test optData.triggering_event_hist[k][2] == 0
+            @test optData.triggering_event_hist[k][3] == 0
         end
 
         # Test second event trigger: τ_lower 
@@ -624,6 +627,9 @@ end
                 store, past_acceptance,k,max_iteration=100)
 
             @test ψjk == x0
+            @test optData.triggering_event_hist[k][1] == 0
+            @test optData.triggering_event_hist[k][2] == 1
+            @test optData.triggering_event_hist[k][3] == 0
         end
 
         # Test third event trigger: τ_upper 
@@ -638,6 +644,9 @@ end
                 store, past_acceptance,k,max_iteration=100)
 
             @test ψjk == x0
+            @test optData.triggering_event_hist[k][1] == 0
+            @test optData.triggering_event_hist[k][2] == 1
+            @test optData.triggering_event_hist[k][3] == 0
         end
 
         # Test fourth event trigger: max_iteration
@@ -652,6 +661,9 @@ end
                 store, past_acceptance,k,max_iteration=0)
 
             @test ψjk == x0
+            @test optData.triggering_event_hist[k][1] == 0
+            @test optData.triggering_event_hist[k][2] == 0
+            @test optData.triggering_event_hist[k][3] == 1
         end
 
         # Test first iteration; past_acceptance=false

@@ -34,6 +34,10 @@ A mutable struct that represents gradient descent with non-sequential armijo
     is at most `threshold`.
 - `max_iterations::Int64`, max number of iterates that are produced, not 
     including the initial iterate.
+- `triggering_event_hist::Vector{Vector{Int64}}`, each vector denotes which
+    triggering events occurred. The first position is for the bounding ball,
+    the second position is for the gradient interval, and third position
+    is for the max iteration.
 - `iter_hist::Vector{Vector{T}}`, store the iterate sequence as the algorithm 
     progresses. The initial iterate is stored in the first position.
 - `grad_val_hist::Vector{T}`, stores the norm gradient values at each iterate. 
@@ -83,6 +87,7 @@ mutable struct NonsequentialArmijoGD{T} <: AbstractOptimizerData{T}
     local_lipschitz_estimate::T
     threshold::T
     max_iterations::Int64
+    triggering_event_hist::Vector{Vector{Int64}}
     iter_hist::Vector{Vector{T}}
     grad_val_hist::Vector{T}
     stop_iteration::Int64
@@ -114,6 +119,9 @@ function NonsequentialArmijoGD(
     iter_hist[1] = x0
 
     grad_val_hist::Vector{T} = Vector{T}(undef, max_iterations + 1)
+    triggering_event_hist::Vector{Vector{Int64}} = Vector{Vector{Int64}}([
+        zeros(Int64, 3) for i in 1:max_iterations
+    ]) 
     stop_iteration::Int64 = -1 # dummy value
 
     return NonsequentialArmijoGD(
@@ -131,6 +139,7 @@ function NonsequentialArmijoGD(
         T(1.0),                     # local_lipschitz_estimate
         threshold,
         max_iterations,
+        triggering_event_hist,
         iter_hist,
         grad_val_hist,
         stop_iteration
@@ -366,6 +375,13 @@ function inner_loop!(
         optData.norm_∇F_ψ = norm(store.grad)
     end
 
+    # record which triggering event occurred
+    optData.triggering_event_hist[k][1] = !(norm(ψjk - θk) <= 10) 
+    optData.triggering_event_hist[k][2] = 
+        !(optData.τ_lower < optData.norm_∇F_ψ && optData.norm_∇F_ψ < optData.τ_upper) 
+    optData.triggering_event_hist[k][3] = !(j < max_iteration) 
+
+    # update local lipschitz constant
     optData.local_lipschitz_estimate = update_local_lipschitz_approximation(
             j, k, optData.prev_norm_step, store.grad,
             optData.prev_∇F_ψ, optData.local_lipschitz_estimate, past_acceptance)
