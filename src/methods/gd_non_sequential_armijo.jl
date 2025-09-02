@@ -36,8 +36,10 @@ A mutable struct that represents gradient descent with non-sequential armijo
     including the initial iterate.
 - `triggering_event_hist::Vector{Vector{Int64}}`, each vector denotes which
     triggering events occurred. The first position is for the bounding ball,
-    the second position is for the gradient interval, and third position
-    is for the max iteration.
+    the second position is for the lower bound on the gradient interval,
+    the third position is for the upper bound on the gradient interval,
+    the fourth position is for the max iteration, and the fifth position is
+    if the descent condition was satisfied.
 - `iter_hist::Vector{Vector{T}}`, store the iterate sequence as the algorithm 
     progresses. The initial iterate is stored in the first position.
 - `grad_val_hist::Vector{T}`, stores the norm gradient values at each iterate. 
@@ -120,7 +122,7 @@ function NonsequentialArmijoGD(
 
     grad_val_hist::Vector{T} = Vector{T}(undef, max_iterations + 1)
     triggering_event_hist::Vector{Vector{Int64}} = Vector{Vector{Int64}}([
-        zeros(Int64, 3) for i in 1:max_iterations
+        zeros(Int64, 5) for i in 1:max_iterations
     ]) 
     stop_iteration::Int64 = -1 # dummy value
 
@@ -377,9 +379,9 @@ function inner_loop!(
 
     # record which triggering event occurred
     optData.triggering_event_hist[k][1] = !(norm(ψjk - θk) <= 10) 
-    optData.triggering_event_hist[k][2] = 
-        !(optData.τ_lower < optData.norm_∇F_ψ && optData.norm_∇F_ψ < optData.τ_upper) 
-    optData.triggering_event_hist[k][3] = !(j < max_iteration) 
+    optData.triggering_event_hist[k][2] = !(optData.τ_lower < optData.norm_∇F_ψ)
+    optData.triggering_event_hist[k][3] = !(optData.norm_∇F_ψ < optData.τ_upper) 
+    optData.triggering_event_hist[k][4] = !(j < max_iteration) 
 
     # update local lipschitz constant
     optData.local_lipschitz_estimate = update_local_lipschitz_approximation(
@@ -548,6 +550,8 @@ function nonsequential_armijo_gd(
         achieved_descent = 
         OptimizationMethods.non_sequential_armijo_condition(Fx, reference_value, 
             optData.grad_val_hist[iter], optData.ρ, optData.δk, optData.α0k)
+        optData.triggering_event_hist[k][5] = achieved_descent
+        
         
         # update the algorithm parameters and current iterate
         update_algorithm_parameters!(x, optData, achieved_descent, iter)
