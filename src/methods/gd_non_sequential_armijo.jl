@@ -550,7 +550,7 @@ function nonsequential_armijo_gd(
         achieved_descent = 
         OptimizationMethods.non_sequential_armijo_condition(Fx, reference_value, 
             optData.grad_val_hist[iter], optData.ρ, optData.δk, optData.α0k)
-        optData.triggering_event_hist[k][5] = achieved_descent
+        optData.triggering_event_hist[iter][5] = achieved_descent
         
         
         # update the algorithm parameters and current iterate
