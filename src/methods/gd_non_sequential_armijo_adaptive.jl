@@ -84,6 +84,7 @@ mutable struct NonsequentialArmijoAdaptiveGD{T} <: AbstractOptimizerData{T}
     local_lipschitz_estimate::T
     threshold::T
     max_iterations::Int64
+    triggering_event_hist::Vector{Vector{Int64}}
     iter_hist::Vector{Vector{T}}
     grad_val_hist::Vector{T}
     stop_iteration::Int64
@@ -115,6 +116,9 @@ function NonsequentialArmijoAdaptiveGD(
     iter_hist[1] = x0
 
     grad_val_hist::Vector{T} = Vector{T}(undef, max_iterations + 1)
+    triggering_event_hist::Vector{Vector{Int64}} = Vector{Vector{Int64}}([
+        zeros(Int64, 5) for i in 1:max_iterations
+    ]) 
     stop_iteration::Int64 = -1 # dummy value
 
     return NonsequentialArmijoAdaptiveGD(
@@ -132,6 +136,7 @@ function NonsequentialArmijoAdaptiveGD(
         T(1.0),                     # local_lipschitz_estimate
         threshold,
         max_iterations,
+        triggering_event_hist,
         iter_hist,
         grad_val_hist,
         stop_iteration
@@ -394,6 +399,12 @@ function inner_loop!(
         optData.norm_∇F_ψ = norm(store.grad)
     end
 
+    # record which triggering event occurred
+    optData.triggering_event_hist[k][1] = !(norm(ψjk - θk) <= 10) 
+    optData.triggering_event_hist[k][2] = !(optData.τ_lower < optData.norm_∇F_ψ)
+    optData.triggering_event_hist[k][3] = !(optData.norm_∇F_ψ < optData.τ_upper) 
+    optData.triggering_event_hist[k][4] = !(j < max_iteration) 
+
     optData.local_lipschitz_estimate = update_local_lipschitz_approximation(
             j, k, optData.prev_norm_step, store.grad,
             optData.prev_∇F_ψ, optData.local_lipschitz_estimate, past_acceptance)
@@ -513,6 +524,7 @@ function nonsequential_armijo_adaptive_gd(
         achieved_descent = 
         OptimizationMethods.non_sequential_armijo_condition(Fx, reference_value, 
             optData.grad_val_hist[iter], optData.ρ, optData.δk, optData.α0k)
+        optData.triggering_event_hist[iter][5] = achieved_descent
         
         # update the algorithm parameters and current iterate
         update_algorithm_parameters!(x, optData, achieved_descent, iter)
