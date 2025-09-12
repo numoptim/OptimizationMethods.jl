@@ -118,21 +118,14 @@ mutable struct QLLogisticCenteredExp{T, S} <: AbstractDefaultQL{T, S}
         V(μ) = OptimizationMethods.centered_exp(μ, p, c)
         dV(μ) = OptimizationMethods.dcentered_exp(μ, p, c)
         weighted_residual(μ, y) = (y - μ) / V(μ)
-
-        l(η) = OptimizationMethods.logistic(η) + (η / 100) ^ 2
-        dl(η) = OptimizationMethods.dlogistic(η) + (2 * η / 10000)
-        ddl(η) = OptimizationMethods.ddlogistic(η) + (1 / 5000)
         new(
             meta,
             counters,
             design,
             response,
-            l,
-            dl,
-            ddl,
-            #OptimizationMethods.logistic,
-            #OptimizationMethods.dlogistic,
-            #OptimizationMethods.ddlogistic,
+            OptimizationMethods.logistic,
+            OptimizationMethods.dlogistic,
+            OptimizationMethods.ddlogistic,
             V,
             dV,
             weighted_residual,
@@ -168,7 +161,7 @@ function QLLogisticCenteredExp(
     β_true_mean = randn(T, nvar)
     β_true = β_true_mean + randn(T, nvar)
     η = design * β_true
-    μ_obs = OptimizationMethods.logistic.(η) + ((η ./ 100) .^ 2)
+    μ_obs = OptimizationMethods.logistic.(η)
     ϵ = T.((rand(Distributions.Arcsine(), nobs) .- .5)./sqrt(1/8)) # standardize
 
     # generate responses
