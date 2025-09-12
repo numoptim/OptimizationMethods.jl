@@ -1,5 +1,5 @@
 """
-    WatchdogFixedGD{T} <: AbstractOptimizerData{T}
+    WatchdogFixedSimpleGD{T} <: AbstractOptimizerData{T}
 
 A structure for storing data about gradient descent with fixed step size,
     globalized through a watchdog technique. The structure also stores values 
@@ -43,7 +43,7 @@ A structure for storing data about gradient descent with fixed step size,
 
 # Constructors
 
-    WatchdogFixedGD(::Type{T}; x0::Vector{T}, α::T, δ::T, ρ::T, window_size::Int64,
+    WatchdogFixedSimpleGD(::Type{T}; x0::Vector{T}, α::T, δ::T, ρ::T, window_size::Int64,
         line_search_max_iterations::Int64, inner_loop_max_iterations::Int64,
         threshold::T, max_iterations::Int64) where {T}
 
@@ -71,7 +71,7 @@ A structure for storing data about gradient descent with fixed step size,
 - `max_iterations::Int64`, max number of iterates that are produced, not 
     including the initial iterate.
 """
-mutable struct WatchdogFixedGD{T} <: AbstractOptimizerData{T}
+mutable struct WatchdogFixedSimpleGD{T} <: AbstractOptimizerData{T}
     name::String
     ∇F_θk::Vector{T}
     # line search helpers
@@ -93,7 +93,7 @@ mutable struct WatchdogFixedGD{T} <: AbstractOptimizerData{T}
     grad_val_hist::Vector{T}
     stop_iteration::Int64
 end
-function WatchdogFixedGD(
+function WatchdogFixedSimpleGD(
     ::Type{T};
     x0::Vector{T},
     α::T,
@@ -120,7 +120,7 @@ function WatchdogFixedGD(
     grad_val_hist::Vector{T} = Vector{T}(undef, max_iterations + 1)
     stop_iteration::Int64 = -1 # dummy value
 
-    return WatchdogFixedGD{T}(name,
+    return WatchdogFixedSimpleGD{T}(name,
         zeros(T, d),                                       # ∇F_θk
         α, 
         δ,                                                 
@@ -194,7 +194,7 @@ where ``j_k \\in \\mathbb{N}`` is the smallest iteration for which:
 function inner_loop!(
     ψjk::S,
     θk::S,
-    optData::WatchdogFixedGD{T}, 
+    optData::WatchdogFixedSimpleGD{T}, 
     progData::P1 where P1 <: AbstractNLPModel{T, S}, 
     precomp::P2 where P2 <: AbstractPrecompute{T}, 
     store::P3 where P3 <: AbstractProblemAllocate{T}, 
@@ -287,7 +287,7 @@ routine.
 
 # Arguments
 
-- `optData::WatchdogFixedGD{T}`, the specification for the optimization 
+- `optData::WatchdogFixedSimpleGD{T}`, the specification for the optimization 
     method.
 - `progData<:AbstractNLPModel{T,S}`, the specification for the optimization
     problem.
@@ -301,8 +301,8 @@ routine.
 
 - `x::S`, final iterate of the optimization algorithm.
 """
-function watchdog_fixed_gd(
-    optData::WatchdogFixedGD{T},
+function watchdog_fixed_simple_gd(
+    optData::WatchdogFixedSimpleGD{T},
     progData::P where P <: AbstractNLPModel{T, S}
 ) where {T, S}
 
