@@ -32,7 +32,7 @@ args = [:(progData::P where P<:AbstractDefaultQL{T, S}),
             end
             obj -= quadgk(
                 x -> progData.weighted_residual(x, progData.response[i]),
-                0, μ_hat[i])[1]
+                1e-5, μ_hat[i])[1]
         end
 
         return T(obj)
@@ -235,7 +235,7 @@ args_store = [
             end
             obj -= quadgk(
                 x -> progData.weighted_residual(x, progData.response[i]),
-                0, store.μ[i])[1]
+                1e-5, store.μ[i])[1]
         end
 
         return obj
