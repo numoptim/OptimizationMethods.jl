@@ -94,4 +94,23 @@ See [Quasi-likelihood Estimation](@ref) for details.
 """
 function centered_shifted_log(μ::T, p::T, c::T, d::T) where {T}
     return log(abs(μ-c)^(2*p) + 1) + d
-end 
+end
+
+"""
+    logistic_variance(μ::T) where {T}
+
+Implements the variance function for logistic regression.
+"""
+function logistic_variance(μ::T) where {T}
+    return μ * (1 - μ)
+end
+
+"""
+    logistic_variance_squared(μ::T) where {T}
+
+Implements the squared variance function. This is the function wedderburn
+    used in his original paper on quasi-likelihood estimation.
+"""
+function logistic_variance_squared(μ::T) where {T}
+    return (μ * (1 - μ))^2 # mu^2 * (1-mu)^2 = mu^2 * (1-2mu + mu^2) = mu^2 - 2mu^3 + mu^4
+end

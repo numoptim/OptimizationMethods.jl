@@ -85,3 +85,21 @@ Compute the following function
 function dmonomial_plus_constant(μ::T, p::T) where {T}
     return T(sign(μ) * 2 * p * (abs(μ) ^ (2 * p - 1)))
 end
+
+"""
+    dlogistic_variance(μ::T) where {T}
+
+Implements the first derivative of the variance function for logistic regression.
+"""
+function dlogistic_variance(μ::T) where {T}
+    return 1 - 2 * μ
+end
+
+"""
+    dlogistic_variance_squared(μ::T) where {T}
+
+Implements the first derivative of the squared variance function for logistic regression.
+"""
+function dlogistic_variance_squared(μ::T) where {T}
+    return 2 * μ - 6 * μ ^ 2 + 4 * μ ^ 4
+end
