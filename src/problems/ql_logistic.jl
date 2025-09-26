@@ -40,6 +40,44 @@ mutable struct QLLogistic{T, S} <: AbstractDefaultQL{T, S}
     end
 end
 function QLLogistic(
+    ::Type{T},
+    V::Function,
+    dV::Function;
+    nobs::Int64 = 1000,
+    nvar::Int64 = 50,
+) where {T}
+
+    # initialize the meta data and counters
+    meta = NLPModelMeta(
+        nvar,
+        name = "Quasi-likelihood with logistic link function and user-defined variance",
+        x0 = zeros(T, nvar)
+    )
+    counters = Counters()
+
+    # simulate the design matrix
+    design = hcat(ones(T, nobs), randn(T, nobs, nvar-1) ./ T(sqrt(nvar - 1)))
+
+    # get reponses
+    β_true_mean = randn(T, nvar)
+    β_true = β_true_mean + randn(T, nvar)
+    η = design * β_true
+    μ_obs = OptimizationMethods.logistic.(η)
+    ϵ = T.((rand(Distributions.Arcsine(), nobs) .- .5)./sqrt(1/8)) # standardize
+
+    # generate responses
+    response = μ_obs + T.(V.(μ_obs) .^ (.5)) .* ϵ
+
+    return QLLogistic{T, Vector{T}}(
+        meta,
+        counters,
+        design,
+        response,
+        V,
+        dV
+    )
+end
+function QLLogistic(
     design::Matrix{T},
     response::Vector{T},
     V::Function,
@@ -56,7 +94,7 @@ function QLLogistic(
     # initialize meta
     meta = NLPModelMeta(
             size(design, 2),
-            name = "Quasi-likelihood with logistic link function and centered exp",
+            name = "Quasi-likelihood with logistic link function and user-defined variance",
             x0 = x0
            )
 
