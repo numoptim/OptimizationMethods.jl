@@ -10,6 +10,7 @@ mutable struct QLLogistic{T, S} <: AbstractDefaultQL{T, S}
     counters::Counters
     design::Matrix{T}
     response::Vector{T}
+    β_true::Union{Vector{T}, Nothing} # only for testing purposes
     mean::Function
     mean_first_derivative::Function
     mean_second_derivative::Function
@@ -22,7 +23,8 @@ mutable struct QLLogistic{T, S} <: AbstractDefaultQL{T, S}
                     design::Matrix{T}, 
                     response::Vector{T},
                     V::Function,
-                    dV::Function) where {T, S} =
+                    dV::Function,
+                    β_true::Union{Vector{T}, Nothing}) where {T, S} =
     begin
         weighted_residual(μ, y) = (y - μ) / V(μ)      
         new(
@@ -30,6 +32,7 @@ mutable struct QLLogistic{T, S} <: AbstractDefaultQL{T, S}
             counters,
             design,
             response,
+            β_true,
             OptimizationMethods.logistic,
             OptimizationMethods.dlogistic,
             OptimizationMethods.ddlogistic,
@@ -38,6 +41,45 @@ mutable struct QLLogistic{T, S} <: AbstractDefaultQL{T, S}
             weighted_residual,
         )
     end
+end
+function QLLogistic(
+    ::Type{T},
+    V::Function,
+    dV::Function;
+    nobs::Int64 = 1000,
+    nvar::Int64 = 50,
+) where {T}
+
+    # initialize the meta data and counters
+    meta = NLPModelMeta(
+        nvar,
+        name = "Quasi-likelihood with logistic link function and user-defined variance",
+        x0 = zeros(T, nvar)
+    )
+    counters = Counters()
+
+    # simulate the design matrix
+    design = hcat(ones(T, nobs), randn(T, nobs, nvar-1) ./ T(sqrt(nvar - 1)))
+
+    # get reponses
+    β_true_mean = randn(T, nvar)
+    β_true = β_true_mean + randn(T, nvar)
+    η = design * β_true
+    μ_obs = OptimizationMethods.logistic.(η)
+    ϵ = T.((rand(Distributions.Arcsine(), nobs) .- .5)./sqrt(1/8)) # standardize
+
+    # generate responses
+    response = μ_obs + T.(V.(μ_obs) .^ (.5)) .* ϵ
+
+    return QLLogistic{T, Vector{T}}(
+        meta,
+        counters,
+        design,
+        response,
+        V,
+        dV,
+        β_true
+    )
 end
 function QLLogistic(
     design::Matrix{T},
@@ -69,7 +111,8 @@ function QLLogistic(
         design,
         response,
         V,
-        dV
+        dV,
+        nothing
     )
 end
 
