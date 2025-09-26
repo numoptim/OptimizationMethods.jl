@@ -59,7 +59,11 @@ function QLLogistic(
     counters = Counters()
 
     # simulate the design matrix
-    design = hcat(ones(T, nobs), randn(T, nobs, nvar-1) ./ T(sqrt(nvar - 1)))
+    design = hcat(ones(T, nobs), randn(T, nobs, nvar-1))
+    mean = sum(design[:, 2:(nvar)])/(nobs*(nvar-1))
+    std = sum((design[:, 2:(nvar)] .- mean) .^ 2)/(nobs*(nvar-1)-1)
+    design[:, 2:(nvar)] .-= mean # center
+    design[:, 2:(nvar)] ./= std # scale
 
     # get reponses
     β_true_mean = randn(T, nvar)
