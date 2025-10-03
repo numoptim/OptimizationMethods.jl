@@ -3,8 +3,52 @@
 # Purpose: Implement a struct were the mean function is the logistic
 # while the variance function is allowed be to be input by the user.
 
-# TODO: testing
+################################################################################
+# Helpers
+################################################################################
 
+"""
+    inverse_logistic(μ)
+
+Compute the inverse of the logistic function.
+"""
+function inverse_logistic(μ::Float64)
+    return log(μ/(1-μ))
+end
+
+"""
+    get_design(a::Float64, nobs::Int64, nvar::Int64)
+
+Generate a design matrix and true coefficients for the quasi-likelihood
+    logistic regression problem.
+"""
+function get_design(a::Float64, nobs::Int64, nvar::Int64)
+    ub = sqrt(inverse_logistic(1-a)/nvar)
+
+    x = (ub) .* rand(nobs, nvar)
+    β = (ub) .* rand(nvar)
+
+    return x, β
+end
+
+"""
+    get_noise(a::Float64, nobs::Int64, vmax::Float64)
+
+Generate noise for the quasi-likelihood regression problem. Added to
+    response.
+"""
+function get_noise(a::Float64, nobs::Int64, vmax::Float64)
+    lb = -a/sqrt(vmax)
+    ub = a/sqrt(vmax)
+    ϵ = (ub - lb) .* rand(nobs) .+ lb
+    return ϵ
+end
+
+################################################################################
+# Problem Structure
+################################################################################
+
+# TODO: testing
 mutable struct QLLogistic{T, S} <: AbstractDefaultQL{T, S}
     meta::NLPModelMeta{T, S}
     counters::Counters
@@ -48,6 +92,8 @@ function QLLogistic(
     dV::Function;
     nobs::Int64 = 1000,
     nvar::Int64 = 50,
+    a::Float64 = .15,
+    vmax::Float64 = 1.0
 ) where {T}
 
     # initialize the meta data and counters
@@ -58,18 +104,12 @@ function QLLogistic(
     )
     counters = Counters()
 
-    # simulate the design matrix
-    design = hcat(ones(T, nobs), randn(T, nobs, nvar-1) ./ T(sqrt(nvar - 1)))
-
-    # get reponses
-    β_true_mean = randn(T, nvar)
-    β_true = β_true_mean + randn(T, nvar)
+    design, β_true = get_design(a, nobs, nvar)
     η = design * β_true
-    μ_obs = OptimizationMethods.logistic.(η)
-    ϵ = T.((rand(Distributions.Arcsine(), nobs) .- .5)./sqrt(1/8)) # standardize
-
-    # generate responses
-    response = μ_obs + T.(V.(μ_obs) .^ (.5)) .* ϵ
+    μ = OptimizationMethods.logistic.(η)
+    v = V.(μ)
+    ϵ = get_noise(a, nobs, vmax)
+    response = μ + (v .^ (.5)) .* ϵ
 
     return QLLogistic{T, Vector{T}}(
         meta,
