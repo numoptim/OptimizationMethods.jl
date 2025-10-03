@@ -135,18 +135,12 @@ function QLLogisticSin(
     )
     counters = Counters()
 
-    # simulate the design matrix
-    design = hcat(ones(T, nobs), randn(T, nobs, nvar-1) ./ T(sqrt(nvar - 1)))
-
-    # get reponses
-    β_true_mean = randn(T, nvar)
-    β_true = β_true_mean + randn(T, nvar)
+    design, β_true = get_design(.15, nobs, nvar)
     η = design * β_true
-    μ_obs = OptimizationMethods.logistic.(η)
-    ϵ = T.((rand(Distributions.Arcsine(), nobs) .- .5)./sqrt(1/8)) # standardize
-
-    # generate responses
-    response = μ_obs + T.(sqrt.(OptimizationMethods.linear_plus_sin.(μ_obs))) .* ϵ
+    μ = OptimizationMethods.logistic.(η)
+    v = T.(sqrt.(OptimizationMethods.linear_plus_sin.(μ)))
+    ϵ = get_noise(.15, nobs, 2.3)
+    response = μ + (v) .* ϵ
 
     return QLLogisticSin{T, Vector{T}}(
         meta,

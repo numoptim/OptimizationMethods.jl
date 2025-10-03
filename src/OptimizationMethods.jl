@@ -57,6 +57,7 @@ include("problems/regression_helpers/link_function_derivatives.jl")
 include("problems/regression_helpers/variance_functions.jl")
 include("problems/regression_helpers/variance_functions_derivatives.jl")
 include("problems/regression_helpers/quasi_likelihood_functionality.jl")
+include("problems/data_generation_helpers/sampling_helpers.jl")
 
 ## Source Code
 include("problems/least_squares.jl")

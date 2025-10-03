@@ -154,19 +154,12 @@ function QLLogisticCenteredExp(
     )
     counters = Counters()
 
-    # simulate the design matrix
-    design = hcat(ones(T, nobs), randn(T, nobs, nvar-1) ./ T(sqrt(nvar - 1)))
-
-    # get reponses
-    β_true_mean = randn(T, nvar)
-    β_true = β_true_mean + randn(T, nvar)
+    design, β_true = get_design(.15, nobs, nvar)
     η = design * β_true
-    μ_obs = OptimizationMethods.logistic.(η)
-    ϵ = T.((rand(Distributions.Arcsine(), nobs) .- .5)./sqrt(1/8)) # standardize
-
-    # generate responses
-    response = μ_obs + 
-        T.((OptimizationMethods.centered_exp.(μ_obs, p, c) .^ (.5) )) .* ϵ
+    μ = OptimizationMethods.logistic.(η)
+    v = T.((OptimizationMethods.centered_exp.(μ, p, c) .^ (.5) ))
+    ϵ = get_noise(.15, nobs, 1.0)
+    response = μ + (v) .* ϵ
 
     return QLLogisticCenteredExp{T, Vector{T}}(
         meta,
