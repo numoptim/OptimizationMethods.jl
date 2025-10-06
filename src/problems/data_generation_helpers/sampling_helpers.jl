@@ -15,9 +15,10 @@ Generate a design matrix and true coefficients for the quasi-likelihood
 """
 function get_design(a::Float64, nobs::Int64, nvar::Int64)
     ub = sqrt(inverse_logistic(1-a)/nvar)
+    lb = inverse_logistic(a)/sqrt(ub * nvar)
 
-    x = (ub) .* rand(nobs, nvar)
-    β = (ub) .* rand(nvar)
+    x = (ub - lb) .* rand(nobs, nvar) .+ lb
+    β = (ub - lb) .* rand(nvar) .+ lb
 
     return x, β
 end

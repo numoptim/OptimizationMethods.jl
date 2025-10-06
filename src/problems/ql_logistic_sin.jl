@@ -135,11 +135,12 @@ function QLLogisticSin(
     )
     counters = Counters()
 
-    design, β_true = get_design(.15, nobs, nvar)
+    a = .3
+    design, β_true = get_design(a, nobs, nvar)
     η = design * β_true
     μ = OptimizationMethods.logistic.(η)
     v = T.(sqrt.(OptimizationMethods.linear_plus_sin.(μ)))
-    ϵ = get_noise(.15, nobs, 2.3)
+    ϵ = get_noise(a, nobs, 2.3)
     response = μ + (v) .* ϵ
 
     return QLLogisticSin{T, Vector{T}}(
