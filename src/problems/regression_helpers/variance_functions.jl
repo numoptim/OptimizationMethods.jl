@@ -114,3 +114,12 @@ Implements the squared variance function. This is the function wedderburn
 function logistic_variance_squared(μ::T) where {T}
     return (μ * (1 - μ))^2 # mu^2 * (1-mu)^2 = mu^2 * (1-2mu + mu^2) = mu^2 - 2mu^3 + mu^4
 end
+
+"""
+    logistic_variance_p(μ::T, p::T) where {T}
+
+Implements the variance function raised to the power `p`.
+"""
+function logistic_variance_p(μ::T, p::T) where {T}
+    return (μ * (1 - μ))^p
+end

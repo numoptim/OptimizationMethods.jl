@@ -97,4 +97,61 @@ end
     end
 end
 
+# test cases for logistic_variance
+@testset "Variance Function -- Logistic Variance" begin
+
+    # test definition
+    @assert isdefined(OptimizationMethods, :logistic_variance)
+
+    float_types = [Float16, Float32, Float64]
+    for float_type in float_types
+        test_points = rand(float_type, 10)
+        for μ in test_points
+            v = μ * (1 - μ)
+
+            returned_v = OptimizationMethods.logistic_variance(μ)
+            @test v ≈ returned_v
+            @test typeof(returned_v) == float_type
+        end
+    end
+
 end
+
+@testset "Variance Function -- Logistic Variance Squared" begin
+
+    # test definition
+    @assert isdefined(OptimizationMethods, :logistic_variance_squared)
+
+    float_types = [Float16, Float32, Float64]
+    for float_type in float_types
+        test_points = rand(float_type, 10)
+        for μ in test_points
+            v = (μ * (1 - μ))^2 
+
+            returned_v = OptimizationMethods.logistic_variance_squared(μ)
+            @test v ≈ returned_v
+            @test typeof(returned_v) == float_type
+        end
+    end
+end
+
+@testset "Variance Function -- Logistic Variance p" begin
+
+    # test definition
+    @assert isdefined(OptimizationMethods, :logistic_variance_p)
+
+    float_types = [Float16, Float32, Float64]
+    for float_type in float_types
+        test_points = rand(float_type, 10)
+        for μ in test_points
+            p = rand(float_type)
+            v = (μ * (1 - μ))^p 
+
+            returned_v = OptimizationMethods.logistic_variance_p(μ, p)
+            @test v ≈ returned_v
+            @test typeof(returned_v) == float_type
+        end
+    end
+end
+
+end # end module
