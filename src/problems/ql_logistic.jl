@@ -68,16 +68,16 @@ function QLLogistic(
     μ = OptimizationMethods.logistic.(η)
     v = V.(μ)
     ϵ = get_noise(a, nobs, vmax)
-    response = μ + (v .^ (.5)) .* ϵ
+    response = T.(μ + (v .^ (.5)) .* ϵ)
 
     return QLLogistic{T, Vector{T}}(
         meta,
         counters,
-        design,
+        T.(design),
         response,
         V,
         dV,
-        β_true
+        T.(β_true)
     )
 end
 function QLLogistic(
