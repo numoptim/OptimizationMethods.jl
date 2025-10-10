@@ -182,8 +182,8 @@ function gradient_logistic_monomial(
     progData::P where P <: OptimizationMethods.AbstractDefaultQL{T, S}
 ) where {T, S}
 
-    p = progData.p
-    c = progData.c
+    p = T(1.0)
+    c = T(1.0)
 
     η = progData.design * x
     μ = 1 ./ (1 .+ exp.(-η))
@@ -198,9 +198,9 @@ function gradient_logistic_centered_log(
     progData::P where P <: OptimizationMethods.AbstractDefaultQL{T, S}
 ) where {T, S}
 
-    p = progData.p
-    c = progData.c
-    d = progData.d
+    p = T(1.0)
+    c = T(1.0)
+    d = T(1.0)
 
     η = progData.design * x
     μ = 1 ./ (1 .+ exp.(-η))
@@ -215,8 +215,8 @@ function gradient_logistic_centered_exp(
     progData::P where P <: OptimizationMethods.AbstractDefaultQL{T, S}
 ) where {T, S}
 
-    c = progData.c
-    p = progData.p
+    c = T(1.0)
+    p = T(1.0)
 
     η = progData.design * x
     μ = 1 ./ (1 .+ exp.(-η))

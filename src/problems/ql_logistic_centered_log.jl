@@ -170,7 +170,7 @@ function QLLogisticCenteredLog(
     a = .3
     design, β_true = get_design(a, nobs, nvar)
     η = design * β_true
-    μ = OptimizationMethods.logistic.(η)
+    μ = T.(OptimizationMethods.logistic.(η))
     v = T.(OptimizationMethods.centered_shifted_log.(μ, p, c, d).^(.5))
     ϵ = get_noise(a, nobs, 2.8)
     response = μ + (v) .* ϵ
@@ -178,8 +178,8 @@ function QLLogisticCenteredLog(
     return QLLogisticCenteredLog{T, Vector{T}}(
         meta,
         counters,
-        design, 
-        response,
+        T.(design), 
+        T.(response),
         p,
         c,
         d

@@ -157,7 +157,7 @@ function QLLogisticCenteredExp(
     a = .3
     design, β_true = get_design(a, nobs, nvar)
     η = design * β_true
-    μ = OptimizationMethods.logistic.(η)
+    μ = T.(OptimizationMethods.logistic.(η))
     v = T.((OptimizationMethods.centered_exp.(μ, p, c) .^ (.5) ))
     ϵ = get_noise(a, nobs, 1.0)
     response = μ + (v) .* ϵ
@@ -165,8 +165,8 @@ function QLLogisticCenteredExp(
     return QLLogisticCenteredExp{T, Vector{T}}(
         meta,
         counters,
-        design,
-        response,
+        T.(design),
+        T.(response),
         p,
         c
     )

@@ -65,7 +65,7 @@ function QLLogistic(
 
     design, β_true = get_design(a, nobs, nvar)
     η = design * β_true
-    μ = OptimizationMethods.logistic.(η)
+    μ = T.(OptimizationMethods.logistic.(η))
     v = V.(μ)
     ϵ = get_noise(a, nobs, vmax)
     response = T.(μ + (v .^ (.5)) .* ϵ)

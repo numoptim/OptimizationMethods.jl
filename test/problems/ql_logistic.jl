@@ -133,4 +133,105 @@ using Test, OptimizationMethods, Random
 
 end # end test set
 
+@testset "Functionality -- QLLogistic" begin
+
+    # set seed for reproducibility
+    Random.seed!(1010)
+
+    ############################################################################
+    # Test functionality: QLLogistic{T, S} -- centered exp
+    ############################################################################
+
+    let real_types = [Float64], nobs_default = 1000,
+        nvar_default = 50
+        
+        a = .5 * rand()
+        c = randn()
+        p = rand() + .5
+        for real_type in real_types
+
+            # Initialize QLLogistic Struct
+            V(μ) = OptimizationMethods.centered_exp(μ, p, c)
+            dV(μ) = OptimizationMethods.dcentered_exp(μ, p, c)
+            progData = OptimizationMethods.QLLogistic(real_type,
+            V, dV; nobs = nobs_default, nvar = nvar_default, 
+            a = a, vmax = 1.0)
+
+            # Initialize the same problem with test struct
+            testedData = OptimizationMethods.QLLogisticCenteredExp(
+                progData.design,
+                progData.response;
+                p = p,
+                c = c
+            )
+
+            # Test that the objective, gradient, and hessian are the same
+            # on a set of test points
+            for i in 1:5
+                x = randn(real_type, nvar_default)
+                f1 = OptimizationMethods.obj(progData, x)
+                f2 = OptimizationMethods.obj(testedData, x)
+                @test isapprox(f1, f2; atol = 1e-5, rtol = 1e-5)
+
+                g1 = OptimizationMethods.grad(progData, x)
+                g2 = OptimizationMethods.grad(testedData, x)
+                @test all(isapprox.(g1, g2; atol = 1e-5, rtol = 1e-5))
+
+                H1 = OptimizationMethods.hess(progData, x)
+                H2 = OptimizationMethods.hess(testedData, x)
+                @test all(isapprox.(H1, H2; atol = 1e-5, rtol = 1e-5))
+            end
+        end
+    end # end let block
+
+    ############################################################################
+    # Test functionality: QLLogistic{T, S} -- centered
+    ############################################################################
+
+    let real_types = [Float64], nobs_default = 1000,
+        nvar_default = 50
+        
+        a = .5 * rand()
+        c = randn()
+        p = rand() + .5
+        d = randn()
+        for real_type in real_types
+
+            # Initialize QLLogistic Struct
+            V(μ) = OptimizationMethods.centered_shifted_log(μ, p, c, d)
+            dV(μ) = OptimizationMethods.dcentered_shifted_log(μ, p, c)
+            progData = OptimizationMethods.QLLogistic(real_type,
+            V, dV; nobs = nobs_default, nvar = nvar_default, 
+            a = a, vmax = 1.0)
+
+            # Initialize the same problem with test struct
+            testedData = OptimizationMethods.QLLogisticCenteredLog(
+                progData.design,
+                progData.response;
+                p = p,
+                c = c,
+                d = d
+            )
+
+            # Test that the objective, gradient, and hessian are the same
+            # on a set of test points
+            for i in 1:5
+                x = randn(real_type, nvar_default)
+                f1 = OptimizationMethods.obj(progData, x)
+                f2 = OptimizationMethods.obj(testedData, x)
+                @test isapprox(f1, f2; atol = 1e-5, rtol = 1e-5)
+
+                g1 = OptimizationMethods.grad(progData, x)
+                g2 = OptimizationMethods.grad(testedData, x)
+                @test all(isapprox.(g1, g2; atol = 1e-5, rtol = 1e-5))
+
+                H1 = OptimizationMethods.hess(progData, x)
+                H2 = OptimizationMethods.hess(testedData, x)
+                @test all(isapprox.(H1, H2; atol = 1e-5, rtol = 1e-5))
+            end
+        end
+    end # end let block
+
+end # end test set
+
 end # end module

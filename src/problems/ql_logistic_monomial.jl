@@ -169,7 +169,7 @@ function QLLogisticMonomial(
     a = .3
     design, β_true = get_design(a, nobs, nvar)
     η = design * β_true
-    μ = OptimizationMethods.logistic.(η)
+    μ = T.(OptimizationMethods.logistic.(η))
     v = T.(sqrt.( OptimizationMethods.monomial_plus_constant.(μ, p, c) ))
     ϵ = get_noise(a, nobs, 2.0)
     response = μ + (v) .* ϵ
@@ -177,8 +177,8 @@ function QLLogisticMonomial(
     return QLLogisticMonomial{T, Vector{T}}(
         meta, 
         counters,
-        design,
-        response,
+        T.(design),
+        T.(response),
         p,
         c
     )
