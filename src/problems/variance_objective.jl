@@ -68,7 +68,7 @@ end
 # Operations that are not in-place. Does not make use of precomputed values.
 ###############################################################################
 
-args = [:(progData::P where P<:AbstractDefaultQL{T, S}), 
+args = [:(progData::SOSVarianceObjective{T, S}), 
         :(x::Vector{T})
        ]
 
