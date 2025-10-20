@@ -86,7 +86,7 @@ args = [:(progData::P where P<:AbstractDefaultQL{T, S}),
         obj = 0
         for i in 1:length(progData.response)
             obj += .5 * ((progData.response[i] - progData.μ[i]) ^ 2 - 
-            progData.variance(μ[i], x))^2
+            progData.variance(progData.μ[i], x))^2
         end
         return obj
     end
@@ -103,7 +103,7 @@ args = [:(progData::P where P<:AbstractDefaultQL{T, S}),
         g = zeros(T, length(x))
         for i in 1:length(progData.response)
             g .-= ((progData.response[i] - progData.μ[i]) ^ 2 - 
-            progData.variance(μ[i], x)) * progData.variance_first_derivative(μ[i], x)
+            progData.variance(progData.μ[i], x)) * progData.variance_first_derivative(progData.μ[i], x)
         end
         return g
     end
@@ -212,7 +212,7 @@ args_store = [
         obj = 0
         for i in 1:length(progData.response)
             obj += .5 * ((progData.response[i] - progData.μ[i]) ^ 2 - 
-            progData.variance(μ[i], x))^2
+            progData.variance(progData.μ[i], x))^2
         end
         return obj 
     end
@@ -232,7 +232,7 @@ args_store = [
         fill!(store.grad, 0)
         for i in 1:length(progData.response)
             store.grad .-= ((progData.response[i] - progData.μ[i]) ^ 2 - 
-            progData.variance(μ[i], x)) * progData.variance_first_derivative(μ[i], x)
+            progData.variance(progData.μ[i], x)) * progData.variance_first_derivative(progData.μ[i], x)
         end
     end
 
