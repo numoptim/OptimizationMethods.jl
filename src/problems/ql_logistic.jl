@@ -7,7 +7,8 @@
 # Problem Structure
 ################################################################################
 
-# TODO: testing
+"""
+"""
 mutable struct QLLogistic{T, S} <: AbstractDefaultQL{T, S}
     meta::NLPModelMeta{T, S}
     counters::Counters
