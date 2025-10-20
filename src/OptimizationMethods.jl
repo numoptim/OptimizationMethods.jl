@@ -6,7 +6,7 @@ using LinearAlgebra
 using NLPModels
 using Distributions
 using QuadGK: quadgk
-using CUTEst          # for CUTEst Wrapper
+#using CUTEst          # for CUTEst Wrapper
 
 ################################################################################
 # Optimization Problems 
@@ -57,6 +57,7 @@ include("problems/regression_helpers/link_function_derivatives.jl")
 include("problems/regression_helpers/variance_functions.jl")
 include("problems/regression_helpers/variance_functions_derivatives.jl")
 include("problems/regression_helpers/quasi_likelihood_functionality.jl")
+include("problems/data_generation_helpers/sampling_helpers.jl")
 
 ## Source Code
 include("problems/least_squares.jl")
@@ -66,8 +67,9 @@ include("problems/ql_logistic_sin.jl")
 include("problems/ql_logistic_centered_exp.jl")
 include("problems/ql_logistic_centered_log.jl")
 include("problems/ql_logistic_monomial.jl")
-include("problems/cutest_wrapper.jl")
+#include("problems/cutest_wrapper.jl")
 include("problems/ql_logistic.jl")
+include("problems/variance_objective.jl")
 
 ################################################################################
 # Optimization Methods 

@@ -3,13 +3,18 @@
 # Purpose: Implement a struct were the mean function is the logistic
 # while the variance function is allowed be to be input by the user.
 
-# TODO: testing
+################################################################################
+# Problem Structure
+################################################################################
 
+"""
+"""
 mutable struct QLLogistic{T, S} <: AbstractDefaultQL{T, S}
     meta::NLPModelMeta{T, S}
     counters::Counters
     design::Matrix{T}
     response::Vector{T}
+    β_true::Union{Vector{T}, Nothing} # only for testing purposes
     mean::Function
     mean_first_derivative::Function
     mean_second_derivative::Function
@@ -22,7 +27,8 @@ mutable struct QLLogistic{T, S} <: AbstractDefaultQL{T, S}
                     design::Matrix{T}, 
                     response::Vector{T},
                     V::Function,
-                    dV::Function) where {T, S} =
+                    dV::Function,
+                    β_true::Union{Vector{T}, Nothing}) where {T, S} =
     begin
         weighted_residual(μ, y) = (y - μ) / V(μ)      
         new(
@@ -30,6 +36,7 @@ mutable struct QLLogistic{T, S} <: AbstractDefaultQL{T, S}
             counters,
             design,
             response,
+            β_true,
             OptimizationMethods.logistic,
             OptimizationMethods.dlogistic,
             OptimizationMethods.ddlogistic,
@@ -45,6 +52,8 @@ function QLLogistic(
     dV::Function;
     nobs::Int64 = 1000,
     nvar::Int64 = 50,
+    a::Float64 = .15,
+    vmax::Float64 = 1.0
 ) where {T}
 
     # initialize the meta data and counters
@@ -55,26 +64,21 @@ function QLLogistic(
     )
     counters = Counters()
 
-    # simulate the design matrix
-    design = hcat(ones(T, nobs), randn(T, nobs, nvar-1) ./ T(sqrt(nvar - 1)))
-
-    # get reponses
-    β_true_mean = randn(T, nvar)
-    β_true = β_true_mean + randn(T, nvar)
+    design, β_true = get_design(a, nobs, nvar)
     η = design * β_true
-    μ_obs = OptimizationMethods.logistic.(η)
-    ϵ = T.((rand(Distributions.Arcsine(), nobs) .- .5)./sqrt(1/8)) # standardize
-
-    # generate responses
-    response = μ_obs + T.(V.(μ_obs) .^ (.5)) .* ϵ
+    μ = T.(OptimizationMethods.logistic.(η))
+    v = V.(μ)
+    ϵ = get_noise(a, nobs, vmax)
+    response = T.(μ + (v .^ (.5)) .* ϵ)
 
     return QLLogistic{T, Vector{T}}(
         meta,
         counters,
-        design,
+        T.(design),
         response,
         V,
-        dV
+        dV,
+        T.(β_true)
     )
 end
 function QLLogistic(
@@ -107,7 +111,8 @@ function QLLogistic(
         design,
         response,
         V,
-        dV
+        dV,
+        nothing
     )
 end
 

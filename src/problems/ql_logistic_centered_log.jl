@@ -167,24 +167,19 @@ function QLLogisticCenteredLog(
     )
     counters = Counters()
 
-    # simulate the design matrix
-    design = hcat(ones(T, nobs), randn(T, nobs, nvar-1) ./ T(sqrt(nvar - 1)))
-    
-    # generate responses
-    β_true_mean = randn(T, nvar)
-    β_true = β_true_mean + randn(T, nvar)
+    a = .3
+    design, β_true = get_design(a, nobs, nvar)
     η = design * β_true
-    μ_obs = OptimizationMethods.logistic.(η)
-    ϵ = T.((rand(Distributions.Arcsine(), nobs) .- .5)./sqrt(1/8)) # standardize
-
-    response = μ_obs + 
-        T.(OptimizationMethods.centered_shifted_log.(μ_obs, p, c, d).^(.5)) .* ϵ
+    μ = T.(OptimizationMethods.logistic.(η))
+    v = T.(OptimizationMethods.centered_shifted_log.(μ, p, c, d).^(.5))
+    ϵ = get_noise(a, nobs, 2.8)
+    response = μ + (v) .* ϵ
 
     return QLLogisticCenteredLog{T, Vector{T}}(
         meta,
         counters,
-        design, 
-        response,
+        T.(design), 
+        T.(response),
         p,
         c,
         d

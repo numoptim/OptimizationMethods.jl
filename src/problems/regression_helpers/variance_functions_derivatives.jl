@@ -101,5 +101,14 @@ end
 Implements the first derivative of the squared variance function for logistic regression.
 """
 function dlogistic_variance_squared(μ::T) where {T}
-    return 2 * μ - 6 * μ ^ 2 + 4 * μ ^ 4
+    return 2μ * (1-μ)^2 - μ^2 * 2 * (1-μ)
+end
+
+"""
+    dlogistic_variance_p(μ::T, p::T) where {T}
+
+Implements the first derivative of the variance function for logistic regression raised to the power `p`.
+"""
+function dlogistic_variance_p(μ::T, p::T) where {T}
+    return p*(μ^(p-1))*(1-μ)^p - (μ^p)*p*((1-μ)^(p-1))
 end

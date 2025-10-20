@@ -181,4 +181,73 @@ end
     end
 end
 
+@testset "Variance Function First Derivatives -- Logistic" begin
+
+    # test definition
+    @test isdefined(OptimizationMethods, :dlogistic_variance)
+
+    # define the "true" derivative
+    f(μ) = OptimizationMethods.logistic_variance(μ)
+    g(μ) = ForwardDiff.derivative(f, μ)
+
+    for float_type in [Float64]
+        for npoint in 1:10
+            random_point = rand(float_type)
+            est_true_val = g(random_point)
+            returned_val = OptimizationMethods.dlogistic_variance(random_point)
+
+            @test typeof(returned_val) == float_type
+            @test est_true_val ≈ returned_val atol = 1e-9
+        end
+    end
+
+end
+
+@testset "Variance Function First Derivatives -- Logistic Squared" begin
+
+    # test definition
+    @test isdefined(OptimizationMethods, :dlogistic_variance_squared)
+
+    # define the "true" derivative
+    f(μ) = OptimizationMethods.logistic_variance_squared(μ)
+    g(μ) = ForwardDiff.derivative(f, μ)
+
+    for float_type in [Float64]
+        for npoint in 1:10
+            random_point = rand(float_type)
+            est_true_val = g(random_point)
+            returned_val = OptimizationMethods.dlogistic_variance_squared(random_point)
+
+            @test typeof(returned_val) == float_type
+            @test est_true_val ≈ returned_val atol = 1e-9
+        end
+    end
+
+end
+
+@testset "Variance Function First Derivatives -- Logistic P" begin
+
+    # test definition
+    @test isdefined(OptimizationMethods, :dlogistic_variance_p)
+    for p in 0.0:.1:2.0
+
+        # define the "true" derivative
+        f(μ) = (μ * (1-μ))^p
+        g(μ) = ForwardDiff.derivative(f, μ)
+
+        for float_type in [Float64]
+            for npoint in 1:10
+                random_point = rand(float_type)
+                est_true_val = g(random_point)
+                returned_val = OptimizationMethods.dlogistic_variance_p(random_point, p)
+
+                @test typeof(returned_val) == float_type
+                @test est_true_val ≈ returned_val atol = 1e-9
+            end
+        end
+    end
+
+end
+
+
 end

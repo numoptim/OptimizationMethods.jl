@@ -166,24 +166,19 @@ function QLLogisticMonomial(
     )
     counters = Counters()
 
-    # simulate the design matrix
-    design = hcat(ones(T, nobs), randn(T, nobs, nvar-1) ./ T(sqrt(nvar - 1)))
-
-    # get responses
-    β_true_mean = randn(T, nvar)
-    β_true = β_true_mean + randn(T, nvar)
+    a = .3
+    design, β_true = get_design(a, nobs, nvar)
     η = design * β_true
-    μ_obs = OptimizationMethods.logistic.(η)
-    ϵ = T.((rand(Distributions.Arcsine(), nobs) .- .5)./sqrt(1/8))
-
-    # generate responses
-    response = μ_obs + T.(sqrt.(OptimizationMethods.linear_plus_sin.(μ_obs))) .* ϵ
+    μ = T.(OptimizationMethods.logistic.(η))
+    v = T.(sqrt.( OptimizationMethods.monomial_plus_constant.(μ, p, c) ))
+    ϵ = get_noise(a, nobs, 2.0)
+    response = μ + (v) .* ϵ
 
     return QLLogisticMonomial{T, Vector{T}}(
         meta, 
         counters,
-        design,
-        response,
+        T.(design),
+        T.(response),
         p,
         c
     )
