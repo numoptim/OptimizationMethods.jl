@@ -37,3 +37,4 @@ methods/line_search_helpers/non_sequential_armijo.jl
 methods/second_order_helpers/bfgs_update.jl
 methods/second_order_helpers/modified_newton.jl
 methods/second_order_helpers/triangle_solve.jl
+methods/gd_fixed_watchdog_gd_simple.jl
