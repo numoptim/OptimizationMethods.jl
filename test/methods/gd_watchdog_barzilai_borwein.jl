@@ -435,7 +435,7 @@ end
         grad_diff = rand(dim)
         optData.iter_diff = iter_diff
         optData.grad_diff = grad_diff
-        max_iterations = rand(2:100)
+        max_iterations = rand(2:10)
         optData.grad_val_hist[k] = norm(store.grad)
 
         # run inner loop to get exit iterations
