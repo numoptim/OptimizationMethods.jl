@@ -400,10 +400,12 @@ function inner_loop!(
     end
 
     # record which triggering event occurred
-    optData.triggering_event_hist[k][1] = !(norm(ψjk - θk) <= 10) 
-    optData.triggering_event_hist[k][2] = !(optData.τ_lower < optData.norm_∇F_ψ)
-    optData.triggering_event_hist[k][3] = !(optData.norm_∇F_ψ < optData.τ_upper) 
-    optData.triggering_event_hist[k][4] = !(j < max_iteration) 
+    if length(optData.triggering_event_hist) >= k
+        optData.triggering_event_hist[k][1] = !(norm(ψjk - θk) <= 10) 
+        optData.triggering_event_hist[k][2] = !(optData.τ_lower < optData.norm_∇F_ψ)
+        optData.triggering_event_hist[k][3] = !(optData.norm_∇F_ψ < optData.τ_upper) 
+        optData.triggering_event_hist[k][4] = !(j < max_iteration) 
+    end
 
     optData.local_lipschitz_estimate = update_local_lipschitz_approximation(
             j, k, optData.prev_norm_step, store.grad,
@@ -524,7 +526,10 @@ function nonsequential_armijo_adaptive_gd(
         achieved_descent = 
         OptimizationMethods.non_sequential_armijo_condition(Fx, reference_value, 
             optData.grad_val_hist[iter], optData.ρ, optData.δk, optData.α0k)
-        optData.triggering_event_hist[iter][5] = achieved_descent
+
+        if length(optData.triggering_event_hist) >= iter
+            optData.triggering_event_hist[iter][5] = achieved_descent
+        end
         
         # update the algorithm parameters and current iterate
         update_algorithm_parameters!(x, optData, achieved_descent, iter)
