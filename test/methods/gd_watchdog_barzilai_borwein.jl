@@ -1011,7 +1011,7 @@ end
             η = η,
             inner_loop_max_iterations = inner_loop_max_iterations,
             window_size = window_size,
-            threshold = 0.0,
+            threshold = 1e-5,
             max_iterations = max_iterations)    
 
         # get random problem
@@ -1019,6 +1019,7 @@ end
 
         # run method
         xk = watchdog_safe_barzilai_borwein_gd(optData, progData)
+        stop_iter = optData.stop_iteration
 
         optData_km1 = WatchdogSafeBarzilaiBorweinGD(
             T;
@@ -1033,8 +1034,8 @@ end
             η = η,
             inner_loop_max_iterations = inner_loop_max_iterations,
             window_size = window_size,
-            threshold = 0.0,
-            max_iterations = max_iterations - 1) 
+            threshold = 1e-5,
+            max_iterations = stop_iter - 1) 
         xkm1 = watchdog_safe_barzilai_borwein_gd(optData_km1, progData) 
 
         # set up for the inner loop
