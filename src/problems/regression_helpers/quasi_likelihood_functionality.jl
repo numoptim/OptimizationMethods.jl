@@ -346,7 +346,7 @@ args_store = [
         fill!(store.hess, 0)
         for i in 1:nobs
             t2 = store.variance[i]^(-1) * (store.∇μ_η[i]^2)
-            store.hess .-= (t2) .* view(precomp.obs_obs_t, i, :, :)
+            store.hess .+= (t2) .* view(precomp.obs_obs_t, i, :, :)
         end
     end
 end
