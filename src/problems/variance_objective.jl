@@ -308,7 +308,7 @@ args_store = [
             else
                 t2 *= v
             end
-            store.hess .-= t1 + t2                                              
+            store.hess .+= t1 + t2                                              
         end
     end
 end
