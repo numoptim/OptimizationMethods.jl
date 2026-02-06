@@ -66,6 +66,7 @@ Returns a `struct` of type `BacktrackingVariableGD{T}` with all the field initia
 mutable struct BacktrackingVariableGD{T} <: AbstractOptimizerData{T}
     name::String
     α::T
+    α_max::T
     δ::T
     ρ::T
     line_search_max_iteration::Int64
@@ -79,6 +80,7 @@ function BacktrackingVariableGD(
     ::Type{T};
     x0::Vector{T},
     α::T,
+    α_max::T,
     δ::T,
     ρ::T,
     line_search_max_iteration::Int64,
@@ -99,7 +101,7 @@ function BacktrackingVariableGD(
 
     return BacktrackingVariableGD(
         "Gradient Descent with Backtracking and Variable Initial Step Size",
-        α, δ, ρ, line_search_max_iteration, threshold, 
+        α, α_max, δ, ρ, line_search_max_iteration, threshold, 
         max_iterations, iter_hist, grad_val_hist, stop_iteration)
 end
 
@@ -196,7 +198,7 @@ function backtracking_variable_gd(
         optData.iter_hist[iter + 1] .= x
         optData.grad_val_hist[iter + 1] = norm(store.grad)
         norm_squared_kp1 = optData.grad_val_hist[iter + 1]^2
-        optData.α = αk * norm_squared_k / norm_squared_kp1
+        optData.α = min(αk * norm_squared_k / norm_squared_kp1, optData.α_max)
     end
 
     optData.stop_iteration = iter

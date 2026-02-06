@@ -6,6 +6,7 @@ optData = BacktrackingVariableGD(
     Float64,
     x0 = x0,
     α = 1.0,
+    α_max = 1.0,
     δ = .5,
     ρ = 1e-4,
     line_search_max_iteration = 100,
