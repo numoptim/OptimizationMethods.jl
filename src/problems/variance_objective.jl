@@ -284,7 +284,7 @@ args_store = [
             #     t2 *= v
             #     t2 -= (progData.response[i] - progData.μ[i]) ^ 2 * ddv 
             # end
-            # t3 = (progData.response[i] - progData.μ[i]) ^ 2 * ddv               # fix
+            t3 = (progData.response[i] - progData.μ[i]) ^ 2 * ddv               # fix
             store.hess .+= t1 + t2 - t3
         end
     end
