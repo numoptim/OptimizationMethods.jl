@@ -91,6 +91,7 @@ export NesterovAcceleratedGD, nesterov_accelerated_gd
 export DiminishingStepGD, diminishing_step_gd
 export WeightedNormDampingGD, weighted_norm_damping_gd
 export BacktrackingGD, backtracking_gd
+export BacktrackingVariableGD, backtracking_variable_gd
 export FixedStepNonmonLSMaxValGD, fixed_step_nls_maxval_gd
 export SafeBarzilaiBorweinNLSMaxValGD, safe_barzilai_borwein_nls_maxval_gd
 export NonsequentialArmijoAdaptiveGD, nonsequential_armijo_adaptive_gd
@@ -139,5 +140,6 @@ include("methods/gd_non_sequential_armijo_fixed_mnewton.jl")
 include("methods/gd_watchdog_fixed_mnewton.jl")
 include("methods/gd_non_sequential_armijo_fixed_damped_bfgs.jl")
 include("methods/gd_fixed_watchdog_gd_simple.jl")
+include("methods/gd_backtracking_variable.jl")
 
 end
