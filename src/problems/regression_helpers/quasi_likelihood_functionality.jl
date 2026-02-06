@@ -324,4 +324,29 @@ args_store = [
         end
     end
 
+    """
+    """
+    function fisher!($(args_store...); recompute = true) where {T, S}
+        increment!(progData, :neval_hess)
+
+        # compute required quantities
+        if recompute
+            store.linear_effect .= progData.design * x
+            store.μ .= progData.mean.(store.linear_effect)
+            store.∇μ_η .= progData.mean_first_derivative.(store.linear_effect)
+            store.∇∇μ_η .= progData.mean_second_derivative.(store.linear_effect)
+            store.variance .= progData.variance.(store.μ)
+            store.∇variance .= progData.variance_first_derivative.(store.μ)
+            store.weighted_residual .= 
+                progData.weighted_residual.(store.μ, progData.response)
+        end
+
+        # compute hessian
+        nobs = size(progData.design, 1)
+        fill!(store.hess, 0)
+        for i in 1:nobs
+            t2 = store.variance[i]^(-1) * (store.∇μ_η[i]^2)
+            store.hess .-= (t2) .* view(precomp.obs_obs_t, i, :, :)
+        end
+    end
 end

@@ -272,10 +272,42 @@ args_store = [
             dv = progData.variance_first_derivative(progData.μ[i], x) 
             ddv = progData.variance_second_derivative(progData.μ[i], x) 
             t1 = dv * dv'
-            t2 = v * ddv
-            t3 = (progData.response[i] - progData.μ[i]) ^ 2 * ddv
-            store.hess .+= t1 + t2 - t3 
+            t2 = ddv
+            if typeof(t2) == Matrix
+                for i in diagind(t2)
+                    t2[i] *= v
+                end
+                t2[1, 2] -= (progData.response[i] - progData.μ[i]) ^ 2 * dv[1] 
+                t2[2, 1] -= (progData.response[i] - progData.μ[i]) ^ 2 * dv[1] 
+                t2[2, 2] -= (progData.response[i] - progData.μ[i]) ^ 2 * ddv[1] 
+            else
+                t2 *= v
+                t2 -= (progData.response[i] - progData.μ[i]) ^ 2 * ddv 
+            end
+            #t3 = (progData.response[i] - progData.μ[i]) ^ 2 * ddv               # fix
+            store.hess .+= t1 + t2 
         end
     end
 
+    """
+    """
+    function fisher!($(args_store...); recompute = true) where {T, S}
+        increment!(progData, :neval_hess)
+        fill!(store.hess, 0)
+        for i in 1:length(progData.response)
+            v = progData.variance(progData.μ[i], x)
+            dv = progData.variance_first_derivative(progData.μ[i], x) 
+            ddv = progData.variance_second_derivative(progData.μ[i], x) 
+            t1 = dv * dv'
+            t2 = ddv
+            if typeof(t2) == Matrix
+                for i in diagind(t2)
+                    t2[i] *= v
+                end
+            else
+                t2 *= v
+            end
+            store.hess .+= t1 + t2                                              # fix
+        end
+    end
 end
