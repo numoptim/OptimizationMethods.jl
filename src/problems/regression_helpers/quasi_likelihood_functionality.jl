@@ -233,9 +233,14 @@ args_store = [
             if isnan(store.μ[i])
                 return NaN
             end
-            obj -= quadgk(
-                x -> progData.weighted_residual(x, progData.response[i]),
-                1e-5, store.μ[i])[1]
+
+            try
+                obj -= quadgk(
+                    x -> progData.weighted_residual(x, progData.response[i]),
+                    1e-5, store.μ[i])[1]
+            catch e
+                return NaN
+            end
         end
 
         return obj

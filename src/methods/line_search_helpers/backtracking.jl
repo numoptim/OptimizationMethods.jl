@@ -174,7 +174,8 @@ function backtracking!(
     backtracking_condition_satisfied = false
     while (t < max_iteration) && (!backtracking_condition_satisfied)
 
-        if F(θk) > reference_value - ρ * (δ^t * α) * norm_gkm1_squared 
+        fk = F(θk)
+        if (isnan(fk)) || (F(θk) > reference_value - ρ * (δ^t * α) * norm_gkm1_squared)
             t += 1
             θk .= θkm1 - (δ^t * α) .* gkm1 
         else
