@@ -38,7 +38,7 @@ function FiellerCreasy(
     y1::Vector{T},
     y2::Vector{T},
     σ::Float64
-)
+) where {T}
     # initialize the meta data and counters
     meta = NLPModelMeta(
         1,
