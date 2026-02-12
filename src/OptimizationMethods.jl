@@ -70,6 +70,7 @@ include("problems/ql_logistic_monomial.jl")
 #include("problems/cutest_wrapper.jl")
 include("problems/ql_logistic.jl")
 include("problems/variance_objective.jl")
+include("problems/fieller-creasy.jl")
 
 ################################################################################
 # Optimization Methods 
