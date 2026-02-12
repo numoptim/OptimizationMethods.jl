@@ -34,7 +34,6 @@ function FiellerCreasy(
     return FiellerCreasy(meta, counters, y1, y2, σ)
 end
 function FiellerCreasy(
-    ::Type{T};
     y1::Vector{T},
     y2::Vector{T},
     σ::Float64
@@ -56,7 +55,7 @@ end
 
 """
 """
-struct AllocateFiellerCreasy{T} <: AbstractFiellerCreasy{T}
+struct AllocateFiellerCreasy{T} <: AbstractProblemAllocate{T}
     grad::Vector{T}
     hess::Matrix{T}
 end
