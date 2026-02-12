@@ -231,7 +231,7 @@ args_store = [
             t1 = (progData.y2[i]^2 - progData.y1[i]^2) .* x .- 
                 (2 * progData.y1[i] * progData.y2[i]) 
             t2 = (2 .* (1 .+ x .^ 2 ) .* progData.σ^2) 
-            obj += (t1 ./ t2) .* x
+            obj += (t1[1] / t2[1]) * x[1]
         end
         return obj
     end
@@ -293,7 +293,7 @@ args_store = [
             t3 = (6 * progData.y1[i] * progData.y2[i]) .* x 
             t4 = progData.y2[i]^2 - progData.y1[i]^2
             t5 = (progData.σ^2 .* (1 .+ x.^2).^3)
-            store.hess .-= (t1 + t2 - t3 - t4) ./ t5
+            store.hess .-= (t1 .+ t2 .- t3 .- t4) ./ t5
         end
     end
 
@@ -304,7 +304,7 @@ args_store = [
         fill!(store.hess, 0) 
         for i in 1:length(progData.y1)
             t1 = (progData.y2[i] .+ progData.y1[i] .* x) .^ 2
-            t2 = progData.σ^2 .* (1 + x .^ 2) .^ 3 
+            t2 = progData.σ^2 .* (1 .+ x .^ 2) .^ 3 
             store.hess .-= (t1 ./ t2)
         end
     end
