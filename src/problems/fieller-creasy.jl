@@ -305,7 +305,7 @@ args_store = [
         for i in 1:length(progData.y1)
             t1 = (progData.y2[i] .+ progData.y1[i] .* x) .^ 2
             t2 = progData.σ^2 .* (1 .+ x .^ 2) .^ 3 
-            store.hess .-= (t1 ./ t2)
+            store.hess .+= (t1 ./ t2)
         end
     end
 end
