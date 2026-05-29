@@ -8,9 +8,13 @@ bib = CitationBibliography(
 
 makedocs(
     modules = [OptimizationMethods],
-    sitename = "OptimizationMethods.jl",
+    sitename = "OptimizationMethods Documentation",
     checkdocs = :exports,
     warnonly = [:missing_docs],
+    format = Documenter.HTML(
+        edit_link = "main",
+        size_threshold_warn = 150 * 1024,
+    ),
     pages = [
         "Overview" => "index.md",
         "Manual" => [
