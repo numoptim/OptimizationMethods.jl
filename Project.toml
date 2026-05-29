@@ -1,7 +1,7 @@
 name = "OptimizationMethods"
 uuid = "5d16ec4c-3308-46eb-bccb-6dfd9ce745e1"
 authors = ["Vivak Patel <vivak.patel@wisc.edu>", "Christian Varner <cvarner@wisc.edu>", "Daniel Adrian Maldonado <maldonadod@anl.gov>"]
-version = "0.1.0"
+version = "0.1.1"
 
 [deps]
 CircularArrays = "7a955b69-7140-5f4e-a0ed-f168c5e2e749"
