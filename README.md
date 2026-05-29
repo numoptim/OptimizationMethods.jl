@@ -32,3 +32,58 @@ In that case, refer to [Julia Pkg instructions](
 ## License
 
 MIT License
+
+## Roadmap
+
+Items marked `[x]` are available in the current release.
+Items marked `[ ]` are planned.
+
+#### Interface & Architecture
+- [ ] Migrate from [NLPModels.jl](https://github.com/JuliaSmoothOptimizers/NLPModels.jl) to [OptimizationModels.jl](https://github.com/numoptim/OptimizationModels.jl) interface
+- [ ] `abstract type AbstractMode` with `struct Research <: AbstractMode` and `struct Execution <: AbstractMode` as concrete subtypes
+- [ ] Mode encoded as a type parameter on all optimizer structs (e.g., `FixedStepGD{T, M<:AbstractMode}`)
+- [ ] Optimizer structs carry `counters::Dict{Symbol, Counter}` for optimizer-specific tracking (gradient steps, objective evaluations, inner loop iterations)
+- [ ] `allocate(optimizer, store::Dict; ...)` — adds optimizer-specific keys to an existing problem store
+- [ ] `allocate(optimizer; n, ...)` — fresh dict for standalone or testing use
+- [ ] `allocate(optimizer::.{T, Research}, ...)` — full iterate history, gradient norm history, and step-size history
+- [ ] `allocate(optimizer::.{T, Execution}, ...)` — minimal scratch space only, no history overhead
+- [ ] Remove bundled problem implementations; delegate to [OptimizationProblems.jl](https://github.com/numoptim/OptimizationProblems.jl)
+
+#### Full-Batch First-Order Methods
+- [x] Fixed step-size gradient descent
+- [x] Diminishing step-size gradient descent
+- [x] Barzilai-Borwein gradient descent
+- [x] Lipschitz approximation gradient descent (Malitsky & Mishchenko)
+- [x] Weighted norm damping gradient descent (WNGrad)
+- [x] Nesterov accelerated gradient descent
+- [x] Gradient descent with backtracking line search (Armijo)
+- [x] Gradient descent with non-monotone line search
+- [x] Gradient descent with non-sequential Armijo line search
+- [ ] Heavy ball method
+- [ ] Proximal gradient descent
+- [ ] FISTA (accelerated proximal gradient for nonsmooth objectives)
+
+#### Stochastic First-Order Methods
+- [ ] SGD with fixed/diminishing step size
+- [ ] Mini-batch gradient descent
+- [ ] SAG / SAGA
+- [ ] SVRG
+- [ ] SARAH / SpiderBoost
+
+#### Variance Reduction
+- [ ] Katyusha
+- [ ] L-SVRG / SARAH variants
+
+#### Block / Coordinate Methods
+- [ ] Randomized coordinate gradient descent
+- [ ] Block gradient descent
+- [ ] Stochastic block gradient descent
+- [ ] Stochastic block with variance reduction
+
+#### Second-Order and Quasi-Newton
+- [ ] Newton's method
+- [ ] L-BFGS
+
+#### Documentation
+- [ ] Manual: method guide with theory and usage notes per method family
+- [ ] Examples updated to use [OptimizationProblems.jl](https://github.com/numoptim/OptimizationProblems.jl)
