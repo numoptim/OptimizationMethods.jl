@@ -7,12 +7,19 @@ bib = CitationBibliography(
 )
 
 makedocs(
-    sitename="OptimizationMethods.jl Documentation",
+    modules = [OptimizationMethods],
+    sitename = "OptimizationMethods Documentation",
+    checkdocs = :exports,
+    warnonly = [:missing_docs],
+    format = Documenter.HTML(
+        edit_link = "main",
+        size_threshold_warn = 150 * 1024,
+    ),
     pages = [
         "Overview" => "index.md",
-        "Manual" =>[
+        "Manual" => [
             "Problems" => [
-                "Quasi-likelihood Estimation" => "./problems/quasilikelihood_estimation.md"
+                "Quasi-likelihood Estimation" => "problems/quasilikelihood_estimation.md"
             ],
         ],
         "API" => [
@@ -20,10 +27,11 @@ makedocs(
             "Methods" => "api_methods.md"
         ],
         "References" => "references.md",
-    ];
-    plugins=[bib]
+    ],
+    plugins = [bib]
 )
 
 deploydocs(
     repo = "github.com/numoptim/OptimizationMethods.jl",
+    devbranch = "main",
 )
