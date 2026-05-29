@@ -1,7 +1,7 @@
 name = "OptimizationMethods"
 uuid = "5d16ec4c-3308-46eb-bccb-6dfd9ce745e1"
 authors = ["Vivak Patel <vivak.patel@wisc.edu>", "Christian Varner <cvarner@wisc.edu>", "Daniel Adrian Maldonado <maldonadod@anl.gov>"]
-version = "0.0.0"
+version = "0.1.0"
 
 [deps]
 CircularArrays = "7a955b69-7140-5f4e-a0ed-f168c5e2e749"
@@ -12,13 +12,10 @@ QuadGK = "1fd47b50-473d-5c70-9696-f719f8f3bcdc"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 
 [compat]
-CircularArrays = "1.4.0"
-QuadGK = "2.11.2"
-julia = "1"
-
-[extras]
-ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
-Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-
-[targets]
-test = ["Test", "ForwardDiff"]
+CircularArrays = "1.5"
+Distributions = "0.25"
+LinearAlgebra = "1"
+NLPModels = "0.21"
+QuadGK = "2"
+Random = "1"
+julia = "1.12"
