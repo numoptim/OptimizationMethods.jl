@@ -26,6 +26,9 @@ makedocs(
             "Problems" => "api_problems.md",
             "Methods" => "api_methods.md"
         ],
+        "Development" => [
+            "Roadmap" => "dev/roadmap.md"
+        ],
         "References" => "references.md",
     ],
     plugins = [bib]

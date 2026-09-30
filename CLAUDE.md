@@ -2,6 +2,15 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Redesign in progress
+
+The package is being redesigned around [OptimizationModels.jl](https://github.com/numoptim/OptimizationModels.jl) and [OptimizationProblems.jl](https://github.com/numoptim/OptimizationProblems.jl). The design decisions, the target API, the phases, and the open questions are in `docs/src/dev/roadmap.md`. Read it before starting redesign work.
+
+- **Design in one line:** a method is an immutable struct of hyperparameters. Everything that changes during a run lives in the problem's `Dict{Symbol, Any}` store (history, if requested, under `store[:history]`). A generic `optimize!` drives each method's `allocate!`, `initialize!`, and `step!`.
+- **Current code:** the Architecture section below still describes the v0.1.x code in `src/`. It stays accurate until the clean break (Phase 3).
+- **MWE:** `dev/mwe/` (Phase 1) will be a standalone prototype with its own `Project.toml`. It is not part of the package or CI. Run its tests with `julia --project=dev/mwe dev/mwe/test/runtests.jl`.
+- **Workflow:** work proceeds phase by phase with `/incremental-dev`. Each phase's plan lives at `docs/src/dev/<phase>/plan.md` and is added to the docs navigation under "Development".
+
 ## Commands
 
 **Run all tests:**
