@@ -35,19 +35,26 @@ MIT License
 
 ## Roadmap
 
-Items marked `[x]` are available in the current release.
+Items marked `[x]` are available in the current release (v0.1.2), which uses the
+[NLPModels.jl](https://github.com/JuliaSmoothOptimizers/NLPModels.jl) interface.
+The full-batch methods will be re-implemented in the new design (Phase 5 below).
 Items marked `[ ]` are planned.
 
 #### Interface & Architecture
-- [ ] Migrate from [NLPModels.jl](https://github.com/JuliaSmoothOptimizers/NLPModels.jl) to [OptimizationModels.jl](https://github.com/numoptim/OptimizationModels.jl) interface
-- [ ] `abstract type AbstractMode` with `struct Research <: AbstractMode` and `struct Execution <: AbstractMode` as concrete subtypes
-- [ ] Mode encoded as a type parameter on all optimizer structs (e.g., `FixedStepGD{T, M<:AbstractMode}`)
-- [ ] Optimizer structs carry `counters::Dict{Symbol, Counter}` for optimizer-specific tracking (gradient steps, objective evaluations, inner loop iterations)
-- [ ] `allocate(optimizer, store::Dict; ...)` — adds optimizer-specific keys to an existing problem store
-- [ ] `allocate(optimizer; n, ...)` — fresh dict for standalone or testing use
-- [ ] `allocate(optimizer::.{T, Research}, ...)` — full iterate history, gradient norm history, and step-size history
-- [ ] `allocate(optimizer::.{T, Execution}, ...)` — minimal scratch space only, no history overhead
-- [ ] Remove bundled problem implementations; delegate to [OptimizationProblems.jl](https://github.com/numoptim/OptimizationProblems.jl)
+The package is being redesigned to work with
+[OptimizationModels.jl](https://github.com/numoptim/OptimizationModels.jl) and
+[OptimizationProblems.jl](https://github.com/numoptim/OptimizationProblems.jl).
+The idea: a method struct fixes only the hyperparameters. Everything that changes during a run
+(the iterate, the algorithm state, and optional history) lives in the problem's store
+(a `Dict`). A single `optimize!` drives each method's `step!`.
+See the [development roadmap](docs/src/dev/roadmap.md) for the design decisions, the
+detailed Phase 1 plan, and open questions.
+
+- [ ] Phase 1: Minimal working example (MWE) of the store-based design in `dev/mwe/`
+- [ ] Phase 2: Settle how the interface is shared with OptimizationModels.jl and OptimizationProblems.jl
+- [ ] Phase 3: Clean break: remove NLPModels.jl, the bundled problems, and the v0.1.x methods
+- [ ] Phase 4: Core infrastructure (`AbstractMethod`, `History`, `StoppingCriteria`, `optimize!`)
+- [ ] Phase 5: Port the full-batch first-order methods; release v0.2.0
 
 #### Full-Batch First-Order Methods
 - [x] Fixed step-size gradient descent
