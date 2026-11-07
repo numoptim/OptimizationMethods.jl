@@ -53,6 +53,8 @@ records tolerance first-hits. Construct with `TimedProblem(inner)` or
     wall-clock safety cap; a call that would start with `#∇F ≥ max_grad`
     (resp. `#F ≥ max_obj`, or elapsed time ≥ `max_time_ns`) throws
     [`BudgetExhausted`](@ref) instead. Use [`run_solver!`](@ref) to catch it.
+- `inner_loops::Vector{Tuple{Int,Int}}`, `(k, j_k)` for every completed inner
+    loop of `nonsequential_armijo_adaptive_gd` (see [`record_inner_loop!`](@ref))
 - `last_x`, `last_iter`, `last_gradnorm`, the last iterate reported through
     `record_iterate!` (the last completed iteration of the solver)
 """
@@ -71,6 +73,7 @@ mutable struct TimedProblem{T,S,P<:AbstractNLPModel{T,S},C} <: AbstractNLPModel{
     last_x::Vector{T}
     last_iter::Int
     last_gradnorm::T
+    inner_loops::Vector{Tuple{Int,Int}}
 end
 
 function TimedProblem(
@@ -85,6 +88,7 @@ function TimedProblem(
         Union{Nothing,ToleranceHit{T}}[nothing for _ in tols],
         0, 0, time_ns(), max_grad, max_obj, max_time_ns,
         fill(T(NaN), length(inner.meta.x0)), -1, T(NaN),
+        Tuple{Int,Int}[],
     )
 end
 
@@ -102,6 +106,7 @@ function start!(timed::TimedProblem{T}) where {T}
     timed.t_start_ns = time_ns()
     fill!(timed.last_x, T(NaN))
     timed.last_iter = -1
+    empty!(timed.inner_loops)
     return timed
 end
 
@@ -167,6 +172,16 @@ solver's test `gra_norm > ε` is false (so NaN counts as a hit, exactly as the
 solver would stop).
 """
 record_iterate!(progData, iter, x, gra_norm) = nothing
+
+"""
+    record_inner_loop!(progData, k, j)
+
+Hook called by `nonsequential_armijo_adaptive_gd` after each inner loop with the
+outer index `k` and the inner-loop length `j_k`. No-op unless `progData` is a
+`TimedProblem`, which appends `(k, j)` to `inner_loops`.
+"""
+record_inner_loop!(progData, k, j) = nothing
+record_inner_loop!(timed::TimedProblem, k, j) = (push!(timed.inner_loops, (Int(k), Int(j))); nothing)
 
 function record_iterate!(timed::TimedProblem{T}, iter, x, gra_norm) where {T}
     t = time_ns()

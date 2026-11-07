@@ -123,7 +123,7 @@ include("methods/second_order_helpers/bfgs_update.jl")
 
 ## Experiment support (timing layer and tolerance first-hit recorder)
 include("experiment_recorder.jl")
-export TimedProblem, ToleranceHit, BudgetExhausted, start!, record_iterate!, run_solver!
+export TimedProblem, ToleranceHit, BudgetExhausted, start!, record_iterate!, record_inner_loop!, run_solver!
 
 ## Source Code 
 include("methods/gd_barzilai_borwein.jl")

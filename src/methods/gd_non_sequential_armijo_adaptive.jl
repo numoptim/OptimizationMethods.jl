@@ -518,8 +518,9 @@ function nonsequential_armijo_adaptive_gd(
 
         # inner loop
         optData.∇F_θk .= store.grad
-        inner_loop!(x, optData.iter_hist[iter], optData, progData,
+        j_k = inner_loop!(x, optData.iter_hist[iter], optData, progData,
             precomp, store, past_acceptance, iter)
+        record_inner_loop!(progData, iter, j_k)
 
         # check non-sequential armijo condition
         Fx = F(x)

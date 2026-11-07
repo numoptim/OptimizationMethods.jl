@@ -19,6 +19,7 @@ methods/gd_diminishing.jl
 methods/gd_backtracking.jl
 methods/gd_fixed_nonmonotone_ls.jl
 methods/gd_non_sequential_armijo_adaptive.jl
+methods/ours_vs_algorithm1.jl
 methods/gd_non_sequential_armijo_fixed.jl
 methods/gd_watchdog_fixed_mnewton.jl
 methods/gd_watchdog_barzilai_borwein.jl

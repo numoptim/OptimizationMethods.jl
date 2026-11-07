@@ -1,3 +1,4 @@
+BLOCKED: Open question 1 (OURS Lipschitz-estimate off-by-one when j_k=1, see OURS_vs_Algorithm1.md row 17): decide whether to keep OURS as is or fix it, then remove this line.
 # COAP revision experiments: STATUS
 Branch: cv/experiments-quasi-likelihood · Last updated: 2026-11-07 (UTC) · Current phase: 1
 
@@ -12,7 +13,7 @@ Branch: cv/experiments-quasi-likelihood · Last updated: 2026-11-07 (UTC) · Cur
 - [x] Phase 1.4d ASTR1 docstring + stub
 - [x] Phase 1.4e ASTR1 implementation
 - [x] Phase 1.4f ASTR1 tests (§2.3)
-- [ ] Phase 1.5 OURS vs Algorithm 1 (`OURS_vs_Algorithm1.md`)
+- [x] Phase 1.5 OURS vs Algorithm 1 (`OURS_vs_Algorithm1.md`) (one possible bug found, Open question 1)
 - [ ] Gate 1: full test suite passes on Julia 1.13
 - [ ] Phase 2.1 config/problems.csv, starts.csv, algorithms.csv
 - [ ] Phase 2.2 src/run_job.jl
@@ -34,7 +35,9 @@ Branch: cv/experiments-quasi-likelihood · Last updated: 2026-11-07 (UTC) · Cur
 - Run tests: `julia --project -e 'using Pkg; Pkg.test()'` (about 1.5 min, fully green at Phase 1.1).
 
 ## Open questions for Vivak
-(none open)
+1. **OURS: possible off-by-one in the terminal Lipschitz estimate** (`OURS_vs_Algorithm1.md`, row 17). In `inner_loop!` the post-loop call `update_local_lipschitz_approximation(j, k, ...)` (src/methods/gd_non_sequential_armijo_adaptive.jl:408) passes the final `j = j_k`, but the function treats `j == 1` as "no information yet". When the inner loop takes exactly one step the one-step secant ratio `‖Ḟ(ψ₁)−Ḟ(ψ₀)‖/‖ψ₁−ψ₀‖` is available but unused: the estimate stays `1.0` (k=1) or the stale previous value. It affects the first step size of the next outer loop. `j_k = 1` happens in about 23% of inner loops (up to the 1e-3 hit), and the trajectories diverge within 1–2 outer iterations after the first such loop. I did not change OURS (per instructions). **Options:** (a) keep the code as is, which is what the old experiments ran, so results stay comparable to the paper, and document it; (b) fix it (pass `j+1` in the post-loop call) and accept that OURS's numbers shift. My default if you do not answer: (a), because the prompt says not to change OURS's behavior. Then remove the BLOCKED line at the top. The manuscript's own text for `EstimateLipschitz` was not available to me; please check which behavior it describes.
+2. Bibliography (from the prompt): the manuscript's `gratton2022firstorder` cites arXiv:2203.01757 (now "Complexity and performance for two classes of noise-tolerant first-order algorithms"); ASTR1 is arXiv:2203.01647. Not acted on.
+3. Pre-existing flaky test: `test/methods/gd_watchdog_barzilai_borwein.jl` (`WatchdogSafeBarzilaiBorweinGD`, not used in the experiments) fails randomly at different lines (seen at lines 492 and 1071 in the full-suite runs; with my changes stashed it also failed once in four standalone runs). Not fixed (unrelated). Gate 1 asks for a green full suite; this test has to be re-run until it passes, fixed (seed), or removed from `test/test.txt`. Your call.
 
 Resolved by Vivak (2026-11-07): use Julia **1.13.2** on CHTC (tarball in Phase 2.4 must pin 1.13.2; local dev stays 1.13.3); remove CUTEst tests.
 
@@ -59,10 +62,17 @@ Resolved by Vivak (2026-11-07): use Julia **1.13.2** on CHTC (tarball in Phase 2
 - Test problem scaling (§2.3 item 4): the default `LeastSquares(T, nequ=50, nvar=10)` has L≈85 and ||∇f(x0)||≈150; with b0=1 (η=1) WNGrad's first step overshoots, b jumps to ~7e7 and the method cannot reach 1e-6 in 20,000 iterations (known WNGrad behaviour, not a bug). The convergence tests therefore use `A = randn(50,10)/√50` (eig(A'A) ≈ [0.3, 2.1]), response `A*β + 0.1*noise`, which is "well-conditioned" and passes with η=1 for both new methods. **Consequence for the experiments:** WNGrad-type methods (ADATR, ADAGRAD) are sensitive to b0/θ relative to L; the η grid covers it, but expect poor reliability for small b0 on large-L problems.
 - Memory note for Phase 2: all solvers preallocate `iter_hist` with `max_iterations+1` vectors; with `max_iterations` large enough never to bind (~G_max=200,000 for gradient-only methods) and n=90 this is ~144 MB per run. Decide in Phase 2.2/2.3 (cap `max_iterations` per method from G_max, and use the pilot for `request_memory`).
 
+- Phase 1.5: added a hook `record_inner_loop!(progData, k, j_k)` (no-op for plain problems; `TimedProblem.inner_loops` stores `(k, j_k)`) right after `inner_loop!` in `nonsequential_armijo_adaptive_gd`, because `j_k` was discarded and `ours_events.csv` needs it. Behavior of OURS is unchanged (transcription test passes). Event flags come from `triggering_event_hist[k]` = `[ball, lower, upper, maxiter, accepted]`.
+
 ## Development plan
 Phases 1-4 as in `PROMPT.md` §4. One step per run; a step is "done" when its checks pass and it is committed. Verification: test files listed in the Log; gates push to origin.
 
 ## Log
+### 2026-11-07: Phase 1.5
+- Compared `NonsequentialArmijoAdaptiveGD` with Algorithm 1 line by line: `experiments/coap-revision/OURS_vs_Algorithm1.md` (19 rows). Confirmed the known issues: inverted inner `while` (paper typo), missing comma in the `\Else` branch (paper typo), `EstimateLipschitz` at `j=0` undefined in the paper (code defines it as carry-over), `√20·τ_low = √10·‖g‖` so no mismatch. Found one possible real bug (Open question 1).
+- New test `test/methods/ours_vs_algorithm1.jl` (392 pass): an independent transcription of Algorithm 1 reproduces the solver (iterates, `j_k`, event flags, acceptance, `δ`, `τ`) over 40 outer iterations from 3 starts; the paper-consistent variant of the Lipschitz rule is identical until the first `j_k = 1` loop and diverges right after.
+- Full suite: only the unrelated flaky `gd_watchdog_barzilai_borwein.jl` failed (Open question 3); everything else passes (27,561 to 27,570 passed, 1 failed in two runs).
+- Stopped here per §4 (real bug found, so stop and ask). Gate 1 not ticked. Next after Vivak's answer: Gate 1, then Phase 2.1.
 ### 2026-11-07: Phase 1.4 (all six sub-steps, at Vivak's request in one run)
 - 1.4a/1.4d: docstrings + stubs committed first (`src/methods/gd_adaptive_trust_region.jl`, `src/methods/gd_astr1.jl`), then implementations (1.4b/1.4e), then tests (1.4c/1.4f), separate commits.
 - Tests (`test/methods/gd_adaptive_trust_region.jl`: 10,138 pass; `test/methods/gd_astr1.jl`: 5,523 pass), wired in `test/test.txt`: hand-computed three iterations for both variants of each method (rtol 1e-12, plain arithmetic in the test); invariants (ADATR: `b_k ≥ b_min`, `||d_k|| = Δ_k`, α=0 ⇒ δ_k non-increasing; ASTR1: `|s_ik| ≤ Δ_ik` with weights recomputed independently from stored iterates, adagrad `w` non-decreasing); `neval_obj == 0` and `neval_grad == stop_iteration + 1` on `LeastSquares`; convergence to 1e-6 within 20,000 iterations for η=1; start at stationary point stops at iteration 0; `max_iterations` respected.
