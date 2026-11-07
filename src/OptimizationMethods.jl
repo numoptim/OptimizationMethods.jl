@@ -107,6 +107,7 @@ export WatchdogFixedDampedBFGSGD, watchdog_fixed_damped_bfgs_gd
 export FixedModifiedNewtonNLSMaxValGD, fixed_modified_newton_nls_maxval_gd
 export FixedDampedBFGSNLSMaxValGD, fixed_damped_bfgs_nls_maxval_gd
 export WatchdogFixedSimpleGD, watchdog_fixed_simple_gd
+export AdaptiveTrustRegionGD, adaptive_trust_region_gd, adaptive_trust_region_update
 
 ## Helper functions for optimization methods
 include("methods/stepsize_helpers/diminishing_stepsizes.jl")
@@ -146,5 +147,6 @@ include("methods/gd_watchdog_fixed_mnewton.jl")
 include("methods/gd_non_sequential_armijo_fixed_damped_bfgs.jl")
 include("methods/gd_fixed_watchdog_gd_simple.jl")
 include("methods/gd_backtracking_variable.jl")
+include("methods/gd_adaptive_trust_region.jl")
 
 end
