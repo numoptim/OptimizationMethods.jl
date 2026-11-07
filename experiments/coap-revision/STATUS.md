@@ -65,4 +65,9 @@ Phases 1-4 as in `PROMPT.md` §4. One step per run; a step is "done" when its ch
 - OURS `BoundsError` was a **test bug, not a source bug**. In `test/methods/gd_non_sequential_armijo_adaptive.jl` (the "method" testset, 4 call sites) `inner_loop!(..., k)` is run on `optDatakm1`, built with `max_iterations = k-1`, so its `triggering_event_hist` has only k-1 entries and `[k]` is out of bounds. It only fired when the random run had a rejected first iterate (data-dependent, so flaky). Fix: `push!(optDatakm1.triggering_event_hist, zeros(Int64, 5))` before each call. `src/` unchanged. The solver sizes the history to `max_iterations` and indexes `[iter]`, so it is consistent.
 - Note for Phase 1.5: `triggering_event_hist[k]` is length 5; entries 1-4 are the events (ball, lower, upper, max-iteration; `true` means that event ended the inner loop) and entry 5 is `achieved_descent` (written in the solver). Entries 1-4 are set inside `inner_loop!` from the *final* ψ_j, so several can be 1 at once.
 - 3 full `Pkg.test()` runs: only failures are the 6 in `gd_non_sequential_armijo_fixed_mnewton.jl` (ignored per Vivak; method not used in experiments). Total pass count varies run to run (11553-11587) because tests use random sizes.
-- Gate 1 criterion therefore: all tests pass except `gd_non_sequential_armijo_fixed_mnewton.jl`.
+- Gate 1 criterion therefore: full `Pkg.test()` passes (see next entry).
+
+### 2026-11-07: removed mnewton-fixed test from suite
+- Per Vivak, removed `methods/gd_non_sequential_armijo_fixed_mnewton.jl` from `test/test.txt` (file kept on disk, not run; method not used in experiments).
+- Full `Pkg.test()` on Julia 1.13.3: **10809 pass, 0 fail, 0 error, rc=0**. The suite is fully green, so the Gate 1 baseline is "all tests pass".
+- Next: Phase 1.2.

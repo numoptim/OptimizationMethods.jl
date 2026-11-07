@@ -25,7 +25,6 @@ methods/gd_fixed_nls_max_val_damped_bfgs.jl
 methods/gd_non_sequential_armijo_fixed_damped_bfgs.jl
 methods/gd_watchdog_fixed_damped_bfgs.jl
 methods/gd_non_sequential_armijo_safe_bb.jl
-methods/gd_non_sequential_armijo_fixed_mnewton.jl
 problems/regression_helpers/link_functions.jl
 problems/regression_helpers/link_function_derivatives.jl
 problems/regression_helpers/variance_functions.jl
