@@ -28,6 +28,10 @@ Branch: cv/experiments-quasi-likelihood · Last updated: 2026-11-07 (UTC) · Cur
 - [ ] Phase 4.3 .gitignore + pilot-sized data
 - [ ] Gate 4: re-read runbook as newcomer
 
+## Environment notes (cloud container)
+- Julia 1.13.3 via juliaup: `export PATH=$HOME/.juliaup/bin:$PATH`. If the container is fresh: install with `curl -fsSL https://install.julialang.org | sh -s -- -y --default-channel 1.13`, then `julia -e 'using Pkg; Pkg.Registry.add("General")'`, then `julia --project -e 'using Pkg; Pkg.instantiate()'`.
+- Run tests: `julia --project -e 'using Pkg; Pkg.test()'` (about 1.5 min, fully green at Phase 1.1).
+
 ## Open questions for Vivak
 (none open)
 
