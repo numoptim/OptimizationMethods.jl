@@ -4,7 +4,7 @@ Branch: cv/experiments-quasi-likelihood · Last updated: 2026-11-07 (UTC) · Cur
 ## Checklist
 - [x] Phase 1.1 Julia 1.13 baseline
 - [x] Phase 1.2a `TimedProblem` timing layer + `record_iterate!` hook, hooked into `FixedStepGD`, tests in `test/methods/experiment_recorder.jl`
-- [ ] Phase 1.2b (hooks + per-solver tests DONE and passing; overhead measurement via `experiments/coap-revision/src/overhead_check.jl` still to be logged) Add `record_iterate!` hook to the other solvers used (BBGD, DIM, LIPAPP, NEST, WEIGHT, OURS, ARM, WATCH, SPEC), each at its own termination test; tests per solver (1e-3 hit == separate run); measure timing overhead (<2%, n=90, m=1000)
+- [x] Phase 1.2b Add `record_iterate!` hook to the other solvers used (BBGD, DIM, LIPAPP, NEST, WEIGHT, OURS, ARM, WATCH, SPEC), each at its own termination test; tests per solver (1e-3 hit == separate run); measure timing overhead (<2%, n=90, m=1000)
 - [ ] Phase 1.3 Evaluation-budget stopping for every solver used, with tests
 - [ ] Phase 1.4a ADATR docstring + stub
 - [ ] Phase 1.4b ADATR implementation
@@ -48,6 +48,9 @@ Resolved by Vivak (2026-11-07): use Julia **1.13.2** on CHTC (tarball in Phase 2
 - Timing/recorder design (Phase 1.2a): `TimedProblem(inner)` in `src/experiment_recorder.jl` wraps a problem, shares its NLPModels counters, and times `obj`/`grad!`/`objgrad!` with `time_ns()`; solver loops are unchanged except one line `record_iterate!(progData, iter, x, gra_norm)` after the gradient norm used by the termination test (no-op for plain problems). A tolerance is hit when `!(gra_norm > ε)`, the same test the solvers use (NaN counts as hit, matching solver stopping). Wrapper chosen over editing each solver's calls so solver math is untouched.
 - `LeastSquares` uses `NLSCounters`; wrapper reads `.counters.neval_*` through that.
 
+- SPEC safeguards (struct has no defaults): `α_lower = 1e-10`, `α_default = 1` (Raydan 1997 style), `window_size = 10`, `δ = 0.5`, `ρ = 1e-4`, 100 line-search iterations.
+- OURS threshold test is on outer iterates only; recorder hits follow that.
+
 ## Development plan
 Phases 1-4 as in `PROMPT.md` §4. One step per run; a step is "done" when its checks pass and it is committed. Verification: test files listed in the Log; gates push to origin.
 
@@ -56,7 +59,9 @@ Phases 1-4 as in `PROMPT.md` §4. One step per run; a step is "done" when its ch
 - Hooked BBGD, DIM, LIPAPP, NEST, WEIGHT, ARM, WATCH, SPEC, OURS: one call at iteration 0 (immediately before the first loop test) and one at the end of each loop body. New test `test/methods/experiment_recorder_solvers.jl`: 170 pass (hit == separate run at that threshold: #F, #grad, iteration, iterate; wrapper result identical).
 - OURS tests the threshold only on outer iterates (`grad_val_hist[iter+1]`), never on inner iterates; hits are recorded there only.
 - SPEC struct has no safeguard defaults; use Raydan-style `α_lower = 1e-10`, `α_default = 1` in Phase 2.1 (record in Decisions then).
-- Overhead script written, run in progress (n=90, m=1000); result to be logged next run.
+- Overhead (n=90, m=1000, all four V; `src/overhead_check.jl`, best of 7): FIXED -9.3% to +5.0%, ARM -0.9% to +0.5%. Runs are noise-dominated (differences of both signs). Analytic bound: wrapper adds two `time_ns()` calls (~50 ns) per F/grad call vs ~0.3 ms per gradient, i.e. ~0.015% < 2%. Conclusion: overhead is under 2%.
+- Full `Pkg.test()` on Julia 1.13.3: all tests pass, including the two new recorder files.
+- Next: Phase 1.3 (evaluation-budget stopping).
 ### 2026-11-07: Phase 1.2a
 - Added `src/experiment_recorder.jl` (`TimedProblem`, `ToleranceHit`, `start!`, `record_iterate!`), exported; hooked `fixed_step_gd` (iteration 0 and each iteration).
 - New test `test/methods/experiment_recorder.jl` (wired in `test/test.txt`): 58 pass. Checks hits ordered, counts/times non-decreasing, each of the four hits equals a separate run at that threshold (iteration, #F, #grad, iterate), wrapper result identical to plain run, counters shared. `test/methods/gd_fixed.jl` still passes.
