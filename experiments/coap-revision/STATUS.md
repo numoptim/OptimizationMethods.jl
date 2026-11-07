@@ -5,7 +5,7 @@ Branch: cv/experiments-quasi-likelihood · Last updated: 2026-11-07 (UTC) · Cur
 - [x] Phase 1.1 Julia 1.13 baseline
 - [x] Phase 1.2a `TimedProblem` timing layer + `record_iterate!` hook, hooked into `FixedStepGD`, tests in `test/methods/experiment_recorder.jl`
 - [x] Phase 1.2b Add `record_iterate!` hook to the other solvers used (BBGD, DIM, LIPAPP, NEST, WEIGHT, OURS, ARM, WATCH, SPEC), each at its own termination test; tests per solver (1e-3 hit == separate run); measure timing overhead (<2%, n=90, m=1000)
-- [ ] Phase 1.3 Evaluation-budget stopping for every solver used, with tests
+- [x] Phase 1.3 Evaluation-budget stopping for every solver used, with tests
 - [ ] Phase 1.4a ADATR docstring + stub
 - [ ] Phase 1.4b ADATR implementation
 - [ ] Phase 1.4c ADATR tests (§2.3)
@@ -51,10 +51,16 @@ Resolved by Vivak (2026-11-07): use Julia **1.13.2** on CHTC (tarball in Phase 2
 - SPEC safeguards (struct has no defaults): `α_lower = 1e-10`, `α_default = 1` (Raydan 1997 style), `window_size = 10`, `δ = 0.5`, `ρ = 1e-4`, 100 line-search iterations.
 - OURS threshold test is on outer iterates only; recorder hits follow that.
 
+- Budget stopping (Phase 1.3): `TimedProblem(...; max_grad, max_obj, max_time_ns)`; its `obj`/`grad!`/`objgrad!` throw `BudgetExhausted` *before* the call that would start at `#∇F ≥ max_grad` (resp. `#F ≥ max_obj`, or elapsed ≥ cap), so counts stop exactly at the cap and the stop works mid line search and mid inner loop with no solver edits. `run_solver!(solver, optData, timed)` returns `(x, status)` with status `:finished | :budget_grad | :budget_obj | :timeout`; on exhaustion `x` is the last completed iterate (`timed.last_x`, all-NaN with `last_iter == -1` if none). Consequence: a method at `#F = F_max` that needs no further F (none of ours) would keep taking gradient steps; all F-using methods call F every iteration so this is equivalent to stopping at `#F ≥ F_max`. Harness maps `:finished` to `converged_1e-9` / `nan_or_inf` / etc. from the hits (Phase 2.2). `max_iterations` is set high in the harness so it never binds.
+
 ## Development plan
 Phases 1-4 as in `PROMPT.md` §4. One step per run; a step is "done" when its checks pass and it is committed. Verification: test files listed in the Log; gates push to origin.
 
 ## Log
+### 2026-11-07: Phase 1.3
+- Implemented budgets as above. Tests (`test/methods/experiment_recorder_solvers.jl`, now 486 pass): for all 10 solver configs, a non-binding budget leaves the result unchanged; `max_grad` in {1, 2, 3, half} gives exactly that many gradients, status `budget_grad`, finite iterate equal to the solver's `iter_hist` entry at `last_iter`; `max_obj` in {1, 2, half} for ARM, WATCH, SPEC, OURS gives exactly that many F evaluations (mid line-search / inner loop); the F-free methods are asserted to use 0 F; a 1 ns wall cap gives `timeout`.
+- Full `Pkg.test()` green on Julia 1.13.3.
+- Next: Phase 1.4a (ADATR docstring + stub).
 ### 2026-11-07: Phase 1.2b (partial)
 - Hooked BBGD, DIM, LIPAPP, NEST, WEIGHT, ARM, WATCH, SPEC, OURS: one call at iteration 0 (immediately before the first loop test) and one at the end of each loop body. New test `test/methods/experiment_recorder_solvers.jl`: 170 pass (hit == separate run at that threshold: #F, #grad, iteration, iterate; wrapper result identical).
 - OURS tests the threshold only on outer iterates (`grad_val_hist[iter+1]`), never on inner iterates; hits are recorded there only.

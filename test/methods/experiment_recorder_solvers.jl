@@ -82,6 +82,63 @@ using Test, OptimizationMethods, Random, LinearAlgebra, NLPModels
             @test timed.time_grad_ns > 0
         end
     end
+
+    # Budget stopping: exact counts, clean stop (also mid line search / inner loop)
+    @testset "Budgets" begin
+        has_obj = ["ARM", "WATCH", "SPEC", "OURS"]
+        for name in sort(collect(keys(cases)))
+            mk, run = cases[name]
+            # unbudgeted reference
+            ref = TimedProblem(prob); start!(ref)
+            sref = mk(1e-8)
+            xref, st = run_solver!(run, sref, ref)
+            @test st == :finished
+            Gref = ref.counters.counters.neval_grad
+            Fref = ref.counters.counters.neval_obj
+            @test Gref > 6
+
+            # no binding budget => same result
+            big = TimedProblem(prob; max_grad = 10 * Gref + 10, max_obj = 10 * Fref + 10)
+            start!(big)
+            xb, stb = run_solver!(run, mk(1e-8), big)
+            @test stb == :finished && xb == xref
+
+            # gradient budgets, including very small ones
+            for G in (1, 2, 3, Gref ÷ 2)
+                tp = TimedProblem(prob; max_grad = G); start!(tp)
+                s = mk(1e-8)
+                x, st = run_solver!(run, s, tp)
+                @test st == :budget_grad
+                @test tp.counters.counters.neval_grad == G
+                @test all(isfinite, x)
+                @test tp.last_iter >= 0
+                # returned x is the last completed iterate stored by the solver
+                @test x == s.iter_hist[tp.last_iter + 1]
+            end
+
+            # objective budgets
+            if name in has_obj
+                for F in (1, 2, max(Fref ÷ 2, 3))
+                    tp = TimedProblem(prob; max_obj = F); start!(tp)
+                    s = mk(1e-8)
+                    x, st = run_solver!(run, s, tp)
+                    @test st == :budget_obj
+                    @test tp.counters.counters.neval_obj == F
+                    @test all(isfinite, x)
+                    @test tp.last_iter >= 0
+                    @test x == s.iter_hist[tp.last_iter + 1]
+                end
+            else
+                @test Fref == 0
+            end
+
+            # wall-clock cap
+            tp = TimedProblem(prob; max_time_ns = 1); start!(tp)
+            x, st = run_solver!(run, mk(1e-8), tp)
+            @test st == :timeout
+            @test tp.last_iter == -1 && all(isnan, x)
+        end
+    end
 end
 
 end
