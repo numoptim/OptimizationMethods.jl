@@ -661,6 +661,8 @@ end
             # Setting up for test - output of inner loop for iteration k
             x = copy(xkm1) 
             OptimizationMethods.grad!(progData, precomp, store, x)
+            # optDatakm1 only stores k-1 events; make room for the k-th
+            push!(optDatakm1.triggering_event_hist, zeros(Int64, 5))
             OptimizationMethods.inner_loop!(x, optDatakm1.iter_hist[k], 
                 optDatakm1, progData, precomp, store, (k == 1), k)
             
@@ -705,6 +707,8 @@ end
         # Setting up for test - output of inner loop for iteration k
         x = copy(xkm1) 
         OptimizationMethods.grad!(progData, precomp, store, x)
+        # optDatakm1 only stores k-1 events; make room for the k-th
+        push!(optDatakm1.triggering_event_hist, zeros(Int64, 5))
         OptimizationMethods.inner_loop!(x, optDatakm1.iter_hist[iter + 1], 
             optDatakm1, progData, precomp, store, ((iter + 1) == 1), iter + 1)
 
@@ -757,6 +761,8 @@ end
             # Setting up for test - output of inner loop for iteration k
             x = copy(xkm1) 
             OptimizationMethods.grad!(progData, precomp, store, x)
+            # optDatakm1 only stores k-1 events; make room for the k-th
+            push!(optDatakm1.triggering_event_hist, zeros(Int64, 5))
             OptimizationMethods.inner_loop!(x, optDatakm1.iter_hist[k], 
                 optDatakm1, progData, precomp, store, (k == last_acceptance), k)
             
@@ -802,6 +808,8 @@ end
         # Setting up for test - output of inner loop for iteration k
         x = copy(xkm1) 
         OptimizationMethods.grad!(progData, precomp, store, x)
+        # optDatakm1 only stores k-1 events; make room for the k-th
+        push!(optDatakm1.triggering_event_hist, zeros(Int64, 5))
         OptimizationMethods.inner_loop!(x, optDatakm1.iter_hist[iter + 1], 
             optDatakm1, progData, precomp, store, 
             (stop_iteration-last_acceptance == 0), iter + 1)

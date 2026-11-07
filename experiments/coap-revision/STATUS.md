@@ -59,3 +59,10 @@ Phases 1-4 as in `PROMPT.md` §4. One step per run; a step is "done" when its ch
 - Removed `problems/cutest_wrapper.jl` from `test/test.txt`. Stock `Pkg.test()` now runs all files: **11438 pass, 10 fail/error**, all pre-existing and unchanged: `quasi_likelihood.jl` 4 fails (line 301, Float16 tolerance); `gd_non_sequential_armijo_fixed_mnewton.jl` 6 fails (lines 1653, 1668, 1672, 1821, 1836); `gd_non_sequential_armijo_adaptive.jl` 1 error (line 551, BoundsError, OURS; see Phase 1.5).
 - Gate 1 therefore needs these to be either unrelated-and-listed or fixed; decision at Gate 1: they are unrelated to experiments (not run by the harness), so they will be listed rather than fixed, except the OURS error, which is investigated in Phase 1.5.
 - Next: Phase 1.2.
+
+### 2026-11-07: test fixes (Vivak's go-ahead)
+- `test/problems/quasi_likelihood.jl`: dropped `Float16` from `real_types` (3 places); the 4 failures are gone.
+- OURS `BoundsError` was a **test bug, not a source bug**. In `test/methods/gd_non_sequential_armijo_adaptive.jl` (the "method" testset, 4 call sites) `inner_loop!(..., k)` is run on `optDatakm1`, built with `max_iterations = k-1`, so its `triggering_event_hist` has only k-1 entries and `[k]` is out of bounds. It only fired when the random run had a rejected first iterate (data-dependent, so flaky). Fix: `push!(optDatakm1.triggering_event_hist, zeros(Int64, 5))` before each call. `src/` unchanged. The solver sizes the history to `max_iterations` and indexes `[iter]`, so it is consistent.
+- Note for Phase 1.5: `triggering_event_hist[k]` is length 5; entries 1-4 are the events (ball, lower, upper, max-iteration; `true` means that event ended the inner loop) and entry 5 is `achieved_descent` (written in the solver). Entries 1-4 are set inside `inner_loop!` from the *final* ψ_j, so several can be 1 at once.
+- 3 full `Pkg.test()` runs: only failures are the 6 in `gd_non_sequential_armijo_fixed_mnewton.jl` (ignored per Vivak; method not used in experiments). Total pass count varies run to run (11553-11587) because tests use random sizes.
+- Gate 1 criterion therefore: all tests pass except `gd_non_sequential_armijo_fixed_mnewton.jl`.

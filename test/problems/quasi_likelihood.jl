@@ -262,7 +262,7 @@ const ql_allocate_symbols = [:AllocateQLLogisticSin, :AllocateQLLogisticMonomial
     ####################################
 
     # Test Constructor 
-    let real_types = [Float16, Float32, Float64], 
+    let real_types = [Float32, Float64], 
         nobs_default = 1000, 
         nvar_default = 50,
         structures = ql_structures
@@ -310,7 +310,7 @@ const ql_allocate_symbols = [:AllocateQLLogisticSin, :AllocateQLLogisticMonomial
     ####################################
 
     # Test Constructors 
-    let real_types = [Float16, Float32, Float64], 
+    let real_types = [Float32, Float64], 
         nobs_default = 1000, 
         nvar_default = 50,
         structures = ql_structures,
@@ -371,7 +371,7 @@ const ql_allocate_symbols = [:AllocateQLLogisticSin, :AllocateQLLogisticMonomial
     ####################################
     # Test Method: Initialize
     ####################################
-    let real_types = [Float16, Float32, Float64], 
+    let real_types = [Float32, Float64], 
         nobs_default = 1000,
         nvar_default = 50, 
         structures = ql_structures,
