@@ -72,7 +72,21 @@ function AdaptiveTrustRegionGD(
     threshold::T,
     max_iterations::Int,
 ) where {T}
-    error("not implemented")
+    @assert b_min > 0 "b_min must be positive."
+    @assert init_scaling >= b_min "init_scaling must be at least b_min."
+    @assert 0 <= α < 1 "α must be in [0, 1)."
+
+    d = length(x0)
+    iter_hist = Vector{T}[Vector{T}(undef, d) for i = 1:max_iterations+1]
+    iter_hist[1] = x0
+
+    grad_val_hist = Vector{T}(undef, max_iterations + 1)
+    scaling_hist = Vector{T}(undef, max_iterations + 1)
+    stop_iteration = -1 # Not stopped
+
+    return AdaptiveTrustRegionGD("Adaptive Trust-Region Gradient Descent \
+        (Grapiglia-Stella, B_k = 0)", init_scaling, α, b_min, threshold,
+        max_iterations, iter_hist, grad_val_hist, scaling_hist, stop_iteration)
 end
 
 """
@@ -108,7 +122,13 @@ and `b_hat_max` ``= \\hat b_{\\max}``. To guarantee (2.5) when
 function adaptive_trust_region_update(
     b::T, ω::T, gnorm_next::T, α::T, b_min::T, b_hat_max::T
 ) where {T}
-    error("not implemented")
+    if gnorm_next <= α * ω
+        b_hat = min(b_hat_max, max(b_min, b / 2))
+        b_hat = min(b, max(b_min, b_hat)) # enforce (2.5)
+        return b_hat, gnorm_next
+    else
+        return b + gnorm_next^2 / b, ω
+    end
 end
 
 """
@@ -188,5 +208,40 @@ function adaptive_trust_region_gd(
     optData::AdaptiveTrustRegionGD{T},
     progData::P where P<:AbstractNLPModel{T,S}
 ) where {T,S}
-    error("not implemented")
+
+    # initialize storage and pre-computed values
+    precomp, store = initialize(progData)
+
+    iter = 0
+    x = copy(optData.iter_hist[iter + 1])
+    grad!(progData, precomp, store, x)
+    gra_norm = norm(store.grad)
+    optData.grad_val_hist[iter + 1] = gra_norm
+
+    b = optData.init_scaling
+    ω = gra_norm
+    b_hat_max = gra_norm
+    optData.scaling_hist[iter + 1] = b
+    record_iterate!(progData, iter, x, gra_norm)
+
+    while (gra_norm > optData.threshold) && (iter < optData.max_iterations)
+        iter += 1
+
+        # d_k = -(1/b_k) ∇f(x_k), ||d_k|| = Δ_k
+        x .-= (1 / b) .* store.grad
+        grad!(progData, precomp, store, x)
+        gra_norm = norm(store.grad)
+
+        b, ω = adaptive_trust_region_update(b, ω, gra_norm, optData.α,
+            optData.b_min, b_hat_max)
+
+        optData.iter_hist[iter + 1] .= x
+        optData.grad_val_hist[iter + 1] = gra_norm
+        optData.scaling_hist[iter + 1] = b
+        record_iterate!(progData, iter, x, gra_norm)
+    end
+
+    optData.stop_iteration = iter
+
+    return x
 end
