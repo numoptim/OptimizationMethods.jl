@@ -74,7 +74,22 @@ function ASTR1GD(
     threshold::T,
     max_iterations::Int,
 ) where {T}
-    error("not implemented")
+    @assert variant in (:adagrad, :maxg) "variant must be :adagrad or :maxg."
+    @assert θ > 0 "θ must be positive."
+    @assert 0 < ς <= 1 "ς must be in (0, 1]."
+
+    d = length(x0)
+    iter_hist = Vector{T}[Vector{T}(undef, d) for i = 1:max_iterations+1]
+    iter_hist[1] = x0
+
+    grad_val_hist = Vector{T}(undef, max_iterations + 1)
+    weights = zeros(T, d)
+    accumulator = zeros(T, d)
+    stop_iteration = -1 # Not stopped
+
+    return ASTR1GD("ASTR1 Gradient Descent (Gratton-Jerad-Toint, B_k = 0, \
+        $(variant))", variant, θ, ς, threshold, max_iterations, iter_hist,
+        grad_val_hist, weights, accumulator, stop_iteration)
 end
 
 """
@@ -95,7 +110,9 @@ w_{i,k} = \\theta\\Big(\\varsigma + \\sum_{j=0}^{k} g_{i,j}^2\\Big)^{1/2}.
 function astr1_adagrad_weights!(
     w::Vector{T}, accumulator::Vector{T}, g::Vector{T}, θ::T, ς::T
 ) where {T}
-    error("not implemented")
+    @. accumulator += g^2
+    @. w = θ * sqrt(ς + accumulator)
+    return w
 end
 
 """
@@ -119,7 +136,10 @@ w_{i,k} = \\theta\\,(k+1)^{1/10}\\max\\Big\\{\\varsigma,\\
 function astr1_maxg_weights!(
     w::Vector{T}, accumulator::Vector{T}, g::Vector{T}, k::Int, θ::T, ς::T
 ) where {T}
-    error("not implemented")
+    @. accumulator = max(accumulator, abs(g))
+    scale = θ * T(k + 1)^T(1 / 10)
+    @. w = scale * max(ς, accumulator)
+    return w
 end
 
 """
@@ -181,5 +201,42 @@ function astr1_gd(
     optData::ASTR1GD{T},
     progData::P where P<:AbstractNLPModel{T,S}
 ) where {T,S}
-    error("not implemented")
+
+    # initialize storage and pre-computed values
+    precomp, store = initialize(progData)
+
+    iter = 0
+    x = copy(optData.iter_hist[iter + 1])
+    grad!(progData, precomp, store, x)
+    gra_norm = norm(store.grad)
+    optData.grad_val_hist[iter + 1] = gra_norm
+    fill!(optData.accumulator, T(0))
+    record_iterate!(progData, iter, x, gra_norm)
+
+    while (gra_norm > optData.threshold) && (iter < optData.max_iterations)
+
+        # weights w_k from g_0, ..., g_k
+        if optData.variant == :adagrad
+            astr1_adagrad_weights!(optData.weights, optData.accumulator,
+                store.grad, optData.θ, optData.ς)
+        else
+            astr1_maxg_weights!(optData.weights, optData.accumulator,
+                store.grad, iter, optData.θ, optData.ς)
+        end
+
+        # s_{i,k} = -g_{i,k} / w_{i,k}, |s_{i,k}| = Δ_{i,k}
+        x .-= store.grad ./ optData.weights
+        iter += 1
+
+        grad!(progData, precomp, store, x)
+        gra_norm = norm(store.grad)
+
+        optData.iter_hist[iter + 1] .= x
+        optData.grad_val_hist[iter + 1] = gra_norm
+        record_iterate!(progData, iter, x, gra_norm)
+    end
+
+    optData.stop_iteration = iter
+
+    return x
 end
