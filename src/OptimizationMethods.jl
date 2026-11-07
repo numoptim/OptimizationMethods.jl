@@ -119,6 +119,10 @@ include("methods/second_order_helpers/modified_newton.jl")
 include("methods/second_order_helpers/triangle_solve.jl")
 include("methods/second_order_helpers/bfgs_update.jl")
 
+## Experiment support (timing layer and tolerance first-hit recorder)
+include("experiment_recorder.jl")
+export TimedProblem, ToleranceHit, start!, record_iterate!
+
 ## Source Code 
 include("methods/gd_barzilai_borwein.jl")
 include("methods/gd_fixed.jl")

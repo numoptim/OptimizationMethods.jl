@@ -7,6 +7,7 @@ problems/ql_logistic_centered_log.jl
 problems/ql_logistic_monomial.jl
 problems/quasi_likelihood.jl
 methods/gd_fixed.jl
+methods/experiment_recorder.jl
 methods/gd_barzilai_borwein.jl
 methods/gd_lipschitz_approximation.jl
 methods/gd_weighted_norm_damping.jl

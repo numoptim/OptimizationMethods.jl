@@ -3,7 +3,8 @@ Branch: cv/experiments-quasi-likelihood · Last updated: 2026-11-07 (UTC) · Cur
 
 ## Checklist
 - [x] Phase 1.1 Julia 1.13 baseline
-- [ ] Phase 1.2 Timing layer and tolerance first-hit recorder (FixedStepGD + LeastSquares tests)
+- [x] Phase 1.2a `TimedProblem` timing layer + `record_iterate!` hook, hooked into `FixedStepGD`, tests in `test/methods/experiment_recorder.jl`
+- [ ] Phase 1.2b Add `record_iterate!` hook to the other solvers used (BBGD, DIM, LIPAPP, NEST, WEIGHT, OURS, ARM, WATCH, SPEC), each at its own termination test; tests per solver (1e-3 hit == separate run); measure timing overhead (<2%, n=90, m=1000)
 - [ ] Phase 1.3 Evaluation-budget stopping for every solver used, with tests
 - [ ] Phase 1.4a ADATR docstring + stub
 - [ ] Phase 1.4b ADATR implementation
@@ -44,10 +45,17 @@ Resolved by Vivak (2026-11-07): use Julia **1.13.2** on CHTC (tarball in Phase 2
 - CUTEst test removed from `test/test.txt` (file `test/problems/cutest_wrapper.jl` left in place, just not run), per Vivak: not relevant to the experiments.
 - CHTC uses Julia 1.13.2 (Vivak); `[compat] julia = "1.13"` allows both.
 
+- Timing/recorder design (Phase 1.2a): `TimedProblem(inner)` in `src/experiment_recorder.jl` wraps a problem, shares its NLPModels counters, and times `obj`/`grad!`/`objgrad!` with `time_ns()`; solver loops are unchanged except one line `record_iterate!(progData, iter, x, gra_norm)` after the gradient norm used by the termination test (no-op for plain problems). A tolerance is hit when `!(gra_norm > ε)`, the same test the solvers use (NaN counts as hit, matching solver stopping). Wrapper chosen over editing each solver's calls so solver math is untouched.
+- `LeastSquares` uses `NLSCounters`; wrapper reads `.counters.neval_*` through that.
+
 ## Development plan
 Phases 1-4 as in `PROMPT.md` §4. One step per run; a step is "done" when its checks pass and it is committed. Verification: test files listed in the Log; gates push to origin.
 
 ## Log
+### 2026-11-07: Phase 1.2a
+- Added `src/experiment_recorder.jl` (`TimedProblem`, `ToleranceHit`, `start!`, `record_iterate!`), exported; hooked `fixed_step_gd` (iteration 0 and each iteration).
+- New test `test/methods/experiment_recorder.jl` (wired in `test/test.txt`): 58 pass. Checks hits ordered, counts/times non-decreasing, each of the four hits equals a separate run at that threshold (iteration, #F, #grad, iterate), wrapper result identical to plain run, counters shared. `test/methods/gd_fixed.jl` still passes.
+- Next: Phase 1.2b (hook the other solvers; overhead measurement).
 ### 2026-11-07: Phase 1.1 baseline
 - Installed juliaup, Julia 1.13.3. Added the General registry manually (`Pkg.Registry.add("General")`), as none was installed in the cloud image. Set compat `julia = "1.13"`, resolved and instantiated.
 - `Pkg.test()` stock run: 1836 pass, 4 fail, 1 error, and aborts at `problems/cutest_wrapper.jl` (CUTEst not installed), so method tests never ran.

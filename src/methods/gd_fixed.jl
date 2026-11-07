@@ -113,6 +113,7 @@ function fixed_step_gd(
     gra_norm = norm(store.grad)
 
     optData.grad_val_hist[iter+1] = gra_norm
+    record_iterate!(progData, iter, x, gra_norm)
 
     # fixed step-size gradient descent
     while (gra_norm > optData.threshold) && (iter < optData.max_iterations)
@@ -123,6 +124,7 @@ function fixed_step_gd(
 
         optData.iter_hist[iter + 1] .= x
         optData.grad_val_hist[iter + 1] = norm(store.grad)
+        record_iterate!(progData, iter, x, gra_norm)
     end
 
     optData.stop_iteration = iter
