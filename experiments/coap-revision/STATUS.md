@@ -6,12 +6,12 @@ Branch: cv/experiments-quasi-likelihood · Last updated: 2026-11-07 (UTC) · Cur
 - [x] Phase 1.2a `TimedProblem` timing layer + `record_iterate!` hook, hooked into `FixedStepGD`, tests in `test/methods/experiment_recorder.jl`
 - [x] Phase 1.2b Add `record_iterate!` hook to the other solvers used (BBGD, DIM, LIPAPP, NEST, WEIGHT, OURS, ARM, WATCH, SPEC), each at its own termination test; tests per solver (1e-3 hit == separate run); measure timing overhead (<2%, n=90, m=1000)
 - [x] Phase 1.3 Evaluation-budget stopping for every solver used, with tests
-- [ ] Phase 1.4a ADATR docstring + stub
-- [ ] Phase 1.4b ADATR implementation
-- [ ] Phase 1.4c ADATR tests (§2.3)
-- [ ] Phase 1.4d ASTR1 docstring + stub
-- [ ] Phase 1.4e ASTR1 implementation
-- [ ] Phase 1.4f ASTR1 tests (§2.3)
+- [x] Phase 1.4a ADATR docstring + stub
+- [x] Phase 1.4b ADATR implementation
+- [x] Phase 1.4c ADATR tests (§2.3)
+- [x] Phase 1.4d ASTR1 docstring + stub
+- [x] Phase 1.4e ASTR1 implementation
+- [x] Phase 1.4f ASTR1 tests (§2.3)
 - [ ] Phase 1.5 OURS vs Algorithm 1 (`OURS_vs_Algorithm1.md`)
 - [ ] Gate 1: full test suite passes on Julia 1.13
 - [ ] Phase 2.1 config/problems.csv, starts.csv, algorithms.csv
@@ -53,10 +53,22 @@ Resolved by Vivak (2026-11-07): use Julia **1.13.2** on CHTC (tarball in Phase 2
 
 - Budget stopping (Phase 1.3): `TimedProblem(...; max_grad, max_obj, max_time_ns)`; its `obj`/`grad!`/`objgrad!` throw `BudgetExhausted` *before* the call that would start at `#∇F ≥ max_grad` (resp. `#F ≥ max_obj`, or elapsed ≥ cap), so counts stop exactly at the cap and the stop works mid line search and mid inner loop with no solver edits. `run_solver!(solver, optData, timed)` returns `(x, status)` with status `:finished | :budget_grad | :budget_obj | :timeout`; on exhaustion `x` is the last completed iterate (`timed.last_x`, all-NaN with `last_iter == -1` if none). Consequence: a method at `#F = F_max` that needs no further F (none of ours) would keep taking gradient steps; all F-using methods call F every iteration so this is equivalent to stopping at `#F ≥ F_max`. Harness maps `:finished` to `converged_1e-9` / `nan_or_inf` / etc. from the hits (Phase 2.2). `max_iterations` is set high in the harness so it never binds.
 
+- Papers fetched and read (2026-11-07): ADATR PDF from the DIAL URL (first fetch reset the connection, second worked); ASTR1 arXiv:2203.01647 PDF. Both agree with the prompt summaries: ADATR (2.1)-(2.5) and AdaTrust2 `b̂_k = min{b̂max, max{bmin, b_k/2}}`, `b̂max = ||∇f(x0)||`, `bmin = 1e-4`; ASTR1 Algorithm 2.1, weights (3.1) with μ=1/2 (`θ(ς+Σg²)^{1/2}`, per-coordinate) and (4.1) with μ=ν=1/10 (`θ(k+1)^{1/10} max{ς, max_j|g_ij|}`), ς=1/100, θ as the learning-rate parameter (footnote 4). Termination: the algorithms have no rule; ε-test on `||g_k||` added (ASTR1 comment 4).
+- Names: `AdaptiveTrustRegionGD`/`adaptive_trust_region_gd` (ADATR; constructor `init_scaling = b0 = 1/η`, `α`, `b_min`), `ASTR1GD`/`astr1_gd` (`variant ∈ {:adagrad, :maxg}`, `θ = 1/η`, `ς = 0.01`). Update rules are pure functions `adaptive_trust_region_update`, `astr1_adagrad_weights!`, `astr1_maxg_weights!`.
+- ADATR: result clamped to `[b_min, b_k]` in addition to the paper's formula, so (2.5) holds even if `b̂max < b_min`. Constructor requires `b0 ≥ b_min` (fine for η ≤ 1e4; grid has η ≥ 1e-4 ⇒ b0 ≤ 1e4, and η ≤ 10 ⇒ b0 ≥ 0.1).
+- Test problem scaling (§2.3 item 4): the default `LeastSquares(T, nequ=50, nvar=10)` has L≈85 and ||∇f(x0)||≈150; with b0=1 (η=1) WNGrad's first step overshoots, b jumps to ~7e7 and the method cannot reach 1e-6 in 20,000 iterations (known WNGrad behaviour, not a bug). The convergence tests therefore use `A = randn(50,10)/√50` (eig(A'A) ≈ [0.3, 2.1]), response `A*β + 0.1*noise`, which is "well-conditioned" and passes with η=1 for both new methods. **Consequence for the experiments:** WNGrad-type methods (ADATR, ADAGRAD) are sensitive to b0/θ relative to L; the η grid covers it, but expect poor reliability for small b0 on large-L problems.
+- Memory note for Phase 2: all solvers preallocate `iter_hist` with `max_iterations+1` vectors; with `max_iterations` large enough never to bind (~G_max=200,000 for gradient-only methods) and n=90 this is ~144 MB per run. Decide in Phase 2.2/2.3 (cap `max_iterations` per method from G_max, and use the pilot for `request_memory`).
+
 ## Development plan
 Phases 1-4 as in `PROMPT.md` §4. One step per run; a step is "done" when its checks pass and it is committed. Verification: test files listed in the Log; gates push to origin.
 
 ## Log
+### 2026-11-07: Phase 1.4 (all six sub-steps, at Vivak's request in one run)
+- 1.4a/1.4d: docstrings + stubs committed first (`src/methods/gd_adaptive_trust_region.jl`, `src/methods/gd_astr1.jl`), then implementations (1.4b/1.4e), then tests (1.4c/1.4f), separate commits.
+- Tests (`test/methods/gd_adaptive_trust_region.jl`: 10,138 pass; `test/methods/gd_astr1.jl`: 5,523 pass), wired in `test/test.txt`: hand-computed three iterations for both variants of each method (rtol 1e-12, plain arithmetic in the test); invariants (ADATR: `b_k ≥ b_min`, `||d_k|| = Δ_k`, α=0 ⇒ δ_k non-increasing; ASTR1: `|s_ik| ≤ Δ_ik` with weights recomputed independently from stored iterates, adagrad `w` non-decreasing); `neval_obj == 0` and `neval_grad == stop_iteration + 1` on `LeastSquares`; convergence to 1e-6 within 20,000 iterations for η=1; start at stationary point stops at iteration 0; `max_iterations` respected.
+- The new methods were also added to the recorder/budget test matrix (`experiment_recorder_solvers.jl`, now 658 pass).
+- Full `Pkg.test()` green on Julia 1.13.3.
+- Next: Phase 1.5 (OURS vs Algorithm 1), then Gate 1.
 ### 2026-11-07: Phase 1.3
 - Implemented budgets as above. Tests (`test/methods/experiment_recorder_solvers.jl`, now 486 pass): for all 10 solver configs, a non-binding budget leaves the result unchanged; `max_grad` in {1, 2, 3, half} gives exactly that many gradients, status `budget_grad`, finite iterate equal to the solver's `iter_hist` entry at `last_iter`; `max_obj` in {1, 2, half} for ARM, WATCH, SPEC, OURS gives exactly that many F evaluations (mid line-search / inner loop); the F-free methods are asserted to use 0 F; a 1 ns wall cap gives `timeout`.
 - Full `Pkg.test()` green on Julia 1.13.3.

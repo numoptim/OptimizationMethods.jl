@@ -8,6 +8,7 @@ problems/ql_logistic_monomial.jl
 problems/quasi_likelihood.jl
 methods/gd_fixed.jl
 methods/gd_adaptive_trust_region.jl
+methods/gd_astr1.jl
 methods/experiment_recorder.jl
 methods/experiment_recorder_solvers.jl
 methods/gd_barzilai_borwein.jl
