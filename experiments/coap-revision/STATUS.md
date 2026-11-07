@@ -4,7 +4,7 @@ Branch: cv/experiments-quasi-likelihood · Last updated: 2026-11-07 (UTC) · Cur
 ## Checklist
 - [x] Phase 1.1 Julia 1.13 baseline
 - [x] Phase 1.2a `TimedProblem` timing layer + `record_iterate!` hook, hooked into `FixedStepGD`, tests in `test/methods/experiment_recorder.jl`
-- [ ] Phase 1.2b Add `record_iterate!` hook to the other solvers used (BBGD, DIM, LIPAPP, NEST, WEIGHT, OURS, ARM, WATCH, SPEC), each at its own termination test; tests per solver (1e-3 hit == separate run); measure timing overhead (<2%, n=90, m=1000)
+- [ ] Phase 1.2b (hooks + per-solver tests DONE and passing; overhead measurement via `experiments/coap-revision/src/overhead_check.jl` still to be logged) Add `record_iterate!` hook to the other solvers used (BBGD, DIM, LIPAPP, NEST, WEIGHT, OURS, ARM, WATCH, SPEC), each at its own termination test; tests per solver (1e-3 hit == separate run); measure timing overhead (<2%, n=90, m=1000)
 - [ ] Phase 1.3 Evaluation-budget stopping for every solver used, with tests
 - [ ] Phase 1.4a ADATR docstring + stub
 - [ ] Phase 1.4b ADATR implementation
@@ -52,6 +52,11 @@ Resolved by Vivak (2026-11-07): use Julia **1.13.2** on CHTC (tarball in Phase 2
 Phases 1-4 as in `PROMPT.md` §4. One step per run; a step is "done" when its checks pass and it is committed. Verification: test files listed in the Log; gates push to origin.
 
 ## Log
+### 2026-11-07: Phase 1.2b (partial)
+- Hooked BBGD, DIM, LIPAPP, NEST, WEIGHT, ARM, WATCH, SPEC, OURS: one call at iteration 0 (immediately before the first loop test) and one at the end of each loop body. New test `test/methods/experiment_recorder_solvers.jl`: 170 pass (hit == separate run at that threshold: #F, #grad, iteration, iterate; wrapper result identical).
+- OURS tests the threshold only on outer iterates (`grad_val_hist[iter+1]`), never on inner iterates; hits are recorded there only.
+- SPEC struct has no safeguard defaults; use Raydan-style `α_lower = 1e-10`, `α_default = 1` in Phase 2.1 (record in Decisions then).
+- Overhead script written, run in progress (n=90, m=1000); result to be logged next run.
 ### 2026-11-07: Phase 1.2a
 - Added `src/experiment_recorder.jl` (`TimedProblem`, `ToleranceHit`, `start!`, `record_iterate!`), exported; hooked `fixed_step_gd` (iteration 0 and each iteration).
 - New test `test/methods/experiment_recorder.jl` (wired in `test/test.txt`): 58 pass. Checks hits ordered, counts/times non-decreasing, each of the four hits equals a separate run at that threshold (iteration, #F, #grad, iterate), wrapper result identical to plain run, counters shared. `test/methods/gd_fixed.jl` still passes.

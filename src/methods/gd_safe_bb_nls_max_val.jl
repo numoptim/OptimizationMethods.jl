@@ -243,6 +243,8 @@ function safe_barzilai_borwein_nls_maxval_gd(optData::SafeBarzilaiBorweinNLSMaxV
     optData.objective_hist[iter + 1] = optData.max_value
     optData.max_index = iter + 1
 
+    record_iterate!(progData, 0, x, optData.grad_val_hist[1])
+
     while (iter < optData.max_iterations) && 
         (optData.grad_val_hist[iter + 1] > optData.threshold)
         
@@ -286,6 +288,7 @@ function safe_barzilai_borwein_nls_maxval_gd(optData::SafeBarzilaiBorweinNLSMaxV
         # store values
         optData.iter_hist[iter + 1] .= x
         optData.grad_val_hist[iter + 1] = norm(store.grad)
+        record_iterate!(progData, iter, x, optData.grad_val_hist[iter + 1])
     end
 
     optData.stop_iteration = iter

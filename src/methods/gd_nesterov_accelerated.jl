@@ -195,6 +195,7 @@ function nesterov_accelerated_gd(
     optData.z = copy(x)
     Δ::T = 1            #1/2 × (1 + √(4 B₀ + 1  )) = 1/2 × (1 + 1) = 1
     optData.y = copy(x)
+    record_iterate!(progData, 0, x, grad_norm)
 
 
     while (iter < optData.max_iterations) && (grad_norm > optData.threshold)
@@ -217,6 +218,7 @@ function nesterov_accelerated_gd(
 
         # compute the gradient at y
         OptimizationMethods.grad!(progData, precomp, store, optData.y)
+        record_iterate!(progData, iter, x, grad_norm)
     end
     
     optData.stop_iteration = iter

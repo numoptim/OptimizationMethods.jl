@@ -322,6 +322,8 @@ function watchdog_fixed_simple_gd(
     optData.reference_value, optData.reference_value_index = 
         optData.objective_hist[1], 1
 
+    record_iterate!(progData, 0, x, optData.grad_val_hist[1])
+
     while (iter < optData.max_iterations) && 
         (optData.grad_val_hist[iter + 1] > optData.threshold)
 
@@ -378,6 +380,7 @@ function watchdog_fixed_simple_gd(
 
         # update iter and grad value history
         optData.iter_hist[iter + 1] .= x
+        record_iterate!(progData, iter, x, optData.grad_val_hist[iter + 1])
     end
 
     optData.stop_iteration = iter

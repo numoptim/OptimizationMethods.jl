@@ -8,6 +8,7 @@ problems/ql_logistic_monomial.jl
 problems/quasi_likelihood.jl
 methods/gd_fixed.jl
 methods/experiment_recorder.jl
+methods/experiment_recorder_solvers.jl
 methods/gd_barzilai_borwein.jl
 methods/gd_lipschitz_approximation.jl
 methods/gd_weighted_norm_damping.jl

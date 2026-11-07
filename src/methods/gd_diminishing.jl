@@ -146,6 +146,7 @@ function diminishing_step_gd(
     x = copy(optData.iter_hist[iter + 1])
     grad!(progData, precomp, store, x)
     optData.grad_val_hist[iter + 1] = norm(store.grad)
+    record_iterate!(progData, 0, x, optData.grad_val_hist[1])
     
     # Compute initial step size 
     α = optData.step_size_scaling*optData.step_size_function(T, iter)
@@ -164,6 +165,7 @@ function diminishing_step_gd(
         # update histories
         optData.iter_hist[iter + 1] .= x
         optData.grad_val_hist[iter + 1] = norm(store.grad)
+        record_iterate!(progData, iter, x, optData.grad_val_hist[iter + 1])
     end
     
     optData.stop_iteration = iter

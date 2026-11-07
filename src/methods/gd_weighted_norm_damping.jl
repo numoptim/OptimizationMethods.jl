@@ -158,6 +158,7 @@ function weighted_norm_damping_gd(
     grad!(progData, precomp, store, x)
 
     optData.grad_val_hist[1] = norm(store.grad)
+    record_iterate!(progData, 0, x, optData.grad_val_hist[1])
 
     while (iter < optData.max_iterations) && 
         (optData.grad_val_hist[iter + 1] > optData.threshold)
@@ -176,6 +177,7 @@ function weighted_norm_damping_gd(
         # compute the step size for the next iteration
         step_size = 1/((1 / step_size) + (optData.grad_val_hist[iter + 1]^2) * 
             step_size)
+        record_iterate!(progData, iter, x, optData.grad_val_hist[iter + 1])
     end
 
     optData.stop_iteration = iter

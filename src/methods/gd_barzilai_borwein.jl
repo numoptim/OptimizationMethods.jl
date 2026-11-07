@@ -185,6 +185,7 @@ function barzilai_borwein_gd(
     # Store Values
     optData.grad_val_hist[iter + 1] = norm(store.grad)
 
+    record_iterate!(progData, 0, x, optData.grad_val_hist[1])
     while (iter < optData.max_iterations) && 
         (optData.grad_val_hist[iter + 1] > optData.threshold)
 
@@ -206,6 +207,7 @@ function barzilai_borwein_gd(
         # Store values
         optData.iter_hist[iter + 1] .= x
         optData.grad_val_hist[iter + 1] = norm(store.grad) 
+        record_iterate!(progData, iter, x, optData.grad_val_hist[iter + 1])
     end
 
     optData.stop_iteration = iter

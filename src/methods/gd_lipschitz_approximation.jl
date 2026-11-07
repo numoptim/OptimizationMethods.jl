@@ -168,6 +168,7 @@ function lipschitz_approximation_gd(
     gra_norm = norm(store.grad)
 
     optData.grad_val_hist[iter+1] = gra_norm
+    record_iterate!(progData, iter, x, gra_norm)
 
     # main loop
     while (gra_norm > optData.threshold) && (iter < optData.max_iterations)
@@ -196,6 +197,7 @@ function lipschitz_approximation_gd(
             norm(optData.iter_diff)
         step_size = min(sqrt(1 + optData.theta) * optData.prev_stepsize, 
             1 / (2 * optData.lipschitz_approximation))
+        record_iterate!(progData, iter, x, gra_norm)
     end
 
     optData.stop_iteration = iter

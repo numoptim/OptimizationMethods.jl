@@ -508,6 +508,8 @@ function nonsequential_armijo_adaptive_gd(
     past_acceptance = true
     reference_value = F(optData.iter_hist[1])
 
+    record_iterate!(progData, 0, x, optData.grad_val_hist[1])
+
     while (iter < optData.max_iterations) && 
         (optData.grad_val_hist[iter + 1] > optData.threshold)
 
@@ -541,6 +543,7 @@ function nonsequential_armijo_adaptive_gd(
             store.grad .= optData.∇F_θk
             optData.grad_val_hist[iter + 1] = optData.grad_val_hist[iter]
         end
+        record_iterate!(progData, iter, x, optData.grad_val_hist[iter + 1])
     end
 
     optData.stop_iteration = iter
