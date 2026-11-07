@@ -29,12 +29,16 @@ Branch: cv/experiments-quasi-likelihood · Last updated: 2026-11-07 (UTC) · Cur
 - [ ] Gate 4: re-read runbook as newcomer
 
 ## Open questions for Vivak
-1. Julia version: `juliaup` installed 1.13.3 (latest 1.13 patch available now; the prompt said 1.13.2). Chose 1.13.3 locally. CHTC tarball (Phase 2.4) will use 1.13.3 too unless you prefer 1.13.2.
-2. Pre-existing failures (not fixed, see Log): `test/problems/cutest_wrapper.jl` needs the CUTEst package (not a test dep); this aborts the whole `Pkg.test()` run, so Gate 1 ("full suite passes") cannot literally be met unless that line is removed from `test/test.txt` on this branch. Plan: for Gate 1, run with `cutest_wrapper.jl` excluded and say so. Tell me if you want otherwise.
+(none open)
+
+Resolved by Vivak (2026-11-07): use Julia **1.13.2** on CHTC (tarball in Phase 2.4 must pin 1.13.2; local dev stays 1.13.3); remove CUTEst tests.
 
 ## Decisions
 - `Project.toml` `[compat] julia = "1.13"` set (per prompt). `Manifest.toml` is gitignored, so not committed.
 - Per-file baselines were obtained by running each test file in its own process in a scratch env (the stock `Pkg.test()` stops at the first erroring file, `cutest_wrapper.jl`).
+
+- CUTEst test removed from `test/test.txt` (file `test/problems/cutest_wrapper.jl` left in place, just not run), per Vivak: not relevant to the experiments.
+- CHTC uses Julia 1.13.2 (Vivak); `[compat] julia = "1.13"` allows both.
 
 ## Development plan
 Phases 1-4 as in `PROMPT.md` §4. One step per run; a step is "done" when its checks pass and it is committed. Verification: test files listed in the Log; gates push to origin.
@@ -50,3 +54,8 @@ Phases 1-4 as in `PROMPT.md` §4. One step per run; a step is "done" when its ch
   - `methods/gd_non_sequential_armijo_fixed_mnewton.jl`: 740 pass, **6 fail**.
   - Everything else passes (problems: least_squares 220, logistic 257, poisson 694, ql_sin 42, ql_centered_exp 56, ql_centered_log 63, ql_monomial 56; all other method and helper files pass).
 - Next: Phase 1.2 (timing layer and tolerance first-hit recorder).
+
+### 2026-11-07: test suite rerun without CUTEst
+- Removed `problems/cutest_wrapper.jl` from `test/test.txt`. Stock `Pkg.test()` now runs all files: **11438 pass, 10 fail/error**, all pre-existing and unchanged: `quasi_likelihood.jl` 4 fails (line 301, Float16 tolerance); `gd_non_sequential_armijo_fixed_mnewton.jl` 6 fails (lines 1653, 1668, 1672, 1821, 1836); `gd_non_sequential_armijo_adaptive.jl` 1 error (line 551, BoundsError, OURS; see Phase 1.5).
+- Gate 1 therefore needs these to be either unrelated-and-listed or fixed; decision at Gate 1: they are unrelated to experiments (not run by the harness), so they will be listed rather than fixed, except the OURS error, which is investigated in Phase 1.5.
+- Next: Phase 1.2.
