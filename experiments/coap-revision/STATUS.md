@@ -1,5 +1,5 @@
 # COAP revision experiments: STATUS
-Branch: cv/experiments-quasi-likelihood · Last updated: 2026-11-08 (UTC) · Current phase: 3 (Phase 2 / Gate 2 done)
+Branch: cv/experiments-quasi-likelihood · Last updated: 2026-11-08 (UTC) · Current phase: 4 (Phase 3 / Gate 3 done)
 
 ## Checklist
 - [x] Phase 1.1 Julia 1.13 baseline
@@ -20,10 +20,10 @@ Branch: cv/experiments-quasi-likelihood · Last updated: 2026-11-08 (UTC) · Cur
 - [x] Phase 2.4 chtc/ (.sub files, submit_all.sh, run_job.sh, build_env.sh)
 - [x] Phase 2.5 src/collect.jl
 - [x] Gate 2: local pilot (3 problems x 2 starts x 100 algorithms) + spot checks
-- [ ] Phase 3.1 analysis/profiles.jl
-- [ ] Phase 3.2 analysis/tables.jl
-- [ ] Phase 3.3 results/paper outputs + README
-- [ ] Gate 3: analysis end to end on pilot data
+- [x] Phase 3.1 analysis/profiles.jl
+- [x] Phase 3.2 analysis/tables.jl
+- [x] Phase 3.3 results/paper outputs + README
+- [x] Gate 3: analysis end to end on pilot data
 - [ ] Phase 4.1 CHTC_RUNBOOK.md
 - [ ] Phase 4.2 ANALYSIS.md
 - [ ] Phase 4.3 .gitignore + pilot-sized data
@@ -80,10 +80,20 @@ Branch: cv/experiments-quasi-likelihood · Last updated: 2026-11-08 (UTC) · Cur
 - **Not tested here:** the `chtc/` scripts and `.sub` files cannot be run in this container (no HTCondor). They were checked with `bash -n`; the real test is the CHTC pilot (runbook step 3), and Gate 4 re-reads them.
 - **Job output.** `run_job.jl` refuses to overwrite an existing job directory; it writes `.job_<id>.tmp` and renames at the end; errors per run are caught (status `error`, message in `errors.log`).
 
+- **Analysis environment.** The analysis has its own environment `experiments/coap-revision/analysis/` (CSV, DataFrames, Statistics, CairoMakie), so the CHTC depot does not carry plotting libraries. Run: `julia --project=analysis src/analysis/run_analysis.jl [--merged DIR] [--out DIR] [--no-plots]` (defaults `results/merged` -> `results/paper`; about 1 min). Code: `src/analysis/{common,profiles,tables,plots,run_analysis}.jl`; tests: `julia --project=. test/test_analysis.jl` (hand-computed synthetic cases; the main environment suffices because the tests do not plot).
+- **Analysis definitions** (also in `results/paper/README.md`, generated): reliable at ε = hit and F(x_hit) < F(x0). Best configuration of a method at ε: highest reliability, ties by smaller median #∇F of reliable runs, then smaller id; chosen per tolerance. Performance profiles: cost of a solver on a pair is the metric at the first ε hit if reliable, else ∞; pairs that no solver of the set solves are dropped (reported in `profile_summary.csv`); for #F the metric is #F + 1 because gradient-only methods have #F = 0 and the ratio would be undefined. Weighted cost = #F·c + #∇F with c per run = (time_obj_s/n_obj)/(time_grad_s/n_grad) (c = 0 when n_obj = 0). 95% margins: 1.96 sd/√n, unclamped, 0 when n < 2. Events (Table 4): per OURS run, proportions of inner loops with each flag over the outer iterations up to the first ε hit, averaged over runs; rejection rate = share of those outer iterations not accepted. Flags are not mutually exclusive (they nearly are in practice).
+- **Outputs.** `results/paper/`: per tolerance and metric Appendix-D tables `reliability_<ε>_<metric>.csv` (16), `profile_{main,all}_<metric>_<ε>.csv` (32) with wide pgfplots columns `tau,<method>...`, `events_<ε>.csv` (4), `all_algorithms_reliability.csv`, `algorithms_table.csv`, `best_configurations.csv`, `profile_summary.csv`, `success_summary.csv`, 10 PNG previews and a generated `README.md` mapping files to manuscript items (Appendix E). The OURS curve is drawn thick black in the PNGs.
+- Pilot-sized data committed: `results/pilot_merged/` (600 runs) and `results/pilot_paper/` (analysis of it). Real outputs go to the gitignored `results/merged/` and `results/paper/` (commit `results/paper/` by hand after the real run if wanted).
+
 ## Development plan
 Phases 1-4 as in `PROMPT.md` §4. One step per run; a step is "done" when its checks pass and it is committed. Verification: test files listed in the Log; gates push to origin.
 
 ## Log
+### 2026-11-08: Phase 3 and Gate 3
+- Implemented the analysis (3.1 profiles, 3.2 tables, 3.3 outputs, PNG previews, generated README). Unit tests `test/test_analysis.jl` (5 test sets: weighted cost and join, best configuration with tie-break, profile ratios and curves with hand-computed values, Appendix-D columns and margins, event proportions up to the hit) pass.
+- **Gate 3:** `run_analysis.jl --merged results/pilot_merged --out results/pilot_paper` runs end to end (67 files, about 1 min). PNGs inspected: profiles and reliability bars render correctly. With only 6 problem-start pairs the pilot margins are wide, so the numbers are a smoke test, not results.
+- On the pilot (budget 1,000), OURS' inner-loop event mix up to the 1e-3 hit is ball 2.8%, lower 75.8%, upper 21.4%, max-iteration 0%, rejection 12.1% (2 runs, 41 loops): same ballpark as the paper (1.36 / 64.19 / 30.18 / 4.34 %, about 12% rejected), not a replication.
+- Next: Phase 4.1 (`CHTC_RUNBOOK.md`), 4.2 (`ANALYSIS.md`), 4.3 (`.gitignore` and pilot data), Gate 4.
 ### 2026-11-08: Phase 2.2-2.5 and Gate 2
 - 2.2: `src/runner.jl` (algorithm factory, `run_one`, uncounted F evaluations at x0/final/hit iterates with counters restored) and `src/run_job.jl`. Smoke test (n=10, m=100, all 100 algorithms, budget 300): no errors, budgets respected exactly, F-count 0 for gradient-only methods.
 - 2.3: `src/timing_pilot.jl` (results/pilot/eval_times.csv), `src/jobs.jl` -> `config/jobs.csv` (535 jobs, 120,000 runs) and `config/pilot_jobs.csv` (6 jobs: V1 n=10 m=100, V3 n=50 m=1000, V2 n=90 m=1000; 2 starts; 100 algorithms; budget 1,000). Sizing in Decisions.

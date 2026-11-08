@@ -1,0 +1,6 @@
+Events,Average.Proportion.on.Inner.Loops,Margin.of.Error,runs,loops
+Bounding Ball Event,2.7777777777777777,5.444444444444444,2,41
+Lower Gradient Interval,75.84541062801932,3.7874396135265864,2,41
+Upper Gradient Interval,21.3768115942029,9.231884057971016,2,41
+Max Iteration,0.0,0.0,2,41
+Rejected outer iterations,12.077294685990339,1.8937198067632843,2,41

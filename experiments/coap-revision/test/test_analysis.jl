@@ -61,7 +61,7 @@ end
     @test R[2, j["OURS"]] ≈ 2 && R[2, j["ARM"]] ≈ 1 && R[2, j["FIXED"]] == Inf
     ρ = profile_curves(R, [1.0, 2.0, 3.0])
     @test ρ[:, j["FIXED"]] ≈ [0.5, 0.5, 0.5]
-    @test ρ[:, j["ARM"]] ≈ [0.5, 1.0, 1.0]
+    @test ρ[:, j["ARM"]] ≈ [0.5, 0.5, 1.0]    # ratios 20/7 and 1
     @test ρ[:, j["OURS"]] ≈ [0.0, 1.0, 1.0]
     # #F metric uses #F + 1
     _, Rf, _, _ = profile_ratios(T, cfg, 1e-3, :nobj)

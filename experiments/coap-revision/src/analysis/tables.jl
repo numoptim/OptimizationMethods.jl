@@ -15,20 +15,25 @@ margins are the 95% normal-approximation margins 1.96 sd/√n.
 """
 function reliability_table(T::DataFrame, bc::DataFrame, tol::Real, metric::Symbol)
     mname = METRIC_SUFFIX[metric]
-    rows = NamedTuple[]
+    cols = Dict{String,Vector}(k => [] for k in ["algorithm.name", "param", "total.x",
+        "avg.reliability", "sd.reliability", "moe_plus.x", "moe_minus.x", "total.y",
+        "avg.$mname", "sd.$mname", "moe_plus.y", "moe_minus.y"])
     for r in eachrow(bc)
         d = T[(T.tol .== tol) .& (T.algorithm_id .== r.algorithm_id), :]
         rel = Float64.(d.reliable)
         vals = d[d.reliable, metric]
         μ = mean(rel); m1 = moe95(rel)
         μy = isempty(vals) ? NaN : mean(vals); m2 = moe95(vals)
-        push!(rows, (var"algorithm.name" = r.method, param = r.algorithm_id,
-            var"total.x" = nrow(d), var"avg.reliability" = μ, var"sd.reliability" = sd0(rel),
-            var"moe_plus.x" = μ + m1, var"moe_minus.x" = μ - m1,
-            var"total.y" = length(vals), Symbol("avg.$mname") = μy, Symbol("sd.$mname") = sd0(vals),
-            var"moe_plus.y" = μy + m2, var"moe_minus.y" = μy - m2))
+        for (k, v) in ("algorithm.name" => r.method, "param" => r.algorithm_id, "total.x" => nrow(d),
+                "avg.reliability" => μ, "sd.reliability" => sd0(rel), "moe_plus.x" => μ + m1,
+                "moe_minus.x" => μ - m1, "total.y" => length(vals), "avg.$mname" => μy,
+                "sd.$mname" => sd0(vals), "moe_plus.y" => μy + m2, "moe_minus.y" => μy - m2)
+            push!(cols[k], v)
+        end
     end
-    return DataFrame(rows)
+    order = ["algorithm.name", "param", "total.x", "avg.reliability", "sd.reliability", "moe_plus.x",
+        "moe_minus.x", "total.y", "avg.$mname", "sd.$mname", "moe_plus.y", "moe_minus.y"]
+    return DataFrame([k => identity.(cols[k]) for k in order])
 end
 
 "Reliability of every one of the 100 algorithms at every tolerance (supplement table)."

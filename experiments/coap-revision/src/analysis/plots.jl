@@ -16,7 +16,9 @@ function plot_profiles(curves, set::String, metric::Symbol, path::String)
         names, taus, ρ = curves[(set, metric, tol)]
         for (j, m) in enumerate(names)
             c, ls = style_of(findfirst(==(m), ALL_METHODS))
-            stairs!(ax, taus, ρ[:, j]; label = m, color = c, linestyle = ls, linewidth = 2.5)
+            ours = m == "OURS"                       # highlight the proposed method
+            stairs!(ax, taus, ρ[:, j]; label = m, color = ours ? :black : c,
+                linestyle = ours ? :solid : ls, linewidth = ours ? 3.5 : 2.5)
         end
         ylims!(ax, 0, 1.02)
     end

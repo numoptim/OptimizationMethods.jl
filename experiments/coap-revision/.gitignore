@@ -2,7 +2,6 @@
 results/raw/
 results/merged/
 results/pilot_raw/
-results/pilot_merged/
 results/pilot_logs/
 # CHTC build artifacts
 chtc/*.tar.gz
