@@ -1,5 +1,5 @@
 # COAP revision experiments: STATUS
-Branch: cv/experiments-quasi-likelihood · Last updated: 2026-11-07 (UTC) · Current phase: 1
+Branch: cv/experiments-quasi-likelihood · Last updated: 2026-11-08 (UTC) · Current phase: 2 (Phase 1 complete, Gate 1 passed)
 
 ## Checklist
 - [x] Phase 1.1 Julia 1.13 baseline
