@@ -3,7 +3,7 @@
 universe = vanilla
 log = chtc/logs/build.log
 executable = /usr/bin/hostname
-transfer_input_files = chtc/julia-1.13.2-linux-x86_64.tar.gz, chtc/code.tar.gz, chtc/build_env.sh
+transfer_input_files = chtc/julia-1.13.3-linux-x86_64.tar.gz, chtc/code.tar.gz, chtc/build_env.sh
 +IsBuildJob = true
 request_cpus = 1
 request_memory = 8GB

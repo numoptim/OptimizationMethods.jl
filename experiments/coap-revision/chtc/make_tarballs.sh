@@ -2,10 +2,10 @@
 # Run ONCE on the CHTC submit node, from the repository root or anywhere inside it:
 #   bash experiments/coap-revision/chtc/make_tarballs.sh
 # Creates, in experiments/coap-revision/chtc/:
-#   julia-1.13.2-linux-x86_64.tar.gz   (portable Julia, downloaded if missing)
+#   julia-1.13.3-linux-x86_64.tar.gz   (portable Julia, downloaded if missing)
 #   code.tar.gz                        (tracked files of the current commit, prefix repo/)
 set -euo pipefail
-JULIA_VERSION=1.13.2
+JULIA_VERSION=1.13.3
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 root="$(git -C "$here" rev-parse --show-toplevel)"
 cd "$here"

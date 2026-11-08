@@ -5,7 +5,7 @@
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."          # experiments/coap-revision
 mkdir -p chtc/logs results/raw
-for f in chtc/julia-1.13.2-linux-x86_64.tar.gz chtc/code.tar.gz chtc/depot.tar.gz; do
+for f in chtc/julia-1.13.3-linux-x86_64.tar.gz chtc/code.tar.gz chtc/depot.tar.gz; do
   [ -f "$f" ] || { echo "ERROR: missing $f (see CHTC_RUNBOOK.md steps 1-2)"; exit 1; }
 done
 for sub in chtc/jobs_[0-9]*.sub; do

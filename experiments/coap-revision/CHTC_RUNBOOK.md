@@ -28,10 +28,10 @@ mkdir -p chtc/logs results/raw
 
 ## 2. Build the environment tarballs (once)
 
-CHTC machines have no Julia. We ship Julia 1.13.2 and a pre-built package depot with every job.
+CHTC machines have no Julia. We ship Julia 1.13.3 and a pre-built package depot with every job.
 
 ```bash
-bash chtc/make_tarballs.sh         # downloads Julia 1.13.2, packs the code of this commit
+bash chtc/make_tarballs.sh         # downloads Julia 1.13.3, packs the code of this commit
 condor_submit -i chtc/build.sub    # interactive build job; wait a few minutes for the prompt
 ```
 
@@ -153,7 +153,7 @@ It prints lines starting with `FAIL:` and exits with an error; it also writes
    Output of the old attempt is kept in `results/raw_invalid/`.
 2. **A job failed with a "checksums ... differ" message in `chtc/logs/job_<id>.err`**: the random
    numbers differ from the ones used to create `config/problems.csv` (different Julia version?). Check
-   `grep julia_version results/raw/job_*/runs.csv | sort | uniq -c | head`; every run must say 1.13.2.
+   `grep julia_version results/raw/job_*/runs.csv | sort | uniq -c | head`; every run must say 1.13.3.
    Do not resubmit blindly; send the message to the branch maintainer.
 3. **Logical failures** ("gradient-only methods with n_obj != 0", "hit data not monotone",
    "status ... disagrees with the 1e-9 hit", "exceed their evaluation budget"): these indicate a code
@@ -169,7 +169,7 @@ It prints lines starting with `FAIL:` and exits with an error; it also writes
 
 | File | Purpose |
 |---|---|
-| `make_tarballs.sh` | Julia 1.13.2 tarball and code tarball of the current commit |
+| `make_tarballs.sh` | Julia 1.13.3 tarball and code tarball of the current commit |
 | `build.sub`, `build_env.sh` | interactive build job that creates `depot.tar.gz` |
 | `run_job.sh`, `jobs_1.sub`, `jobs_1.txt` | what each of the 535 jobs runs / their list |
 | `pilot.sub`, `pilot_jobs.txt` | the 14 pilot jobs |

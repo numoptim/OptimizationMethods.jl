@@ -3,7 +3,7 @@
 # Inputs (transferred): julia tarball, code.tar.gz, depot.tar.gz.
 set -euo pipefail
 JOB_ID="$1"
-JULIA_VERSION=1.13.2
+JULIA_VERSION=1.13.3
 tar -xzf julia-${JULIA_VERSION}-linux-x86_64.tar.gz
 tar -xzf code.tar.gz
 tar -xzf depot.tar.gz

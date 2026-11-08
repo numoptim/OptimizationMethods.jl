@@ -93,7 +93,7 @@ output = chtc/logs/job_\$(job).out
 error = chtc/logs/job_\$(job).err
 should_transfer_files = YES
 when_to_transfer_output = ON_EXIT
-transfer_input_files = chtc/julia-1.13.2-linux-x86_64.tar.gz, chtc/code.tar.gz, chtc/depot.tar.gz
+transfer_input_files = chtc/julia-1.13.3-linux-x86_64.tar.gz, chtc/code.tar.gz, chtc/depot.tar.gz
 transfer_output_files = job_\$(job)
 transfer_output_remaps = "job_\$(job) = results/raw/job_\$(job)"
 request_cpus = 1
