@@ -6,3 +6,6 @@ results/pilot_logs/
 # CHTC build artifacts
 chtc/*.tar.gz
 chtc/logs/
+chtc/*_todo.*
+chtc/resubmit*
+results/raw_invalid/

@@ -1,5 +1,18 @@
+ALL DONE
 # COAP revision experiments: STATUS
-Branch: cv/experiments-quasi-likelihood · Last updated: 2026-11-08 (UTC) · Current phase: 4 (Phase 3 / Gate 3 done)
+Branch: cv/experiments-quasi-likelihood · Last updated: 2026-11-08 (UTC) · Current phase: done (Gates 1-4 passed; CHTC steps still untested on CHTC itself)
+
+## For Vivak
+- **Branch:** `cv/experiments-quasi-likelihood` (isolated, not to be merged into `main`).
+- **First three CHTC commands** (full copy-paste sequence in [`CHTC_RUNBOOK.md`](CHTC_RUNBOOK.md); run from `~/OptimizationMethods.jl/experiments/coap-revision` after step 1):
+  1. `git clone --branch cv/experiments-quasi-likelihood --single-branch https://github.com/numoptim/OptimizationMethods.jl.git`
+  2. `bash chtc/make_tarballs.sh`
+  3. `condor_submit -i chtc/build.sub`   (then `bash build_env.sh` inside the job, `exit`)
+- **Size:** 120,000 runs in **535 jobs** (one submit file). Worst-case job time **max 19.6 h, median 14.3 h** (upper bounds from the timing pilot; most runs stop earlier; the CHTC pilot, runbook step 3, measures the real values). Worst-case total 6,600 core-hours. 2400 MB / 4 GB per job.
+- **Open questions** (details in the section below): (2) bibliography entry `gratton2022firstorder` in the manuscript; (4) V3 sign: resolved, please fix the manuscript to `exp(−|μ−1|^4.5)`; (5) things that can only be confirmed on CHTC (CPU level, depot size, memory).
+- **Decisions of yours reflected in the code:** OURS terminal Lipschitz estimate fixed to match Algorithm 2 (OURS results will differ from the original submission); CUTEst and the flaky watchdog-BB tests removed from the suite.
+- **OURS vs Algorithm 1:** [`OURS_vs_Algorithm1.md`](OURS_vs_Algorithm1.md). After the CHTC run, give `results/merged/` to a fresh session with [`ANALYSIS.md`](ANALYSIS.md).
+- **Not tested here (no HTCondor in this container):** the `.sub` files and the build/run scripts on CHTC itself. Everything else was tested locally: the runner and the collector on a 600-run pilot, the shell plumbing of `run_job.sh` with stub tarballs, the `submit_all.sh` skip logic, the runtime summarizer, and the docs' paths (`python3 test/check_docs.py`). The CHTC pilot in the runbook is the real test.
 
 ## Checklist
 - [x] Phase 1.1 Julia 1.13 baseline
@@ -24,10 +37,10 @@ Branch: cv/experiments-quasi-likelihood · Last updated: 2026-11-08 (UTC) · Cur
 - [x] Phase 3.2 analysis/tables.jl
 - [x] Phase 3.3 results/paper outputs + README
 - [x] Gate 3: analysis end to end on pilot data
-- [ ] Phase 4.1 CHTC_RUNBOOK.md
-- [ ] Phase 4.2 ANALYSIS.md
-- [ ] Phase 4.3 .gitignore + pilot-sized data
-- [ ] Gate 4: re-read runbook as newcomer
+- [x] Phase 4.1 CHTC_RUNBOOK.md
+- [x] Phase 4.2 ANALYSIS.md
+- [x] Phase 4.3 .gitignore + pilot-sized data
+- [x] Gate 4: re-read runbook as newcomer
 
 ## Environment notes (cloud container)
 - Julia 1.13.3 via juliaup: `export PATH=$HOME/.juliaup/bin:$PATH`. If the container is fresh: install with `curl -fsSL https://install.julialang.org | sh -s -- -y --default-channel 1.13`, then `julia -e 'using Pkg; Pkg.Registry.add("General")'`, then `julia --project -e 'using Pkg; Pkg.instantiate()'`.
@@ -39,6 +52,8 @@ Branch: cv/experiments-quasi-likelihood · Last updated: 2026-11-08 (UTC) · Cur
 3. (Resolved by Vivak, 2026-11-07) The flaky `test/methods/gd_watchdog_barzilai_borwein.jl` (`WatchdogSafeBarzilaiBorweinGD`, unused in the experiments) was removed from `test/test.txt`; the file is left in place. Gate 1 now only needs the remaining suite green.
 
 4. (Resolved by Vivak, 2026-11-08) **V3 sign:** the code's V3(μ) = exp(−|μ−1|^4.5) is correct; Vivak will correct the manuscript (Appendix A / §7.2.1) to the minus sign. No code change. (Why it is self-consistent: V3 ≤ 1 on (0,1), so the generator's `vmax = 1.0` noise bound is valid.)
+
+5. **To confirm on CHTC (runbook step 3):** (a) that `Microarch == "x86_64-v3"` has many slots (otherwise switch the level with the one `sed` command in the runbook); (b) the depot tarball size (above 100 MB CHTC must give SQUID access); (c) memory and disk use versus the requests (2400 MB, 4 GB) and the real job runtimes (worst case 19.6 h). Chosen from local measurements and CHTC's Julia guide; none could be tested on CHTC from here.
 
 ## Decisions
 - `Project.toml` `[compat] julia = "1.13"` set (per prompt). `Manifest.toml` is gitignored, so not committed.
@@ -85,10 +100,18 @@ Branch: cv/experiments-quasi-likelihood · Last updated: 2026-11-08 (UTC) · Cur
 - **Outputs.** `results/paper/`: per tolerance and metric Appendix-D tables `reliability_<ε>_<metric>.csv` (16), `profile_{main,all}_<metric>_<ε>.csv` (32) with wide pgfplots columns `tau,<method>...`, `events_<ε>.csv` (4), `all_algorithms_reliability.csv`, `algorithms_table.csv`, `best_configurations.csv`, `profile_summary.csv`, `success_summary.csv`, 10 PNG previews and a generated `README.md` mapping files to manuscript items (Appendix E). The OURS curve is drawn thick black in the PNGs.
 - Pilot-sized data committed: `results/pilot_merged/` (600 runs) and `results/pilot_paper/` (analysis of it). Real outputs go to the gitignored `results/merged/` and `results/paper/` (commit `results/paper/` by hand after the real run if wanted).
 
+- **Phase 4.** `CHTC_RUNBOOK.md` (steps 1-7 as in the prompt, with helper scripts `chtc/collect.sh`, `resubmit.sh`, `job_runtimes.sh`; the submit node has no Julia, so `collect.sh` uses the portable Julia + depot from `$HOME/coap-julia`); `submit_all.sh` skips jobs that already have output (the 14 pilot jobs are real jobs of the list and are kept); `ANALYSIS.md` for a fresh session; `src/analysis/check_merged.jl` (structure check of the merged CSVs); `test/check_docs.py` (every path and script in the two docs exists; Gate 4). `.gitignore` covers `results/raw/`, `results/merged/`, `results/pilot_raw/`, `results/pilot_logs/`, `results/raw_invalid/`, `chtc/*.tar.gz`, `chtc/logs/` and the generated submit lists; pilot-sized data (`results/pilot_merged/`, `results/pilot_paper/`, `results/pilot/eval_times.csv`) is committed. The Manifest.toml files of the experiments and analysis environments are committed (`git add -f`).
+
 ## Development plan
 Phases 1-4 as in `PROMPT.md` §4. One step per run; a step is "done" when its checks pass and it is committed. Verification: test files listed in the Log; gates push to origin.
 
 ## Log
+### 2026-11-08: Phase 4 and Gate 4
+- 4.1 `CHTC_RUNBOOK.md`; helper scripts `chtc/collect.sh`, `resubmit.sh`, `job_runtimes.sh` (tested on synthetic `condor_history` lines: passes at 20 h, fails with a clear message at 27.8 h); `submit_all.sh` rewritten to skip finished jobs (tested with a fake results directory: 533 of 535 queued when 2 are done); `build.sub` now lists `transfer_output_files = depot.tar.gz`.
+- 4.2 `ANALYSIS.md` and `src/analysis/check_merged.jl` (8 checks pass on the pilot data).
+- 4.3 `.gitignore`, pilot-sized data committed.
+- **Gate 4:** `python3 test/check_docs.py` (all paths and scripts mentioned in the two docs exist; a negative test confirmed it fails on a bogus path); `bash -n` on all scripts; `run_job.sh` plumbing tested with stub tarballs and a fake `julia` (the job directory appears at the top level of the scratch directory, where `transfer_output_files` expects it); read-through of the runbook as a newcomer: each step names its commands, the expected output and what to do on failure. Placeholders left for Vivak: `<NETID>`, `<SUBMIT_HOST>`, `<CLUSTER_ID>`.
+- All checklist items done: `ALL DONE`.
 ### 2026-11-08: Phase 3 and Gate 3
 - Implemented the analysis (3.1 profiles, 3.2 tables, 3.3 outputs, PNG previews, generated README). Unit tests `test/test_analysis.jl` (5 test sets: weighted cost and join, best configuration with tie-break, profile ratios and curves with hand-computed values, Appendix-D columns and margins, event proportions up to the hit) pass.
 - **Gate 3:** `run_analysis.jl --merged results/pilot_merged --out results/pilot_paper` runs end to end (67 files, about 1 min). PNGs inspected: profiles and reliability bars render correctly. With only 6 problem-start pairs the pilot margins are wide, so the numbers are a smoke test, not results.

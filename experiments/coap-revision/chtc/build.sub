@@ -8,4 +8,5 @@ transfer_input_files = chtc/julia-1.13.2-linux-x86_64.tar.gz, chtc/code.tar.gz, 
 request_cpus = 1
 request_memory = 8GB
 request_disk = 8GB
+transfer_output_files = depot.tar.gz
 queue
