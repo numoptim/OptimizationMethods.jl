@@ -38,7 +38,7 @@ Branch: cv/experiments-quasi-likelihood · Last updated: 2026-11-08 (UTC) · Cur
 2. Bibliography (from the prompt): the manuscript's `gratton2022firstorder` cites arXiv:2203.01757 (now "Complexity and performance for two classes of noise-tolerant first-order algorithms"); ASTR1 is arXiv:2203.01647. Not acted on.
 3. (Resolved by Vivak, 2026-11-07) The flaky `test/methods/gd_watchdog_barzilai_borwein.jl` (`WatchdogSafeBarzilaiBorweinGD`, unused in the experiments) was removed from `test/test.txt`; the file is left in place. Gate 1 now only needs the remaining suite green.
 
-4. **V3 sign mismatch (data generation).** Appendix A (manuscript §7.2.1) gives V3(μ) = exp(+|μ−1|^4.5), but the branch implements `centered_exp(μ,p,c) = exp(−|μ−1|^{2p})` (so V3 = exp(−|μ−1|^4.5) with p=2.25, c=1), both for generating the data and for the objective. Both are positive on (0,1). With the code's V3 the generator's noise bound `vmax = 1.0` is valid (V3 ≤ 1); with the manuscript's V3 the maximum on [0.3,0.7] is exp(0.7^4.5)=1.22 > 1, which would break the design property |V^{1/2}ε| < 0.3 near μ=0.3. **Decision for now:** keep the code (Appendix C says to use the old scripts' choices; the old experiments ran exactly this). Please check which sign the manuscript intends; if the manuscript is right, `centered_exp` (and its derivative) must change. Not blocking.
+4. (Resolved by Vivak, 2026-11-08) **V3 sign:** the code's V3(μ) = exp(−|μ−1|^4.5) is correct; Vivak will correct the manuscript (Appendix A / §7.2.1) to the minus sign. No code change. (Why it is self-consistent: V3 ≤ 1 on (0,1), so the generator's `vmax = 1.0` noise bound is valid.)
 
 ## Decisions
 - `Project.toml` `[compat] julia = "1.13"` set (per prompt). `Manifest.toml` is gitignored, so not committed.
@@ -78,7 +78,7 @@ Phases 1-4 as in `PROMPT.md` §4. One step per run; a step is "done" when its ch
 ### 2026-11-08: Phase 2.1
 - Added `experiments/coap-revision/{Project.toml, src/instances.jl, src/make_config.jl, test/test_config.jl, config/{problems,starts,algorithms}.csv}`. `julia --project=. src/make_config.jl` regenerates the three CSVs; `julia --project=. test/test_config.jl` (405 checks) validates counts (120 problems, 1,200 starts, 100 algorithms = 58+14+14+14, 120,000 runs), uniqueness of seeds, the paper-design checks, and that regenerating a sample of problems/starts reproduces the recorded checksums/values.
 - Variance functions positivity (checked over μ ∈ (0,1)): V1 ≥ 0.737, V2 ≥ 1, V3 (code) ≥ 0.368, V4 ≥ 1; all positive.
-- Found the V3 sign mismatch (Open question 4).
+- Found the V3 sign mismatch (Open question 4, resolved by Vivak: the code is correct, the manuscript will be corrected).
 - Next: Phase 2.2 (`src/run_job.jl`).
 ### 2026-11-08: OURS fix and Gate 1
 - Manuscript check (session with the manuscript source) confirmed the off-by-one; applied the fix (`j + 1`, with a comment). `test/methods/ours_vs_algorithm1.jl` (396 pass) now requires the solver to equal the paper transcription exactly (iterates, `j_k`, events, acceptance, `δ`, `τ`), plus a direct test that an inner loop of one step sets the estimate to the one-step ratio. Existing OURS test files still pass (inner loop 42, method 82).
