@@ -3,7 +3,7 @@
 Compared: Algorithm 1 as printed in the manuscript (PROMPT.md, Appendix B) against
 `src/methods/gd_non_sequential_armijo_adaptive.jl` (**A**) and
 `src/methods/line_search_helpers/non_sequential_armijo.jl` (**H**), on branch
-`cv/experiments-quasi-likelihood`. Date: 2026-11-07. **OURS's behavior was not changed.**
+`cv/experiments-quasi-likelihood`. Date: 2026-11-07. **OURS's behavior was changed in exactly one place, on 2026-11-08 (row 17, fixed at Vivak's request after the manuscript confirmed the bug). The comparison below describes the code before that fix except where marked.**
 
 Notation: the paper's outer index `k` starts at 0 and its inner index `j` at 0. In the code
 the outer counter `iter` (called `k` inside `inner_loop!`) starts at 1, so code `k` = paper `k`+1,
@@ -12,9 +12,9 @@ step, so code `j` = paper `j`+1 inside the loop body.
 
 ## Summary
 
-* **One real discrepancy** (row 17): the Lipschitz estimate at the terminal inner iterate is
-  off by one when the inner loop takes exactly one step (`j_k = 1`). It changes the trajectory,
-  and `j_k = 1` is common. See **Open question 1** in `STATUS.md`. Not changed.
+* **One real discrepancy** (row 17): the Lipschitz estimate at the terminal inner iterate was
+  off by one when the inner loop took exactly one step (`j_k = 1`). It changed the trajectory,
+  and `j_k = 1` is common (about 23% of inner loops). **Fixed**; the solver now equals the paper transcription exactly.
 * Everything else matches Algorithm 1 once the printing errors in the paper are read as intended
   (rows 2, 5, 13, 15). The remaining differences are cosmetic (rows 18–19).
 * `test/methods/ours_vs_algorithm1.jl` checks all of this mechanically: an independent literal
@@ -42,7 +42,7 @@ step, so code `j` = paper `j`+1 inside the loop body.
 | 14 | `elseif ‖Ḟ(ψ_j)‖ ≥ τ_upp`: accept, `δ' = min{1.5δ, δ̄}`, τ updated as in 13 | H:108–112 | none | same |
 | 15 | `else`: accept, `δ' = min{1.5δ, δ̄}`, `τ' ← τ_low^k τ_upp^k` (**missing comma**) | H:113–115: `δk = min(1.5δk, δ_upper)`, τ unchanged | paper has a typo; intended `τ' = (τ_low^k, τ_upp^k)` | code |
 | 16 | `θ_{k+1} = ψ_j` on acceptance; reference `F(θ_{k+1}) = F(ψ_j)` | A:537–541 (`iter_hist[iter+1] .= x`, `reference_value = Fx`, `grad_val_hist[iter+1] = norm_∇F_ψ`) | none | same |
-| 17 | `EstimateLipschitz` at the **terminal** inner iterate (feeds `L̂₀^{k+1}`) | A:408 `update_local_lipschitz_approximation(j, k, …)` with the *final code `j`* | **Off by one when `j_k = 1`.** The function's docstring (A:152–159, 213–223) defines `j == 1` as "no information yet" (returns `1.0`, or the previous estimate). That is correct for the in-loop call at the top of pass 1, but the post-loop call passes the final `j = j_k`, i.e. the number of steps taken. When `j_k = 1` one step was taken, so `ψ_1, ψ_0` and both gradients are available and the paper's `EstimateLipschitz(1,k,ψ_1,ψ_0)` has data, but the code returns `1.0` (k=1) or the stale carried value (k>1) instead of `‖Ḟ(ψ_1)−Ḟ(ψ_0)‖/‖ψ_1−ψ_0‖`. For `j_k ≥ 2` the code is consistent. | **Bug, confirmed against the manuscript** (2026-11-08; see "Manuscript check" below). Fix: pass `j + 1` in the post-loop call. Left unchanged pending Vivak's decision (Open question 1). |
+| 17 | `EstimateLipschitz` at the **terminal** inner iterate (feeds `L̂₀^{k+1}`) | A:408 `update_local_lipschitz_approximation(j, k, …)` with the *final code `j`* | **Off by one when `j_k = 1`.** The function's docstring (A:152–159, 213–223) defines `j == 1` as "no information yet" (returns `1.0`, or the previous estimate). That is correct for the in-loop call at the top of pass 1, but the post-loop call passes the final `j = j_k`, i.e. the number of steps taken. When `j_k = 1` one step was taken, so `ψ_1, ψ_0` and both gradients are available and the paper's `EstimateLipschitz(1,k,ψ_1,ψ_0)` has data, but the code returns `1.0` (k=1) or the stale carried value (k>1) instead of `‖Ḟ(ψ_1)−Ḟ(ψ_0)‖/‖ψ_1−ψ_0‖`. For `j_k ≥ 2` the code is consistent. | **Bug, confirmed against the manuscript** (see "Manuscript check" below). **Fixed 2026-11-08** (Vivak's decision): the post-loop call now passes `j + 1`. |
 | 18 | events: ball / lower-gradient / upper-gradient / max-iteration | A:403–406: `!(‖ψ−θ‖ ≤ 10)`, `!(τ_low < n)`, `!(n < τ_upp)`, `!(j < max_iteration)`; A:530 stores `accepted` as flag 5 | ball test hard-codes `10` instead of the `radius` keyword (identical at default); flags are not mutually exclusive (e.g. ball and upper can both be true) | code is consistent at defaults. When tabulating Table 4 decide whether proportions are over flags or over loops (see ANALYSIS.md caveat). |
 | 19 | `δ_0 ∈ (0, δ̄]`, `ρ ∈ (0,1)` | constructor asserts `0 < δ0 ≤ δ_upper` (A:100–105); `ρ ∉ (0,1)` is not asserted | cosmetic | n/a (experiment uses `ρ = 1e-4`) |
 

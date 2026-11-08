@@ -12,10 +12,12 @@ const OM = OptimizationMethods
 # index: j = 0 has no information (1.0 for k = 0, else the previous estimate);
 # j ≥ 1 uses ψ_j, ψ_{j-1}.
 #
-# `code_terminal = true`: the estimate at the *terminal* inner iterate is
-# computed as the code does it, i.e. with the "first iteration" rule when the
-# inner loop took exactly one step (j_k = 1). `false`: paper-consistent (the
-# estimate is always measured from the last step).
+# `code_terminal = false` (paper, Algorithm 2 `alg:update`): the estimate at the
+# terminal inner iterate is always measured from the last step, also when the
+# inner loop took exactly one step (j_k = 1). The solver implements this.
+# `code_terminal = true` is the *previous* (buggy) behaviour of the code: with
+# j_k = 1 it used the "no information yet" rule. Kept only to show that the
+# trajectories differ from the paper after the first j_k = 1 loop.
 function algorithm1(prob, x0; ρ, δ0, δbar, nouter, code_terminal)
     precomp, store = OM.initialize(prob)
     F(θ) = OM.obj(prob, precomp, store, θ)
@@ -96,9 +98,9 @@ end
         js = [t[2] for t in timed.inner_loops]
         @test [t[1] for t in timed.inner_loops] == collect(1:nouter)
 
-        # transcription reproducing the code's rule at the terminal iterate
+        # transcription of the paper (Algorithm 1 + Algorithm 2)
         ref = algorithm1(prob, x0; ρ = 1e-4, δ0 = 1.0, δbar = 1.0, nouter = nouter,
-            code_terminal = true)
+            code_terminal = false)
         @test js == [r.j for r in ref]
         for k in 1:nouter
             @test s.iter_hist[k+1] ≈ ref[k].θ rtol = 1e-8 atol = 1e-10
@@ -111,15 +113,36 @@ end
         @test s.τ_lower ≈ ref[end].τl rtol = 1e-8
         @test s.τ_upper ≈ ref[end].τu rtol = 1e-8
 
-        # paper-consistent estimate at the terminal iterate: identical until the
-        # loop after the first inner loop with j_k = 1
-        ref2 = algorithm1(prob, x0; ρ = 1e-4, δ0 = 1.0, δbar = 1.0, nouter = nouter,
-            code_terminal = false)
+        # previous behaviour (j_k = 1 handled as "no information"): identical to
+        # the paper until the first j_k = 1 loop, then different
+        old = algorithm1(prob, x0; ρ = 1e-4, δ0 = 1.0, δbar = 1.0, nouter = nouter,
+            code_terminal = true)
         k1 = findfirst(==(1), js)
-        kmax = k1 === nothing ? nouter : min(nouter, k1)   # loop k1 itself is identical
-        for k in 1:kmax
-            @test s.iter_hist[k+1] ≈ ref2[k].θ rtol = 1e-8 atol = 1e-10
+        if k1 !== nothing
+            for k in 1:min(nouter, k1)
+                @test old[k].θ ≈ ref[k].θ rtol = 1e-8 atol = 1e-10
+            end
         end
+    end
+
+    # Direct check of the terminal estimate after an inner loop of ONE step
+    for k in (1, 2)
+        x0 = 20 .* rand(T, 10) .- 10
+        s = NonsequentialArmijoAdaptiveGD(T; x0 = copy(x0), δ0 = 1.0, δ_upper = 1.0,
+            ρ = 1e-4, threshold = 1e-9, max_iterations = 5)
+        precomp, store = OM.initialize(prob)
+        OM.grad!(prob, precomp, store, x0)
+        s.grad_val_hist[k] = norm(store.grad)
+        s.τ_lower = norm(store.grad) / sqrt(2)
+        s.τ_upper = sqrt(10) * norm(store.grad)
+        s.local_lipschitz_estimate = 123.0     # stale previous estimate
+        g0 = copy(store.grad)
+        ψ = copy(x0)
+        j = OM.inner_loop!(ψ, copy(x0), s, prob, precomp, store, true, k;
+            max_iteration = 1)
+        @test j == 1
+        ratio = norm(store.grad - g0) / norm(ψ - x0)
+        @test s.local_lipschitz_estimate ≈ ratio rtol = 1e-10
     end
 end
 

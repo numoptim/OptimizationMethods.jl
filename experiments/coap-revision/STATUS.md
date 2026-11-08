@@ -1,4 +1,3 @@
-BLOCKED: Open question 1 (OURS Lipschitz-estimate off-by-one when j_k=1, confirmed against the manuscript; see OURS_vs_Algorithm1.md row 17): tell me to FIX it (pass j+1) or KEEP it as is, then remove this line.
 # COAP revision experiments: STATUS
 Branch: cv/experiments-quasi-likelihood · Last updated: 2026-11-07 (UTC) · Current phase: 1
 
@@ -14,7 +13,7 @@ Branch: cv/experiments-quasi-likelihood · Last updated: 2026-11-07 (UTC) · Cur
 - [x] Phase 1.4e ASTR1 implementation
 - [x] Phase 1.4f ASTR1 tests (§2.3)
 - [x] Phase 1.5 OURS vs Algorithm 1 (`OURS_vs_Algorithm1.md`) (one possible bug found, Open question 1)
-- [ ] Gate 1: full test suite passes on Julia 1.13
+- [x] Gate 1: full test suite passes on Julia 1.13
 - [ ] Phase 2.1 config/problems.csv, starts.csv, algorithms.csv
 - [ ] Phase 2.2 src/run_job.jl
 - [ ] Phase 2.3 src/jobs.jl (+ timing pilot, sizing arithmetic)
@@ -35,7 +34,7 @@ Branch: cv/experiments-quasi-likelihood · Last updated: 2026-11-07 (UTC) · Cur
 - Run tests: `julia --project -e 'using Pkg; Pkg.test()'` (about 1.5 min, fully green at Phase 1.1).
 
 ## Open questions for Vivak
-1. **OURS: possible off-by-one in the terminal Lipschitz estimate** (`OURS_vs_Algorithm1.md`, row 17). In `inner_loop!` the post-loop call `update_local_lipschitz_approximation(j, k, ...)` (src/methods/gd_non_sequential_armijo_adaptive.jl:408) passes the final `j = j_k`, but the function treats `j == 1` as "no information yet". When the inner loop takes exactly one step the one-step secant ratio `‖Ḟ(ψ₁)−Ḟ(ψ₀)‖/‖ψ₁−ψ₀‖` is available but unused: the estimate stays `1.0` (k=1) or the stale previous value. It affects the first step size of the next outer loop. `j_k = 1` happens in about 23% of inner loops (up to the 1e-3 hit), and the trajectories diverge within 1–2 outer iterations after the first such loop. I did not change OURS (per instructions). **Options:** (a) keep the code as is, which is what the old experiments ran, so results stay comparable to the paper, and document it; (b) fix it (pass `j+1` in the post-loop call) and accept that OURS's numbers shift. My default if you do not answer: (a), because the prompt says not to change OURS's behavior. Then remove the BLOCKED line at the top. **Update 2026-11-08:** a session with the manuscript confirmed it is a bug (Algorithm 2, `alg:update`: "no information" is exactly paper `j = 0`; after one step the one-step ratio is required). Minimal fix: `j + 1` in the post-loop call (no change for `j_k ≥ 2`). The decision left is only fix vs keep.
+1. (Resolved by Vivak, 2026-11-08: FIX) **OURS Lipschitz off-by-one when `j_k = 1`** (`OURS_vs_Algorithm1.md`, row 17). Confirmed against the manuscript (Algorithm 2 `alg:update`: "no information" is exactly paper `j = 0`). Fixed by passing `j + 1` in the post-loop call of `inner_loop!` (src/methods/gd_non_sequential_armijo_adaptive.jl:408); identical for `j_k ≥ 2`. **Consequence for the paper:** OURS numbers will differ from the original submission (about 23% of inner loops had `j_k = 1`), so the revision should say the implementation was corrected to match Algorithm 2.
 2. Bibliography (from the prompt): the manuscript's `gratton2022firstorder` cites arXiv:2203.01757 (now "Complexity and performance for two classes of noise-tolerant first-order algorithms"); ASTR1 is arXiv:2203.01647. Not acted on.
 3. (Resolved by Vivak, 2026-11-07) The flaky `test/methods/gd_watchdog_barzilai_borwein.jl` (`WatchdogSafeBarzilaiBorweinGD`, unused in the experiments) was removed from `test/test.txt`; the file is left in place. Gate 1 now only needs the remaining suite green.
 
@@ -62,10 +61,17 @@ Branch: cv/experiments-quasi-likelihood · Last updated: 2026-11-07 (UTC) · Cur
 
 - Phase 1.5: added a hook `record_inner_loop!(progData, k, j_k)` (no-op for plain problems; `TimedProblem.inner_loops` stores `(k, j_k)`) right after `inner_loop!` in `nonsequential_armijo_adaptive_gd`, because `j_k` was discarded and `ours_events.csv` needs it. Behavior of OURS is unchanged (transcription test passes). Event flags come from `triggering_event_hist[k]` = `[ball, lower, upper, maxiter, accepted]`.
 
+- Phase 1.5 fix (Vivak's decision): OURS now follows the manuscript's `EstimateLipschitz` (Algorithm 2) at the terminal inner iterate. Behavior change is limited to inner loops with exactly one step; all other quantities unchanged. The pre-fix behaviour is retained only as a switch in the test transcription (`code_terminal = true`) to show it diverges from the paper after the first `j_k = 1` loop.
+
 ## Development plan
 Phases 1-4 as in `PROMPT.md` §4. One step per run; a step is "done" when its checks pass and it is committed. Verification: test files listed in the Log; gates push to origin.
 
 ## Log
+### 2026-11-08: OURS fix and Gate 1
+- Manuscript check (session with the manuscript source) confirmed the off-by-one; applied the fix (`j + 1`, with a comment). `test/methods/ours_vs_algorithm1.jl` (396 pass) now requires the solver to equal the paper transcription exactly (iterates, `j_k`, events, acceptance, `δ`, `τ`), plus a direct test that an inner loop of one step sets the estimate to the one-step ratio. Existing OURS test files still pass (inner loop 42, method 82).
+- Removed the flaky unused watchdog-BB test from `test/test.txt` (Vivak).
+- Full `Pkg.test()` green on Julia 1.13.3. Gate 1 ticked.
+- Next: Phase 2.1 (config/problems.csv, starts.csv, algorithms.csv).
 ### 2026-11-07: Phase 1.5
 - Compared `NonsequentialArmijoAdaptiveGD` with Algorithm 1 line by line: `experiments/coap-revision/OURS_vs_Algorithm1.md` (19 rows). Confirmed the known issues: inverted inner `while` (paper typo), missing comma in the `\Else` branch (paper typo), `EstimateLipschitz` at `j=0` undefined in the paper (code defines it as carry-over), `√20·τ_low = √10·‖g‖` so no mismatch. Found one possible real bug (Open question 1).
 - New test `test/methods/ours_vs_algorithm1.jl` (392 pass): an independent transcription of Algorithm 1 reproduces the solver (iterates, `j_k`, event flags, acceptance, `δ`, `τ`) over 40 outer iterations from 3 starts; the paper-consistent variant of the Lipschitz rule is identical until the first `j_k = 1` loop and diverges right after.

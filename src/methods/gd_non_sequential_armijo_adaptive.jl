@@ -405,8 +405,14 @@ function inner_loop!(
     optData.triggering_event_hist[k][3] = !(optData.norm_∇F_ψ < optData.τ_upper) 
     optData.triggering_event_hist[k][4] = !(j < max_iteration) 
 
+    # Estimate at the terminal iterate ψ_j. Inside the loop `j` was incremented
+    # before the step, so the function's `j == 1` ("no step taken yet", the
+    # paper's j = 0) is the first pass. After the loop `j` is the number of
+    # steps taken, i.e. the paper's j, so we pass `j + 1` to use the function's
+    # index convention. For j = 1 this uses the one-step ratio, as in
+    # Algorithm 2 (`EstimateLipschitz`) of the manuscript.
     optData.local_lipschitz_estimate = update_local_lipschitz_approximation(
-            j, k, optData.prev_norm_step, store.grad,
+            j + 1, k, optData.prev_norm_step, store.grad,
             optData.prev_∇F_ψ, optData.local_lipschitz_estimate, past_acceptance)
 
     return j
