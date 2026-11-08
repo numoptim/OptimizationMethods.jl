@@ -167,9 +167,10 @@ end
 
 Hook called by solvers right after the gradient norm used in their termination
 test is computed. No-op unless `progData` is a `TimedProblem`, in which case it
-stores a [`ToleranceHit`](@ref) for each tolerance `ε` not yet hit for which the
-solver's test `gra_norm > ε` is false (so NaN counts as a hit, exactly as the
-solver would stop).
+stores a [`ToleranceHit`](@ref) for each tolerance `ε` not yet hit for which
+`gra_norm <= ε`. This is the solvers' stopping test `!(gra_norm > ε)` except for
+NaN: the solvers would stop on a NaN gradient norm as if converged, but a NaN is
+never recorded as a hit (the run is then reported as `nan_or_inf`).
 """
 record_iterate!(progData, iter, x, gra_norm) = nothing
 
@@ -189,7 +190,7 @@ function record_iterate!(timed::TimedProblem{T}, iter, x, gra_norm) where {T}
     timed.last_iter = iter
     timed.last_gradnorm = gra_norm
     for (i, ε) in enumerate(timed.tols)
-        if timed.hits[i] === nothing && !(gra_norm > ε)
+        if timed.hits[i] === nothing && gra_norm <= ε
             timed.hits[i] = ToleranceHit{T}(
                 ε, iter,
                 Int(_base_counters(timed.counters).neval_obj),

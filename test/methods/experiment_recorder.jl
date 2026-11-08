@@ -65,6 +65,13 @@ using Test, OptimizationMethods, Random, LinearAlgebra, NLPModels
     @test all(h -> h === nothing, timed.hits)
     @test timed.time_grad_ns == 0
 
+    # a NaN gradient norm is never a hit
+    timed_nan = TimedProblem(progData; tols = tols); start!(timed_nan)
+    record_iterate!(timed_nan, 0, x0, NaN)
+    @test all(h -> h === nothing, timed_nan.hits)
+    record_iterate!(timed_nan, 1, x0, 1e-4)
+    @test timed_nan.hits[1].iteration == 1 && timed_nan.hits[2] === nothing
+
     # no-op hook for plain problems
     @test OptimizationMethods.record_iterate!(progData, 0, x0, 1.0) === nothing
 
