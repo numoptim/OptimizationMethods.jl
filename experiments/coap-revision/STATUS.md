@@ -1,5 +1,5 @@
 # COAP revision experiments: STATUS
-Branch: cv/experiments-quasi-likelihood · Last updated: 2026-11-08 (UTC) · Current phase: 2 (2.1 done)
+Branch: cv/experiments-quasi-likelihood · Last updated: 2026-11-08 (UTC) · Current phase: 3 (Phase 2 / Gate 2 done)
 
 ## Checklist
 - [x] Phase 1.1 Julia 1.13 baseline
@@ -15,11 +15,11 @@ Branch: cv/experiments-quasi-likelihood · Last updated: 2026-11-08 (UTC) · Cur
 - [x] Phase 1.5 OURS vs Algorithm 1 (`OURS_vs_Algorithm1.md`) (one possible bug found, Open question 1)
 - [x] Gate 1: full test suite passes on Julia 1.13
 - [x] Phase 2.1 config/problems.csv, starts.csv, algorithms.csv
-- [ ] Phase 2.2 src/run_job.jl
-- [ ] Phase 2.3 src/jobs.jl (+ timing pilot, sizing arithmetic)
-- [ ] Phase 2.4 chtc/ (.sub files, submit_all.sh, run_job.sh, build_env.sh)
-- [ ] Phase 2.5 src/collect.jl
-- [ ] Gate 2: local pilot (3 problems x 2 starts x 100 algorithms) + spot checks
+- [x] Phase 2.2 src/run_job.jl
+- [x] Phase 2.3 src/jobs.jl (+ timing pilot, sizing arithmetic)
+- [x] Phase 2.4 chtc/ (.sub files, submit_all.sh, run_job.sh, build_env.sh)
+- [x] Phase 2.5 src/collect.jl
+- [x] Gate 2: local pilot (3 problems x 2 starts x 100 algorithms) + spot checks
 - [ ] Phase 3.1 analysis/profiles.jl
 - [ ] Phase 3.2 analysis/tables.jl
 - [ ] Phase 3.3 results/paper outputs + README
@@ -71,10 +71,27 @@ Branch: cv/experiments-quasi-likelihood · Last updated: 2026-11-08 (UTC) · Cur
 - Algorithm table: ids 1–100 in order FIXED (1–7), DIM (8–14), BBGD (15–28; long then short), LIPAPP (29–35), NEST (36–42), WEIGHT (43–49), OURS (50), ARM (51), WATCH (52–58), SPEC (59–72; long then short), ADATR (73–86; α=0 then 0.9), ASTR1 (87–100; adagrad then maxg); η in the order 1e-4, 1, 2, 4, 6, 8, 10. Hyperparameter columns for runs.csv: `eta, long_stepsize, adatr_alpha, astr1_variant`.
 - `experiments/coap-revision/Project.toml` uses `[sources]` to dev the package at `../..`; its `Manifest.toml` is gitignored (decide in Phase 2.4 whether CHTC needs a committed manifest).
 
+- **Run statuses.** The prompt's six plus one: `stalled` = the solver stopped by itself without reaching 1e-9 (failed line search or `max_iterations`), distinct from `nan_or_inf`. `converged_1e-9` iff the 1e-9 hit was recorded; `nan_or_inf` if the final gradient norm or iterate is non-finite. A NaN gradient norm is never recorded as a hit (the solvers' own test `!(norm > ε)` would count NaN as converged); recorder changed to `gra_norm <= ε`.
+- **Budgets/iterations.** `max_iterations = G_max + 10` (never binds: every iteration of every method uses at least one gradient). `G_max = F_max = 200,000` for the full experiment; the Gate-2 pilot used 1,000 for both (a full-budget local pilot would take hours on the n=90, m=1000 problems).
+- **Sizing arithmetic (timing pilot, `results/pilot/eval_times.csv`, 1,000 evals each).** t_F from 0.43 ms (n=10, m=100) to 14.7 ms (V1, n=90, m=1000); t_grad from 4 µs to 0.19 ms; c = t_F/t_grad from 30 to 277. Worst-case run time T_run = F_max t_F + G_max t_grad: gradient-only methods <= 38 s per run (largest problem), F-using methods <= about 50 min (V1, n=90, m=1000). Jobs are tiles (algorithms x starts) of one problem and one kind (gradient-only: 77 algorithms; F-using: 23 algorithms), sized so that the sum of T_run <= 20 h (limit 24 h; 72 h hold). Result: **535 jobs** (120 gradient-only jobs of 770 runs, 415 F-using jobs of 23-230 runs), worst-case job time max 19.6 h, median 14.3 h; one submit file (<= 10,000), 535 < 1,000 queued, so the 5-minute mean-runtime rule does not apply. Per-run safety cap = max(30 s, 2 T_run). Worst-case total is 6,595 core-hours (6,240 for F-using methods); typical runs stop earlier, so the real total will be lower. G_max/F_max were not lowered.
+- **Resources.** Peak RSS 1,525 MB for the largest problem at G_max = 200,000 (histories preallocated): `request_memory = 2400MB` (+50% rounded). `request_disk = 4GB` (Julia ~1 GB unpacked, depot < 0.5 GB, tarballs, output). `request_cpus = 1`, `JULIA_NUM_THREADS=1`. These are estimates to be confirmed by the CHTC pilot (runbook step 3).
+- **CPU pinning.** `requirements = (Microarch == "x86_64-v3")` (HTCondor machine attribute `Microarch`; levels x86_64-v1..v4). Check availability with `condor_status -af Microarch | sort | uniq -c` and `condor_status -constraint 'Microarch == "x86_64-v3"' -af CpuModel | sort | uniq -c`. The CPU model of every run is recorded in `runs.csv` (`cpu_model`), so homogeneity can be audited afterwards. If v3 is scarce, change `MICROARCH` in `src/jobs.jl` and regenerate.
+- **CHTC environment.** Following CHTC's Julia guide (portable binary + portable depot, built in an interactive build job): `chtc/make_tarballs.sh` (Julia 1.13.2 tarball + `git archive` code tarball), `chtc/build.sub` + `chtc/build_env.sh` (instantiate + precompile into `depot.tar.gz`), `chtc/run_job.sh` (unpacks and runs one job; output `job_<id>` is remapped to `results/raw/job_<id>` on the submit node). The experiments `Manifest.toml` is committed (`git add -f`) so the CHTC depot uses the exact versions tested here (resolved with Julia 1.13.3; CHTC uses 1.13.2). The depot tarball may exceed 100 MB; then CHTC asks to contact chtc@cs.wisc.edu for SQUID access (documented in the runbook). The package is precompiled in the depot but, because it is a path dependency extracted to a per-job directory, Julia may recompile it once per job (about 1 min).
+- **Not tested here:** the `chtc/` scripts and `.sub` files cannot be run in this container (no HTCondor). They were checked with `bash -n`; the real test is the CHTC pilot (runbook step 3), and Gate 4 re-reads them.
+- **Job output.** `run_job.jl` refuses to overwrite an existing job directory; it writes `.job_<id>.tmp` and renames at the end; errors per run are caught (status `error`, message in `errors.log`).
+
 ## Development plan
 Phases 1-4 as in `PROMPT.md` §4. One step per run; a step is "done" when its checks pass and it is committed. Verification: test files listed in the Log; gates push to origin.
 
 ## Log
+### 2026-11-08: Phase 2.2-2.5 and Gate 2
+- 2.2: `src/runner.jl` (algorithm factory, `run_one`, uncounted F evaluations at x0/final/hit iterates with counters restored) and `src/run_job.jl`. Smoke test (n=10, m=100, all 100 algorithms, budget 300): no errors, budgets respected exactly, F-count 0 for gradient-only methods.
+- 2.3: `src/timing_pilot.jl` (results/pilot/eval_times.csv), `src/jobs.jl` -> `config/jobs.csv` (535 jobs, 120,000 runs) and `config/pilot_jobs.csv` (6 jobs: V1 n=10 m=100, V3 n=50 m=1000, V2 n=90 m=1000; 2 starts; 100 algorithms; budget 1,000). Sizing in Decisions.
+- 2.4: `chtc/` files, `chtc/jobs_1.sub` (535 jobs), `chtc/pilot.sub` + `chtc/pilot_jobs.txt` (14 jobs covering the smallest, a middle and the largest problem; worst case 15.2 h), `submit_all.sh` (`--dry-run` supported).
+- 2.5: `src/collect.jl [--pilot] [--jobs F] [--raw D] [--out D]`: exact counts, one row per (problem, start, algorithm), exactly 4 tolerance rows per run, allowed statuses, no NaN/Inf/missing in counts and times, hit data monotone across tolerances, #F = 0 for FIXED/DIM/BBGD/LIPAPP/NEST/WEIGHT/ADATR/ASTR1, budgets respected, status vs 1e-9 hit consistent; writes `resubmit_jobs.txt`; exits nonzero on failure. `test/test_collect.jl` (8 checks: clean data passes; missing file, duplicate row, bad status, NaN time, F evaluations for FIXED, non-monotone hits, status/hit mismatch all fail).
+- **Gate 2 (local pilot):** `run_job.jl` on the 6 pilot jobs (600 runs, 0 errors, 4 jobs in parallel, about 4 min); `collect.jl --pilot` -> VALID. Statuses: 303 `converged_1e-9`, 259 `budget_grad`, 38 `budget_obj`, no `error`/`timeout`/`nan_or_inf`/`stalled`. Pooled reliability (all 100 algorithms): 1e-3: 0.535, 1e-5: 0.463, 1e-7: 0.438, 1e-9: 0.423 (budget 1,000, so not comparable with the paper). Spot checks (`src/spot_check.jl`): OURS, ARM and ADATR re-run by calling the solvers directly with threshold 1e-3 reproduce the recorded 1e-3 hit exactly (iteration, #F, #grad, F at the hit iterate).
+- Full OptimizationMethods test suite still green (library change: NaN rule in `record_iterate!`, test added).
+- Next: Phase 3.1 (`src/analysis/profiles.jl`), developed on the pilot data in `results/pilot_merged/`.
 ### 2026-11-08: Phase 2.1
 - Added `experiments/coap-revision/{Project.toml, src/instances.jl, src/make_config.jl, test/test_config.jl, config/{problems,starts,algorithms}.csv}`. `julia --project=. src/make_config.jl` regenerates the three CSVs; `julia --project=. test/test_config.jl` (405 checks) validates counts (120 problems, 1,200 starts, 100 algorithms = 58+14+14+14, 120,000 runs), uniqueness of seeds, the paper-design checks, and that regenerating a sample of problems/starts reproduces the recorded checksums/values.
 - Variance functions positivity (checked over μ ∈ (0,1)): V1 ≥ 0.737, V2 ≥ 1, V3 (code) ≥ 0.368, V4 ≥ 1; all positive.

@@ -1,0 +1,9 @@
+# Raw and merged results (Phase 4.3: only pilot-sized data is committed, by hand)
+results/raw/
+results/merged/
+results/pilot_raw/
+results/pilot_merged/
+results/pilot_logs/
+# CHTC build artifacts
+chtc/*.tar.gz
+chtc/logs/

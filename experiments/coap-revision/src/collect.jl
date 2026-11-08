@@ -123,7 +123,7 @@ function main(args)
     grp = groupby(hits, [:problem_id, :start_id, :algorithm_id])
     nrow_wrong = 0; nonmono = 0; wrongtol = 0
     for g in grp
-        if nrow(g) != 4 || sort(g.tol) != TOLS
+        if nrow(g) != 4 || sort(g.tol) != sort(TOLS)
             wrongtol += 1; continue
         end
         # g sorted by tol ascending: 1e-9 first. Reverse to loose -> tight.
