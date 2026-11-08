@@ -42,7 +42,7 @@ step, so code `j` = paper `j`+1 inside the loop body.
 | 14 | `elseif ‖Ḟ(ψ_j)‖ ≥ τ_upp`: accept, `δ' = min{1.5δ, δ̄}`, τ updated as in 13 | H:108–112 | none | same |
 | 15 | `else`: accept, `δ' = min{1.5δ, δ̄}`, `τ' ← τ_low^k τ_upp^k` (**missing comma**) | H:113–115: `δk = min(1.5δk, δ_upper)`, τ unchanged | paper has a typo; intended `τ' = (τ_low^k, τ_upp^k)` | code |
 | 16 | `θ_{k+1} = ψ_j` on acceptance; reference `F(θ_{k+1}) = F(ψ_j)` | A:537–541 (`iter_hist[iter+1] .= x`, `reference_value = Fx`, `grad_val_hist[iter+1] = norm_∇F_ψ`) | none | same |
-| 17 | `EstimateLipschitz` at the **terminal** inner iterate (feeds `L̂₀^{k+1}`) | A:408 `update_local_lipschitz_approximation(j, k, …)` with the *final code `j`* | **Off by one when `j_k = 1`.** The function's docstring (A:152–159, 213–223) defines `j == 1` as "no information yet" (returns `1.0`, or the previous estimate). That is correct for the in-loop call at the top of pass 1, but the post-loop call passes the final `j = j_k`, i.e. the number of steps taken. When `j_k = 1` one step was taken, so `ψ_1, ψ_0` and both gradients are available and the paper's `EstimateLipschitz(1,k,ψ_1,ψ_0)` has data, but the code returns `1.0` (k=1) or the stale carried value (k>1) instead of `‖Ḟ(ψ_1)−Ḟ(ψ_0)‖/‖ψ_1−ψ_0‖`. For `j_k ≥ 2` the code is consistent. | **Probably a bug** (consistent index would be `j+1` in the post-loop call), but the manuscript's exact `EstimateLipschitz` text is not available here, so left unchanged and raised as an open question. |
+| 17 | `EstimateLipschitz` at the **terminal** inner iterate (feeds `L̂₀^{k+1}`) | A:408 `update_local_lipschitz_approximation(j, k, …)` with the *final code `j`* | **Off by one when `j_k = 1`.** The function's docstring (A:152–159, 213–223) defines `j == 1` as "no information yet" (returns `1.0`, or the previous estimate). That is correct for the in-loop call at the top of pass 1, but the post-loop call passes the final `j = j_k`, i.e. the number of steps taken. When `j_k = 1` one step was taken, so `ψ_1, ψ_0` and both gradients are available and the paper's `EstimateLipschitz(1,k,ψ_1,ψ_0)` has data, but the code returns `1.0` (k=1) or the stale carried value (k>1) instead of `‖Ḟ(ψ_1)−Ḟ(ψ_0)‖/‖ψ_1−ψ_0‖`. For `j_k ≥ 2` the code is consistent. | **Bug, confirmed against the manuscript** (2026-11-08; see "Manuscript check" below). Fix: pass `j + 1` in the post-loop call. Left unchanged pending Vivak's decision (Open question 1). |
 | 18 | events: ball / lower-gradient / upper-gradient / max-iteration | A:403–406: `!(‖ψ−θ‖ ≤ 10)`, `!(τ_low < n)`, `!(n < τ_upp)`, `!(j < max_iteration)`; A:530 stores `accepted` as flag 5 | ball test hard-codes `10` instead of the `radius` keyword (identical at default); flags are not mutually exclusive (e.g. ball and upper can both be true) | code is consistent at defaults. When tabulating Table 4 decide whether proportions are over flags or over loops (see ANALYSIS.md caveat). |
 | 19 | `δ_0 ∈ (0, δ̄]`, `ρ ∈ (0,1)` | constructor asserts `0 < δ0 ≤ δ_upper` (A:100–105); `ρ ∉ (0,1)` is not asserted | cosmetic | n/a (experiment uses `ρ = 1e-4`) |
 
@@ -63,6 +63,17 @@ Measured with the new `record_inner_loop!` hook on `QLLogisticSin` / `QLLogistic
 * Trajectories of "code rule" vs "paper-consistent rule" (transcription, 40 outer iterations, 6 starts)
   **diverge within one or two outer iterations after the first `j_k = 1` loop in all 6 runs**, so the
   difference is not negligible for the paper's results.
+
+## Manuscript check (2026-11-08, by a session with the manuscript source)
+
+`EstimateLipschitz` is the function box Algorithm 2 (`alg:update`, `04-algorithm.tex`, subsection "A Greedy Step Size Strategy"); there is no numbered equation. Cases, with the paper's 0-based `j`:
+
+* `j == 0, k == 0`: `L̂₀⁰ ← 1`.
+* `j == 0, k > 0`: `L̂₀ᵏ ← L̂_{j_{k−1}}^{k−1}` (terminal estimate of the previous inner loop).
+* `j > 0, θ_k ≠ θ_{k−1}`: `L̂ⱼᵏ ← ‖Ḟ(ψⱼ)−Ḟ(ψ_{j−1})‖ / ‖ψⱼ−ψ_{j−1}‖` ("aggressive").
+* `j > 0, θ_k = θ_{k−1}`: `max(that ratio, L̂_{j−1}ᵏ)` ("conservative").
+
+It is defined at `j = 0` without using `ψ_{−1}`, and Algorithm 1 calls it with `j = 0` before the loop and with the incremented `j` after every step. So "no information" is exactly `j = 0`, and after one step (`j = 1`) the one-step ratio is required. The code's in-loop calls use code-`j = paper j + 1` and are right; the post-loop call passes the number of steps taken (the paper's `j`) into a function that expects the code's `j`, so `j_k = 1` is wrong. **Verdict: code has an off-by-one for `j_k = 1`; minimal fix is `j + 1` in the post-loop call (A:408); no change for `j_k ≥ 2`.** No other differences in the five cases (the "rejected" case's `max` with the previous estimate within the same inner loop matches; no safeguard in either).
 
 ## Other notes
 
