@@ -1,0 +1,101 @@
+algorithm_id,method,struct_name,solver,uses_obj,eta,long_stepsize,adatr_alpha,astr1_variant,note
+1,FIXED,FixedStepGD,fixed_step_gd,false,0.0001,,,,step_size = eta
+2,FIXED,FixedStepGD,fixed_step_gd,false,1.0,,,,step_size = eta
+3,FIXED,FixedStepGD,fixed_step_gd,false,2.0,,,,step_size = eta
+4,FIXED,FixedStepGD,fixed_step_gd,false,4.0,,,,step_size = eta
+5,FIXED,FixedStepGD,fixed_step_gd,false,6.0,,,,step_size = eta
+6,FIXED,FixedStepGD,fixed_step_gd,false,8.0,,,,step_size = eta
+7,FIXED,FixedStepGD,fixed_step_gd,false,10.0,,,,step_size = eta
+8,DIM,DiminishingStepGD,diminishing_step_gd,false,0.0001,,,,"step_size_function = stepdown_100_step_size, step_size_scaling = eta"
+9,DIM,DiminishingStepGD,diminishing_step_gd,false,1.0,,,,"step_size_function = stepdown_100_step_size, step_size_scaling = eta"
+10,DIM,DiminishingStepGD,diminishing_step_gd,false,2.0,,,,"step_size_function = stepdown_100_step_size, step_size_scaling = eta"
+11,DIM,DiminishingStepGD,diminishing_step_gd,false,4.0,,,,"step_size_function = stepdown_100_step_size, step_size_scaling = eta"
+12,DIM,DiminishingStepGD,diminishing_step_gd,false,6.0,,,,"step_size_function = stepdown_100_step_size, step_size_scaling = eta"
+13,DIM,DiminishingStepGD,diminishing_step_gd,false,8.0,,,,"step_size_function = stepdown_100_step_size, step_size_scaling = eta"
+14,DIM,DiminishingStepGD,diminishing_step_gd,false,10.0,,,,"step_size_function = stepdown_100_step_size, step_size_scaling = eta"
+15,BBGD,BarzilaiBorweinGD,barzilai_borwein_gd,false,0.0001,true,,,init_stepsize = eta
+16,BBGD,BarzilaiBorweinGD,barzilai_borwein_gd,false,1.0,true,,,init_stepsize = eta
+17,BBGD,BarzilaiBorweinGD,barzilai_borwein_gd,false,2.0,true,,,init_stepsize = eta
+18,BBGD,BarzilaiBorweinGD,barzilai_borwein_gd,false,4.0,true,,,init_stepsize = eta
+19,BBGD,BarzilaiBorweinGD,barzilai_borwein_gd,false,6.0,true,,,init_stepsize = eta
+20,BBGD,BarzilaiBorweinGD,barzilai_borwein_gd,false,8.0,true,,,init_stepsize = eta
+21,BBGD,BarzilaiBorweinGD,barzilai_borwein_gd,false,10.0,true,,,init_stepsize = eta
+22,BBGD,BarzilaiBorweinGD,barzilai_borwein_gd,false,0.0001,false,,,init_stepsize = eta
+23,BBGD,BarzilaiBorweinGD,barzilai_borwein_gd,false,1.0,false,,,init_stepsize = eta
+24,BBGD,BarzilaiBorweinGD,barzilai_borwein_gd,false,2.0,false,,,init_stepsize = eta
+25,BBGD,BarzilaiBorweinGD,barzilai_borwein_gd,false,4.0,false,,,init_stepsize = eta
+26,BBGD,BarzilaiBorweinGD,barzilai_borwein_gd,false,6.0,false,,,init_stepsize = eta
+27,BBGD,BarzilaiBorweinGD,barzilai_borwein_gd,false,8.0,false,,,init_stepsize = eta
+28,BBGD,BarzilaiBorweinGD,barzilai_borwein_gd,false,10.0,false,,,init_stepsize = eta
+29,LIPAPP,LipschitzApproxGD,lipschitz_approximation_gd,false,0.0001,,,,init_stepsize = eta
+30,LIPAPP,LipschitzApproxGD,lipschitz_approximation_gd,false,1.0,,,,init_stepsize = eta
+31,LIPAPP,LipschitzApproxGD,lipschitz_approximation_gd,false,2.0,,,,init_stepsize = eta
+32,LIPAPP,LipschitzApproxGD,lipschitz_approximation_gd,false,4.0,,,,init_stepsize = eta
+33,LIPAPP,LipschitzApproxGD,lipschitz_approximation_gd,false,6.0,,,,init_stepsize = eta
+34,LIPAPP,LipschitzApproxGD,lipschitz_approximation_gd,false,8.0,,,,init_stepsize = eta
+35,LIPAPP,LipschitzApproxGD,lipschitz_approximation_gd,false,10.0,,,,init_stepsize = eta
+36,NEST,NesterovAcceleratedGD,nesterov_accelerated_gd,false,0.0001,,,,step_size = eta
+37,NEST,NesterovAcceleratedGD,nesterov_accelerated_gd,false,1.0,,,,step_size = eta
+38,NEST,NesterovAcceleratedGD,nesterov_accelerated_gd,false,2.0,,,,step_size = eta
+39,NEST,NesterovAcceleratedGD,nesterov_accelerated_gd,false,4.0,,,,step_size = eta
+40,NEST,NesterovAcceleratedGD,nesterov_accelerated_gd,false,6.0,,,,step_size = eta
+41,NEST,NesterovAcceleratedGD,nesterov_accelerated_gd,false,8.0,,,,step_size = eta
+42,NEST,NesterovAcceleratedGD,nesterov_accelerated_gd,false,10.0,,,,step_size = eta
+43,WEIGHT,WeightedNormDampingGD,weighted_norm_damping_gd,false,0.0001,,,,init_norm_damping_factor = 1/eta
+44,WEIGHT,WeightedNormDampingGD,weighted_norm_damping_gd,false,1.0,,,,init_norm_damping_factor = 1/eta
+45,WEIGHT,WeightedNormDampingGD,weighted_norm_damping_gd,false,2.0,,,,init_norm_damping_factor = 1/eta
+46,WEIGHT,WeightedNormDampingGD,weighted_norm_damping_gd,false,4.0,,,,init_norm_damping_factor = 1/eta
+47,WEIGHT,WeightedNormDampingGD,weighted_norm_damping_gd,false,6.0,,,,init_norm_damping_factor = 1/eta
+48,WEIGHT,WeightedNormDampingGD,weighted_norm_damping_gd,false,8.0,,,,init_norm_damping_factor = 1/eta
+49,WEIGHT,WeightedNormDampingGD,weighted_norm_damping_gd,false,10.0,,,,init_norm_damping_factor = 1/eta
+50,OURS,NonsequentialArmijoAdaptiveGD,nonsequential_armijo_adaptive_gd,true,,,,,"delta0 = 1, delta_upper = 1, rho = 1e-4"
+51,ARM,BacktrackingGD,backtracking_gd,true,,,,,"alpha = 1, delta = 0.5, rho = 1e-4, line_search_max_iteration = 100"
+52,WATCH,WatchdogFixedSimpleGD,watchdog_fixed_simple_gd,true,0.0001,,,,"alpha = eta, delta = 0.5, rho = 1e-4, line_search_max_iterations = 100, window_size = 1, inner_loop_max_iterations = 100"
+53,WATCH,WatchdogFixedSimpleGD,watchdog_fixed_simple_gd,true,1.0,,,,"alpha = eta, delta = 0.5, rho = 1e-4, line_search_max_iterations = 100, window_size = 1, inner_loop_max_iterations = 100"
+54,WATCH,WatchdogFixedSimpleGD,watchdog_fixed_simple_gd,true,2.0,,,,"alpha = eta, delta = 0.5, rho = 1e-4, line_search_max_iterations = 100, window_size = 1, inner_loop_max_iterations = 100"
+55,WATCH,WatchdogFixedSimpleGD,watchdog_fixed_simple_gd,true,4.0,,,,"alpha = eta, delta = 0.5, rho = 1e-4, line_search_max_iterations = 100, window_size = 1, inner_loop_max_iterations = 100"
+56,WATCH,WatchdogFixedSimpleGD,watchdog_fixed_simple_gd,true,6.0,,,,"alpha = eta, delta = 0.5, rho = 1e-4, line_search_max_iterations = 100, window_size = 1, inner_loop_max_iterations = 100"
+57,WATCH,WatchdogFixedSimpleGD,watchdog_fixed_simple_gd,true,8.0,,,,"alpha = eta, delta = 0.5, rho = 1e-4, line_search_max_iterations = 100, window_size = 1, inner_loop_max_iterations = 100"
+58,WATCH,WatchdogFixedSimpleGD,watchdog_fixed_simple_gd,true,10.0,,,,"alpha = eta, delta = 0.5, rho = 1e-4, line_search_max_iterations = 100, window_size = 1, inner_loop_max_iterations = 100"
+59,SPEC,SafeBarzilaiBorweinNLSMaxValGD,safe_barzilai_borwein_nls_maxval_gd,true,0.0001,true,,,"init_stepsize = eta, delta = 0.5, rho = 1e-4, window_size = 10, line_search_max_iteration = 100, alpha_lower = 1e-10, alpha_default = 1"
+60,SPEC,SafeBarzilaiBorweinNLSMaxValGD,safe_barzilai_borwein_nls_maxval_gd,true,1.0,true,,,"init_stepsize = eta, delta = 0.5, rho = 1e-4, window_size = 10, line_search_max_iteration = 100, alpha_lower = 1e-10, alpha_default = 1"
+61,SPEC,SafeBarzilaiBorweinNLSMaxValGD,safe_barzilai_borwein_nls_maxval_gd,true,2.0,true,,,"init_stepsize = eta, delta = 0.5, rho = 1e-4, window_size = 10, line_search_max_iteration = 100, alpha_lower = 1e-10, alpha_default = 1"
+62,SPEC,SafeBarzilaiBorweinNLSMaxValGD,safe_barzilai_borwein_nls_maxval_gd,true,4.0,true,,,"init_stepsize = eta, delta = 0.5, rho = 1e-4, window_size = 10, line_search_max_iteration = 100, alpha_lower = 1e-10, alpha_default = 1"
+63,SPEC,SafeBarzilaiBorweinNLSMaxValGD,safe_barzilai_borwein_nls_maxval_gd,true,6.0,true,,,"init_stepsize = eta, delta = 0.5, rho = 1e-4, window_size = 10, line_search_max_iteration = 100, alpha_lower = 1e-10, alpha_default = 1"
+64,SPEC,SafeBarzilaiBorweinNLSMaxValGD,safe_barzilai_borwein_nls_maxval_gd,true,8.0,true,,,"init_stepsize = eta, delta = 0.5, rho = 1e-4, window_size = 10, line_search_max_iteration = 100, alpha_lower = 1e-10, alpha_default = 1"
+65,SPEC,SafeBarzilaiBorweinNLSMaxValGD,safe_barzilai_borwein_nls_maxval_gd,true,10.0,true,,,"init_stepsize = eta, delta = 0.5, rho = 1e-4, window_size = 10, line_search_max_iteration = 100, alpha_lower = 1e-10, alpha_default = 1"
+66,SPEC,SafeBarzilaiBorweinNLSMaxValGD,safe_barzilai_borwein_nls_maxval_gd,true,0.0001,false,,,"init_stepsize = eta, delta = 0.5, rho = 1e-4, window_size = 10, line_search_max_iteration = 100, alpha_lower = 1e-10, alpha_default = 1"
+67,SPEC,SafeBarzilaiBorweinNLSMaxValGD,safe_barzilai_borwein_nls_maxval_gd,true,1.0,false,,,"init_stepsize = eta, delta = 0.5, rho = 1e-4, window_size = 10, line_search_max_iteration = 100, alpha_lower = 1e-10, alpha_default = 1"
+68,SPEC,SafeBarzilaiBorweinNLSMaxValGD,safe_barzilai_borwein_nls_maxval_gd,true,2.0,false,,,"init_stepsize = eta, delta = 0.5, rho = 1e-4, window_size = 10, line_search_max_iteration = 100, alpha_lower = 1e-10, alpha_default = 1"
+69,SPEC,SafeBarzilaiBorweinNLSMaxValGD,safe_barzilai_borwein_nls_maxval_gd,true,4.0,false,,,"init_stepsize = eta, delta = 0.5, rho = 1e-4, window_size = 10, line_search_max_iteration = 100, alpha_lower = 1e-10, alpha_default = 1"
+70,SPEC,SafeBarzilaiBorweinNLSMaxValGD,safe_barzilai_borwein_nls_maxval_gd,true,6.0,false,,,"init_stepsize = eta, delta = 0.5, rho = 1e-4, window_size = 10, line_search_max_iteration = 100, alpha_lower = 1e-10, alpha_default = 1"
+71,SPEC,SafeBarzilaiBorweinNLSMaxValGD,safe_barzilai_borwein_nls_maxval_gd,true,8.0,false,,,"init_stepsize = eta, delta = 0.5, rho = 1e-4, window_size = 10, line_search_max_iteration = 100, alpha_lower = 1e-10, alpha_default = 1"
+72,SPEC,SafeBarzilaiBorweinNLSMaxValGD,safe_barzilai_borwein_nls_maxval_gd,true,10.0,false,,,"init_stepsize = eta, delta = 0.5, rho = 1e-4, window_size = 10, line_search_max_iteration = 100, alpha_lower = 1e-10, alpha_default = 1"
+73,ADATR,AdaptiveTrustRegionGD,adaptive_trust_region_gd,false,0.0001,,0.0,,"init_scaling = b0 = 1/eta, alpha, b_min = 1e-4, b_hat_max = ||grad f(x0)||"
+74,ADATR,AdaptiveTrustRegionGD,adaptive_trust_region_gd,false,1.0,,0.0,,"init_scaling = b0 = 1/eta, alpha, b_min = 1e-4, b_hat_max = ||grad f(x0)||"
+75,ADATR,AdaptiveTrustRegionGD,adaptive_trust_region_gd,false,2.0,,0.0,,"init_scaling = b0 = 1/eta, alpha, b_min = 1e-4, b_hat_max = ||grad f(x0)||"
+76,ADATR,AdaptiveTrustRegionGD,adaptive_trust_region_gd,false,4.0,,0.0,,"init_scaling = b0 = 1/eta, alpha, b_min = 1e-4, b_hat_max = ||grad f(x0)||"
+77,ADATR,AdaptiveTrustRegionGD,adaptive_trust_region_gd,false,6.0,,0.0,,"init_scaling = b0 = 1/eta, alpha, b_min = 1e-4, b_hat_max = ||grad f(x0)||"
+78,ADATR,AdaptiveTrustRegionGD,adaptive_trust_region_gd,false,8.0,,0.0,,"init_scaling = b0 = 1/eta, alpha, b_min = 1e-4, b_hat_max = ||grad f(x0)||"
+79,ADATR,AdaptiveTrustRegionGD,adaptive_trust_region_gd,false,10.0,,0.0,,"init_scaling = b0 = 1/eta, alpha, b_min = 1e-4, b_hat_max = ||grad f(x0)||"
+80,ADATR,AdaptiveTrustRegionGD,adaptive_trust_region_gd,false,0.0001,,0.9,,"init_scaling = b0 = 1/eta, alpha, b_min = 1e-4, b_hat_max = ||grad f(x0)||"
+81,ADATR,AdaptiveTrustRegionGD,adaptive_trust_region_gd,false,1.0,,0.9,,"init_scaling = b0 = 1/eta, alpha, b_min = 1e-4, b_hat_max = ||grad f(x0)||"
+82,ADATR,AdaptiveTrustRegionGD,adaptive_trust_region_gd,false,2.0,,0.9,,"init_scaling = b0 = 1/eta, alpha, b_min = 1e-4, b_hat_max = ||grad f(x0)||"
+83,ADATR,AdaptiveTrustRegionGD,adaptive_trust_region_gd,false,4.0,,0.9,,"init_scaling = b0 = 1/eta, alpha, b_min = 1e-4, b_hat_max = ||grad f(x0)||"
+84,ADATR,AdaptiveTrustRegionGD,adaptive_trust_region_gd,false,6.0,,0.9,,"init_scaling = b0 = 1/eta, alpha, b_min = 1e-4, b_hat_max = ||grad f(x0)||"
+85,ADATR,AdaptiveTrustRegionGD,adaptive_trust_region_gd,false,8.0,,0.9,,"init_scaling = b0 = 1/eta, alpha, b_min = 1e-4, b_hat_max = ||grad f(x0)||"
+86,ADATR,AdaptiveTrustRegionGD,adaptive_trust_region_gd,false,10.0,,0.9,,"init_scaling = b0 = 1/eta, alpha, b_min = 1e-4, b_hat_max = ||grad f(x0)||"
+87,ASTR1,ASTR1GD,astr1_gd,false,0.0001,,,adagrad,"theta = 1/eta, varsigma = 1/100, B_k = 0"
+88,ASTR1,ASTR1GD,astr1_gd,false,1.0,,,adagrad,"theta = 1/eta, varsigma = 1/100, B_k = 0"
+89,ASTR1,ASTR1GD,astr1_gd,false,2.0,,,adagrad,"theta = 1/eta, varsigma = 1/100, B_k = 0"
+90,ASTR1,ASTR1GD,astr1_gd,false,4.0,,,adagrad,"theta = 1/eta, varsigma = 1/100, B_k = 0"
+91,ASTR1,ASTR1GD,astr1_gd,false,6.0,,,adagrad,"theta = 1/eta, varsigma = 1/100, B_k = 0"
+92,ASTR1,ASTR1GD,astr1_gd,false,8.0,,,adagrad,"theta = 1/eta, varsigma = 1/100, B_k = 0"
+93,ASTR1,ASTR1GD,astr1_gd,false,10.0,,,adagrad,"theta = 1/eta, varsigma = 1/100, B_k = 0"
+94,ASTR1,ASTR1GD,astr1_gd,false,0.0001,,,maxg,"theta = 1/eta, varsigma = 1/100, B_k = 0"
+95,ASTR1,ASTR1GD,astr1_gd,false,1.0,,,maxg,"theta = 1/eta, varsigma = 1/100, B_k = 0"
+96,ASTR1,ASTR1GD,astr1_gd,false,2.0,,,maxg,"theta = 1/eta, varsigma = 1/100, B_k = 0"
+97,ASTR1,ASTR1GD,astr1_gd,false,4.0,,,maxg,"theta = 1/eta, varsigma = 1/100, B_k = 0"
+98,ASTR1,ASTR1GD,astr1_gd,false,6.0,,,maxg,"theta = 1/eta, varsigma = 1/100, B_k = 0"
+99,ASTR1,ASTR1GD,astr1_gd,false,8.0,,,maxg,"theta = 1/eta, varsigma = 1/100, B_k = 0"
+100,ASTR1,ASTR1GD,astr1_gd,false,10.0,,,maxg,"theta = 1/eta, varsigma = 1/100, B_k = 0"

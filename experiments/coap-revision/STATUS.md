@@ -1,5 +1,5 @@
 # COAP revision experiments: STATUS
-Branch: cv/experiments-quasi-likelihood · Last updated: 2026-11-08 (UTC) · Current phase: 2 (Phase 1 complete, Gate 1 passed)
+Branch: cv/experiments-quasi-likelihood · Last updated: 2026-11-08 (UTC) · Current phase: 2 (2.1 done)
 
 ## Checklist
 - [x] Phase 1.1 Julia 1.13 baseline
@@ -14,7 +14,7 @@ Branch: cv/experiments-quasi-likelihood · Last updated: 2026-11-08 (UTC) · Cur
 - [x] Phase 1.4f ASTR1 tests (§2.3)
 - [x] Phase 1.5 OURS vs Algorithm 1 (`OURS_vs_Algorithm1.md`) (one possible bug found, Open question 1)
 - [x] Gate 1: full test suite passes on Julia 1.13
-- [ ] Phase 2.1 config/problems.csv, starts.csv, algorithms.csv
+- [x] Phase 2.1 config/problems.csv, starts.csv, algorithms.csv
 - [ ] Phase 2.2 src/run_job.jl
 - [ ] Phase 2.3 src/jobs.jl (+ timing pilot, sizing arithmetic)
 - [ ] Phase 2.4 chtc/ (.sub files, submit_all.sh, run_job.sh, build_env.sh)
@@ -37,6 +37,8 @@ Branch: cv/experiments-quasi-likelihood · Last updated: 2026-11-08 (UTC) · Cur
 1. (Resolved by Vivak, 2026-11-08: FIX) **OURS Lipschitz off-by-one when `j_k = 1`** (`OURS_vs_Algorithm1.md`, row 17). Confirmed against the manuscript (Algorithm 2 `alg:update`: "no information" is exactly paper `j = 0`). Fixed by passing `j + 1` in the post-loop call of `inner_loop!` (src/methods/gd_non_sequential_armijo_adaptive.jl:408); identical for `j_k ≥ 2`. **Consequence for the paper:** OURS numbers will differ from the original submission (about 23% of inner loops had `j_k = 1`), so the revision should say the implementation was corrected to match Algorithm 2.
 2. Bibliography (from the prompt): the manuscript's `gratton2022firstorder` cites arXiv:2203.01757 (now "Complexity and performance for two classes of noise-tolerant first-order algorithms"); ASTR1 is arXiv:2203.01647. Not acted on.
 3. (Resolved by Vivak, 2026-11-07) The flaky `test/methods/gd_watchdog_barzilai_borwein.jl` (`WatchdogSafeBarzilaiBorweinGD`, unused in the experiments) was removed from `test/test.txt`; the file is left in place. Gate 1 now only needs the remaining suite green.
+
+4. **V3 sign mismatch (data generation).** Appendix A (manuscript §7.2.1) gives V3(μ) = exp(+|μ−1|^4.5), but the branch implements `centered_exp(μ,p,c) = exp(−|μ−1|^{2p})` (so V3 = exp(−|μ−1|^4.5) with p=2.25, c=1), both for generating the data and for the objective. Both are positive on (0,1). With the code's V3 the generator's noise bound `vmax = 1.0` is valid (V3 ≤ 1); with the manuscript's V3 the maximum on [0.3,0.7] is exp(0.7^4.5)=1.22 > 1, which would break the design property |V^{1/2}ε| < 0.3 near μ=0.3. **Decision for now:** keep the code (Appendix C says to use the old scripts' choices; the old experiments ran exactly this). Please check which sign the manuscript intends; if the manuscript is right, `centered_exp` (and its derivative) must change. Not blocking.
 
 ## Decisions
 - `Project.toml` `[compat] julia = "1.13"` set (per prompt). `Manifest.toml` is gitignored, so not committed.
@@ -63,10 +65,21 @@ Branch: cv/experiments-quasi-likelihood · Last updated: 2026-11-08 (UTC) · Cur
 
 - Phase 1.5 fix (Vivak's decision): OURS now follows the manuscript's `EstimateLipschitz` (Algorithm 2) at the terminal inner iterate. Behavior change is limited to inner loops with exactly one step; all other quantities unchanged. The pre-fix behaviour is retained only as a switch in the test transcription (`code_terminal = true`) to show it diverges from the paper after the first `j_k = 1` loop.
 
+- Phase 2.1 data generation: the branch's constructors already generate data as Appendix A: x_i ~ U[0,1]^n, θ* ~ U[logit(0.3)/n, logit(0.7)/n], ε ~ U[−0.3/√vmax, 0.3/√vmax], y = μ + V(μ)^{1/2} ε with μ = g(xᵀθ*), and `get_design` is the first RNG draw. Differences from Appendix A: (i) V3 sign, see Open question 4; (ii) the noise bounds use fixed `vmax` = 2.3 (V1), 2.0 (V2), 1.0 (V3), 2.8 (V4), valid but looser than max V on [0.3,0.7] (≈2.26, 1.20, 1.00, 1.18), so for V2 and V4 the noise is smaller than "Ṽ ≈ max" would give; kept as is. (iii) The problem structs do not store θ*, so `true_design` regenerates it from the same seed (verified equal to the stored design for all 120 problems).
+- Seeds: data seed of problem p = 1,000,000 + p (set with `Random.seed!` immediately before construction; constructors use the global RNG); start (p, s) seed = 2,000,000 + 100p + s, generated with `Random.Xoshiro(seed)` as 20·rand − 10. `problems.csv` also stores design/response checksums (sum and sum of squares) so `run_job.jl` can detect RNG drift between Julia 1.13.2 (CHTC) and 1.13.3 (local).
+- Design check results (recorded in `problems.csv` columns `checks_*`, all 120 problems): y_i ∈ (0,1) ✓ (range 0.149–0.850); g(x_iᵀθ*) ∈ (0.3,0.7) ✓ (range 0.430–0.584); |V^{1/2}ε| < 0.3 ✓ (max 0.296, V3).
+- Algorithm table: ids 1–100 in order FIXED (1–7), DIM (8–14), BBGD (15–28; long then short), LIPAPP (29–35), NEST (36–42), WEIGHT (43–49), OURS (50), ARM (51), WATCH (52–58), SPEC (59–72; long then short), ADATR (73–86; α=0 then 0.9), ASTR1 (87–100; adagrad then maxg); η in the order 1e-4, 1, 2, 4, 6, 8, 10. Hyperparameter columns for runs.csv: `eta, long_stepsize, adatr_alpha, astr1_variant`.
+- `experiments/coap-revision/Project.toml` uses `[sources]` to dev the package at `../..`; its `Manifest.toml` is gitignored (decide in Phase 2.4 whether CHTC needs a committed manifest).
+
 ## Development plan
 Phases 1-4 as in `PROMPT.md` §4. One step per run; a step is "done" when its checks pass and it is committed. Verification: test files listed in the Log; gates push to origin.
 
 ## Log
+### 2026-11-08: Phase 2.1
+- Added `experiments/coap-revision/{Project.toml, src/instances.jl, src/make_config.jl, test/test_config.jl, config/{problems,starts,algorithms}.csv}`. `julia --project=. src/make_config.jl` regenerates the three CSVs; `julia --project=. test/test_config.jl` (405 checks) validates counts (120 problems, 1,200 starts, 100 algorithms = 58+14+14+14, 120,000 runs), uniqueness of seeds, the paper-design checks, and that regenerating a sample of problems/starts reproduces the recorded checksums/values.
+- Variance functions positivity (checked over μ ∈ (0,1)): V1 ≥ 0.737, V2 ≥ 1, V3 (code) ≥ 0.368, V4 ≥ 1; all positive.
+- Found the V3 sign mismatch (Open question 4).
+- Next: Phase 2.2 (`src/run_job.jl`).
 ### 2026-11-08: OURS fix and Gate 1
 - Manuscript check (session with the manuscript source) confirmed the off-by-one; applied the fix (`j + 1`, with a comment). `test/methods/ours_vs_algorithm1.jl` (396 pass) now requires the solver to equal the paper transcription exactly (iterates, `j_k`, events, acceptance, `δ`, `τ`), plus a direct test that an inner loop of one step sets the estimate to the one-step ratio. Existing OURS test files still pass (inner loop 42, method 82).
 - Removed the flaky unused watchdog-BB test from `test/test.txt` (Vivak).
