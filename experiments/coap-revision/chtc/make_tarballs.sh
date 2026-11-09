@@ -14,5 +14,7 @@ if [ ! -f "julia-${JULIA_VERSION}-linux-x86_64.tar.gz" ]; then
 fi
 git -C "$root" archive --format=tar.gz --prefix=repo/ HEAD -o "$here/code.tar.gz"
 # the experiments Manifest.toml is committed with `git add -f` (see STATUS.md); check it is in the archive
-tar -tzf code.tar.gz | grep -q 'repo/experiments/coap-revision/Manifest.toml' || { echo "ERROR: experiments Manifest.toml is not committed"; exit 1; }
+tar -tzf code.tar.gz > code.list  # no `grep -q` in a pipe: SIGPIPE + pipefail gives false failures
+grep -q 'repo/experiments/coap-revision/Manifest.toml' code.list || { echo "ERROR: experiments Manifest.toml is not committed"; exit 1; }
+rm -f code.list
 ls -lh julia-${JULIA_VERSION}-linux-x86_64.tar.gz code.tar.gz
