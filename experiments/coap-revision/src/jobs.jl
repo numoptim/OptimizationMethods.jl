@@ -19,7 +19,7 @@ const TARGET_WORST_H = 20.0           # worst-case job time target (limit is 24 
 const MIN_TIMEOUT_S = 30.0            # floor for the per-run safety cap (JIT, noise)
 const MAX_JOBS_PER_SUB = 10_000       # CHTC limit per submit file
 # Measured in the local memory check (see STATUS.md, Phase 2.3) plus 50%:
-const REQUEST_MEMORY = "2400MB"
+const REQUEST_MEMORY = "3000MB"
 const REQUEST_DISK = "4GB"
 const MICROARCH = "x86_64-v3"         # pinned CPU level (ClassAd attribute Microarch)
 

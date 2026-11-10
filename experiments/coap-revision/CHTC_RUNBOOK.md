@@ -11,7 +11,7 @@ commands are copy-paste. Unless stated otherwise, commands run from the director
 **What you are about to run:** 120,000 runs (120 problems x 10 starts x 100 algorithms), packed
 into **535 jobs**, 1 CPU each. Worst-case job time 19.6 h (median 14.3 h; these are
 upper bounds, most runs stop earlier). Worst-case total 6,600 core-hours. Requests per job:
-2400 MB memory, 4 GB disk. Jobs are pinned to one CPU level (`Microarch == "x86_64-v3"`).
+3000 MB memory, 4 GB disk. Jobs are pinned to one CPU level (`Microarch == "x86_64-v3"`).
 
 ---------------------------------------------------------------------------------------------
 
@@ -90,7 +90,7 @@ bash chtc/job_runtimes.sh <CLUSTER_ID>     # prints max/mean runtime in hours, c
 bash chtc/collect.sh --pilot               # merges and validates the finished pilot jobs
 ```
 
-Pass criteria: `RUNTIME OK (<= 24 h)`, peak memory below 2400 MB, peak disk below 4 GB, and
+Pass criteria: `RUNTIME OK (<= 24 h)`, peak memory below 3000 MB, peak disk below 4 GB, and
 `collect.sh --pilot` ends with `VALID`. If a criterion fails, do **not** continue; send the output
 to whoever maintains the branch (the sizes are set in `src/jobs.jl`).
 
