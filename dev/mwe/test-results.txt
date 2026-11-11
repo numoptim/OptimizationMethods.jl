@@ -1,0 +1,4 @@
+Test Summary: | Pass  Total  Time
+MWE           |  131    131  2.6s
+Test Summary:                                  | Pass  Total  Time
+History independence and allocation validation |   26     26  0.0s

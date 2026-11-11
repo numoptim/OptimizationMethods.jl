@@ -1,0 +1,15 @@
+name = "MWE"
+uuid = "ab3a4006-02df-43a4-b26b-cf1bdc5e6330"
+version = "0.1.0"
+[deps]
+OptimizationModels = "1e8ba084-2b82-410e-94da-52931dd80093"
+OptimizationProblems = "cedb96af-b716-49a9-8995-d784cce4c15f"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+[compat]
+julia = "1.12"
+OptimizationModels = "0.1"
+OptimizationProblems = "0.1"
+BenchmarkTools = "1"

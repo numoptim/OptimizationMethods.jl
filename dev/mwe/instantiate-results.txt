@@ -1,0 +1,3 @@
+Precompiling packages...
+   1.0 s  ✓ MWE
+  1 dependency successfully precompiled in 1 seconds. 77 already precompiled.

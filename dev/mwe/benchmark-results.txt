@@ -1,0 +1,12 @@
+Julia 1.13.1 | arm64-apple-darwin27.0.0 | CPU: Apple M5 | Julia threads: 1 | BLAS threads: 4
+20 updates/run; setup, initialization and history included; minimum of 3 samples, evals=1. Per-update values amortize complete run.
+| parameters | observations | case | ms/run | μs/update | bytes/run | allocations/run |
+|---:|---:|:---|---:|---:|---:|---:|
+| 10 | 100 | handwritten | 1.05875 | 52.9375 | 1078960 | 21113 |
+| 10 | 100 | driver | 1.068167 | 53.40835 | 1083616 | 21327 |
+| 10 | 100 | history | 1.124292 | 56.2146 | 1099808 | 21551 |
+| 10 | 100 | no_barrier | 1.083083 | 54.15415 | 1084896 | 21367 |
+| 1000 | 10000 | handwritten | 714.5965 | 35729.825 | 1811060000 | 2310116 |
+| 1000 | 10000 | driver | 710.02675 | 35501.3375 | 1811072768 | 2310331 |
+| 1000 | 10000 | history | 709.716 | 35485.8 | 1811267424 | 2310577 |
+| 1000 | 10000 | no_barrier | 716.372958 | 35818.647899999996 | 1811074048 | 2310371 |

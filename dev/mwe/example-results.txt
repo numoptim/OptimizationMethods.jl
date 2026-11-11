@@ -1,0 +1,5 @@
+iteration=0, x[1]=0.0, gradient norm=20.864306312774342
+iteration=1, x[1]=0.2, gradient norm=16.022415200920882
+iteration=2, x[1]=0.3499481733192882, gradient norm=12.537458703821232
+iteration=3, x[1]=0.4630408775363304, gradient norm=10.059710832599395
+stopped: max_iterations
