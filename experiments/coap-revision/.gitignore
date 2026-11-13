@@ -7,5 +7,5 @@ results/pilot_logs/
 chtc/*.tar.gz
 chtc/logs/
 chtc/*_todo.*
-chtc/resubmit*
+chtc/resubmit_todo.*
 results/raw_invalid/
