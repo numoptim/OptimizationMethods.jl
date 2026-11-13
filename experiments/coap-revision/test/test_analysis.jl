@@ -97,7 +97,11 @@ end
         upper = [false, false, true, false, false, false],
         maxiter = false,
         accepted = [true, true, false, true, true, true])
-    tab = events_table(ev, T, 1e-3)
+    # per-run counts over the loops with k <= hit iteration (what collect.jl's event_summary writes)
+    summ = DataFrame(problem_id = [1, 2], start_id = 1, algorithm_id = 50, tol = 1e-3,
+        loops = [3, 2], ball = 0, lower = [2, 2], upper = [1, 0], maxiter = 0,
+        acc_known = [3, 2], acc_rejected = [1, 0])
+    tab = events_table(summ, 1e-3)
     p = tab[!, "Average.Proportion.on.Inner.Loops"]
     @test tab.Events[1:4] == ["Bounding Ball Event", "Lower Gradient Interval", "Upper Gradient Interval", "Max Iteration"]
     # run 1 (k <= 3): lower 2/3, upper 1/3; run 2: lower 100

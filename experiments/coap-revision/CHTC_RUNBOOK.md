@@ -133,7 +133,7 @@ tar -czf merged.tar.gz results/merged
 ```bash
 # on your laptop
 scp <NETID>@<SUBMIT_HOST>:OptimizationMethods.jl/experiments/coap-revision/merged.tar.gz .
-tar -xzf merged.tar.gz              # creates results/merged/{runs,hits,ours_events}.csv
+tar -xzf merged.tar.gz              # creates results/merged/{runs,hits,ours_events,ours_events_summary}.csv
 ```
 
 Give `results/merged/` (and the commit id from step 1) to a fresh session; it follows `ANALYSIS.md`.

@@ -14,7 +14,7 @@ export PATH=$HOME/.juliaup/bin:$PATH
 julia -e 'using Pkg; Pkg.Registry.add("General")'
 
 cd experiments/coap-revision
-ls -lh results/merged/                                                  # runs.csv hits.csv ours_events.csv must be here
+ls -lh results/merged/                                                  # runs.csv hits.csv ours_events.csv ours_events_summary.csv must be here
 julia --project=analysis -e 'using Pkg; Pkg.instantiate()'              # a few minutes (CairoMakie)
 julia --project=analysis src/analysis/check_merged.jl                   # structural check; must print Test Summary with no failures
 julia --project=analysis src/analysis/run_analysis.jl                   # about 1-3 minutes; writes results/paper/
@@ -73,6 +73,14 @@ definition of reliability, per tolerance).
 `problem_id, start_id, algorithm_id` (always 50), `k` (outer iteration, 1-based), `j_k` (inner-loop length), `ball`,
 `lower`, `upper`, `maxiter` (which triggering events fired; a loop can have more than one), `accepted` (whether the
 outer iterate was accepted by the non-sequential Armijo test; empty if the budget ended before the test).
+This file is **huge** (about 100M rows, several GB for the full experiment). The analysis does not read it; it is kept
+as raw record. Do not `CSV.read` it into memory; stream it (`CSV.Rows` / `CSV.Chunks`) if you need it.
+
+### `ours_events_summary.csv`: one row per OURS run and tolerance that was hit (what the analysis reads)
+`problem_id, start_id, algorithm_id, tol, loops, ball, lower, upper, maxiter, acc_known, acc_rejected`: counts over the
+inner loops of the outer iterations `k <=` the iteration of the first hit at `tol` (`loops` = number of inner loops;
+`acc_known` = those with a known `accepted`; `acc_rejected` = those with `accepted == false`). Written by
+`src/collect.jl` with `event_summary`.
 
 ## 4. Caveats you must keep in mind
 

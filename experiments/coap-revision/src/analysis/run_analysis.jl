@@ -37,7 +37,7 @@ function main(args)
     # OURS triggering events (Table 4)
     ev_by_tol = Dict{Float64,DataFrame}()
     for tol in TOLS
-        ev_by_tol[tol] = events_table(events, T, tol)
+        ev_by_tol[tol] = events_table(events, tol)
         write_csv("events_$(tol_label(tol)).csv", ev_by_tol[tol],
             "OURS triggering-event proportions (percent) up to the ε = $(tol_label(tol)) hit, and rejection rate")
     end

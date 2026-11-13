@@ -23,6 +23,39 @@ const EVENT_COLS = [:problem_id, :start_id, :algorithm_id, :k, :j_k, :ball, :low
 parse_ids(s) = isempty(strip(string(s))) ? Int[] : parse.(Int, split(string(s), ';'))
 bad(x) = ismissing(x) || (x isa AbstractFloat && !isfinite(x))
 
+"""
+    event_summary(e, h) -> DataFrame
+
+Condenses the inner-loop rows `e` of one job (`ours_events.csv` schema) into one row per
+(run, tolerance) for the runs that hit the tolerance (`hits` rows `h`): the counts over the inner
+loops of the outer iterations `k <= iteration of the first hit`. Columns: `problem_id, start_id,
+algorithm_id, tol, loops, ball, lower, upper, maxiter, acc_known, acc_rejected`
+(`acc_known`: loops whose acceptance is known; `acc_rejected`: those with `accepted == false`).
+"""
+function event_summary(e::DataFrame, h::DataFrame)
+    cols = [:problem_id, :start_id, :algorithm_id, :tol, :loops, :ball, :lower, :upper,
+        :maxiter, :acc_known, :acc_rejected]
+    rows = NamedTuple[]
+    if nrow(e) > 0
+        hit = Dict((r.problem_id, r.start_id, r.algorithm_id, r.tol) => Int(r.iteration)
+                   for r in eachrow(h) if r.hit === true)
+        for g in groupby(e, [:problem_id, :start_id, :algorithm_id])
+            key = (g.problem_id[1], g.start_id[1], g.algorithm_id[1])
+            for tol in TOLS
+                haskey(hit, (key..., tol)) || continue
+                d = g[g.k .<= hit[(key..., tol)], :]
+                nrow(d) == 0 && continue
+                acc = collect(skipmissing(d.accepted))
+                push!(rows, (problem_id = key[1], start_id = key[2], algorithm_id = key[3], tol = tol,
+                    loops = nrow(d), ball = count(Bool.(d.ball)), lower = count(Bool.(d.lower)),
+                    upper = count(Bool.(d.upper)), maxiter = count(Bool.(d.maxiter)),
+                    acc_known = length(acc), acc_rejected = count(.!Bool.(acc))))
+            end
+        end
+    end
+    return isempty(rows) ? DataFrame([c => (c == :tol ? Float64[] : Int[]) for c in cols]...) : DataFrame(rows)
+end
+
 function main(args)
     pilot = "--pilot" in args
     opt(name, default) = (i = findfirst(==(name), args); i === nothing ? default : args[i+1])
@@ -53,7 +86,15 @@ function main(args)
         union!(resubmit, missing_jobs)
     end
 
-    runs_all, hits_all, ev_all = DataFrame[], DataFrame[], DataFrame[]
+    # ours_events.csv is by far the largest file (~100M rows for the full experiment), so it is
+    # never held in memory beyond one job: each job's rows are appended to the merged file and
+    # condensed into per-(run, tolerance) counts (ours_events_summary.csv).
+    events_path = joinpath(out_dir, "ours_events.csv")
+    rm(events_path; force = true)
+    n_events = 0
+    ev_cols = nothing
+    summaries = DataFrame[]
+    runs_all, hits_all = DataFrame[], DataFrame[]
     for j in intersect(expected_jobs, present)
         dir = joinpath(raw_dir, "job_$j")
         files = [joinpath(dir, f) for f in ("runs.csv", "hits.csv", "ours_events.csv")]
@@ -79,12 +120,19 @@ function main(args)
         if !isempty(setdiff(Symbol.(names(r)), RUN_COLS)) || !isempty(setdiff(RUN_COLS, Symbol.(names(r))))
             fail!("job $j: runs.csv columns differ from the schema"); push!(resubmit, j); continue
         end
-        push!(runs_all, r); push!(hits_all, h); push!(ev_all, e)
+        push!(runs_all, r); push!(hits_all, h)
+        if ev_cols === nothing
+            ev_cols = [c for c in EVENT_COLS if c in Symbol.(names(e))]
+        end
+        if nrow(e) > 0
+            CSV.write(events_path, e[:, ev_cols]; append = isfile(events_path), header = !isfile(events_path))
+            n_events += nrow(e)
+        end
+        push!(summaries, event_summary(e, h))
     end
     isempty(runs_all) && (println("no valid job output found"); exit(1))
     runs = vcat(runs_all...)
     hits = vcat(hits_all...)
-    events = vcat(ev_all...; cols = :union)
     key(df) = collect(zip(df.problem_id, df.start_id, df.algorithm_id))
 
     # global uniqueness
@@ -168,14 +216,16 @@ function main(args)
     # write merged files
     CSV.write(joinpath(out_dir, "runs.csv"), runs[:, RUN_COLS])
     CSV.write(joinpath(out_dir, "hits.csv"), hits[:, HIT_COLS])
-    ev_cols = [c for c in EVENT_COLS if c in Symbol.(names(events))]
-    CSV.write(joinpath(out_dir, "ours_events.csv"), events[:, ev_cols])
+    if !isfile(events_path)          # no OURS loops at all: still write the header
+        CSV.write(events_path, DataFrame([c => Int[] for c in EVENT_COLS]...))
+    end
+    CSV.write(joinpath(out_dir, "ours_events_summary.csv"), vcat(summaries...))
     write(joinpath(out_dir, "resubmit_jobs.txt"), join(sort(collect(resubmit)), "\n") * (isempty(resubmit) ? "" : "\n"))
 
     # summary
     println("\n==== summary ====")
     @printf("jobs read: %d of %d expected   runs: %d   hit rows: %d   OURS inner loops: %d\n",
-        length(runs_all), length(expected_jobs), nrow(runs), nrow(hits), nrow(events))
+        length(runs_all), length(expected_jobs), nrow(runs), nrow(hits), n_events)
     println(sort(combine(groupby(runs, :status), nrow => :runs), :runs, rev = true))
     errs = runs[runs.status .== "error", :]
     nrow(errs) == 0 || println("runs with status 'error': $(nrow(errs)) (see errors.log in the job directories)")

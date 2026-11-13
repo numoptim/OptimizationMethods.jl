@@ -12,14 +12,16 @@ const METRIC_LABEL = Dict(:nobj => "#F", :ngrad => "#∇F", :cost => "weighted c
 tol_label(t) = @sprintf("%.0e", t) |> s -> replace(s, "e-0" => "e-")   # 1e-3, 1e-5, ...
 
 """
-    load_merged(dir) -> (runs, hits, events)
+    load_merged(dir) -> (runs, hits, events_summary)
 
-Reads the merged CSVs written by `src/collect.jl`.
+Reads the merged CSVs written by `src/collect.jl`. The per-inner-loop file `ours_events.csv`
+(~100M rows for the full experiment) is deliberately not loaded; the analysis uses the per-run
+counts in `ours_events_summary.csv`.
 """
 function load_merged(dir)
     runs = CSV.read(joinpath(dir, "runs.csv"), DataFrame)
     hits = CSV.read(joinpath(dir, "hits.csv"), DataFrame)
-    events = CSV.read(joinpath(dir, "ours_events.csv"), DataFrame)
+    events = CSV.read(joinpath(dir, "ours_events_summary.csv"), DataFrame)
     return runs, hits, events
 end
 

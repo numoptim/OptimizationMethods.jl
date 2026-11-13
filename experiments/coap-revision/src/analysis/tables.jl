@@ -78,37 +78,29 @@ function success_summary(T::DataFrame, bc_by_tol::Dict{Float64,DataFrame})
 end
 
 """
-    events_table(events, T, tol) -> DataFrame
+    events_table(summary, tol) -> DataFrame
 
 OURS triggering events (paper Table 4 format `Events, Average.Proportion.on.Inner.Loops,
 Margin.of.Error`, in percent) restricted, for each run that reached `tol`, to the
-inner loops of the outer iterations `k <= iteration of the first hit`. The proportion
+inner loops of the outer iterations `k <= iteration of the first hit`. `summary` is
+`ours_events_summary.csv` (written by `src/collect.jl`; one row per OURS run and tolerance
+with the counts `loops, ball, lower, upper, maxiter, acc_known, acc_rejected` over those
+loops; the full `ours_events.csv` has ~100M rows and is not read here). The proportion
 of a flag is computed per run and averaged over runs (margin: 95%, 1.96 sd/√runs).
 The flags are not mutually exclusive. The last row is the rejection rate: the
 proportion of those outer iterations whose acceptance flag is false (loops whose
 acceptance is unknown, because the budget ended mid-iteration, are excluded).
 Extra columns: `runs` (OURS runs that reached `tol` and have >= 1 loop) and `loops`.
 """
-function events_table(events::DataFrame, T::DataFrame, tol::Real)
-    hh = hits_iteration(T, tol)
+function events_table(summary::DataFrame, tol::Real)
+    d = summary[(summary.tol .== tol) .& (summary.loops .> 0), :]
     flags = [:ball, :lower, :upper, :maxiter]
     labels = ["Bounding Ball Event", "Lower Gradient Interval", "Upper Gradient Interval", "Max Iteration"]
-    props = Dict(f => Float64[] for f in flags)
-    rej = Float64[]
-    nloops = 0
-    for g in groupby(events, [:problem_id, :start_id, :algorithm_id])
-        key = (g.problem_id[1], g.start_id[1], g.algorithm_id[1])
-        haskey(hh, key) || continue
-        d = g[g.k .<= hh[key], :]
-        nrow(d) == 0 && continue
-        nloops += nrow(d)
-        for f in flags
-            push!(props[f], 100 * mean(Bool.(d[!, f])))
-        end
-        acc = collect(skipmissing(d.accepted))
-        isempty(acc) || push!(rej, 100 * mean(.!Bool.(acc)))
-    end
-    nruns = length(props[:ball])
+    props = Dict(f => 100 .* Float64.(d[!, f]) ./ d.loops for f in flags)
+    k = d.acc_known .> 0
+    rej = 100 .* Float64.(d.acc_rejected[k]) ./ d.acc_known[k]
+    nloops = sum(d.loops)
+    nruns = nrow(d)
     rows = [(Events = labels[i], var"Average.Proportion.on.Inner.Loops" = nruns == 0 ? NaN : mean(props[f]),
              var"Margin.of.Error" = moe95(props[f]), runs = nruns, loops = nloops)
             for (i, f) in enumerate(flags)]

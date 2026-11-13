@@ -106,6 +106,8 @@ Branch: cv/experiments-quasi-likelihood · Last updated: 2026-11-08 (UTC) · Cur
 Phases 1-4 as in `PROMPT.md` §4. One step per run; a step is "done" when its checks pass and it is committed. Verification: test files listed in the Log; gates push to origin.
 
 ## Log
+### 2026-11-13: collect.jl out-of-memory fix
+- `chtc/collect.sh` on the full results was killed (OOM): the CHTC pilot had 2.7M OURS inner-loop rows for ~30 OURS runs, so the full experiment has ~100M, and `collect.jl` held them all in memory. `collect.jl` now streams `ours_events.csv` job by job (merged file byte-identical to the old output on the local pilot) and writes `ours_events_summary.csv` (per OURS run and tolerance counts over the loops up to the hit); the analysis reads the summary (`events_table(summary, tol)`), not the big file. Checked on the local pilot: merged files identical, `events_<ε>.csv` equal up to 1e-14 rounding, analysis tests and `check_merged.jl` pass.
 ### 2026-11-08: Phase 4 and Gate 4
 - 4.1 `CHTC_RUNBOOK.md`; helper scripts `chtc/collect.sh`, `resubmit.sh`, `job_runtimes.sh` (tested on synthetic `condor_history` lines: passes at 20 h, fails with a clear message at 27.8 h); `submit_all.sh` rewritten to skip finished jobs (tested with a fake results directory: 533 of 535 queued when 2 are done); `build.sub` now lists `transfer_output_files = depot.tar.gz`.
 - 4.2 `ANALYSIS.md` and `src/analysis/check_merged.jl` (8 checks pass on the pilot data).
